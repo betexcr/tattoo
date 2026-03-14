@@ -39,7 +39,7 @@ export default function Login() {
       if (err) {
         setError(err)
       } else {
-        setSuccess('Cuenta creada. Revisa tu email para confirmar.')
+        navigate('/')
       }
     }
     setLoading(false)

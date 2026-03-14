@@ -1,9 +1,10 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   X, Palette, PenTool, Eye, Lightbulb,
-  GraduationCap, User, Phone, Bell, ShoppingBag,
+  GraduationCap, User, Phone, Bell, ShoppingBag, LogIn, LogOut, LayoutDashboard,
 } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 
 const menuItems = [
   { to: '/shop', icon: ShoppingBag, label: 'Tienda', desc: 'Arte para llevar' },
@@ -22,6 +23,15 @@ interface MenuDrawerProps {
 }
 
 export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
+  const { user, profile, isArtist, signOut } = useAuth()
+  const navigate = useNavigate()
+
+  const handleSignOut = async () => {
+    await signOut()
+    onClose()
+    navigate('/')
+  }
+
   return (
     <AnimatePresence>
       {open && (
@@ -53,6 +63,55 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                 <X size={18} />
               </button>
             </div>
+
+            {/* Account section */}
+            <div className="px-4 pt-4 pb-2">
+              {user ? (
+                <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-gold/5 border border-gold/10">
+                  <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center text-gold font-serif text-lg shrink-0">
+                    {(profile?.full_name || user.email || '?')[0].toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-cream truncate">{profile?.full_name || user.email}</p>
+                    <p className="text-xs text-subtle truncate">{user.email}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {isArtist && (
+                      <NavLink
+                        to="/studio"
+                        onClick={onClose}
+                        className="w-8 h-8 rounded-lg bg-gold/10 flex items-center justify-center text-gold hover:bg-gold/20 transition-colors"
+                        title="Studio"
+                      >
+                        <LayoutDashboard size={16} />
+                      </NavLink>
+                    )}
+                    <button
+                      onClick={handleSignOut}
+                      className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-subtle hover:text-rose transition-colors"
+                      title="Cerrar sesión"
+                    >
+                      <LogOut size={16} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <NavLink
+                  to="/login"
+                  onClick={onClose}
+                  className="flex items-center gap-4 p-3.5 rounded-2xl bg-gold/10 border border-gold/20 text-gold hover:bg-gold/15 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-gold/20 flex items-center justify-center shrink-0">
+                    <LogIn size={18} strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Iniciar Sesión / Registrarse</p>
+                    <p className="text-xs text-gold/60">Para citas, chat y más</p>
+                  </div>
+                </NavLink>
+              )}
+            </div>
+
             <div className="p-4 pb-8 space-y-1">
               {menuItems.map(({ to, icon: Icon, label, desc }) => (
                 <NavLink
