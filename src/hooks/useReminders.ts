@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import {
+  collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, doc,
+} from 'firebase/firestore'
+import { db } from '../lib/firebase'
 import type { Reminder } from '../types'
 
 export function useReminders() {
@@ -9,46 +12,49 @@ export function useReminders() {
 
   const fetch = useCallback(async () => {
     setLoading(true)
-    const { data, error: err } = await supabase
-      .from('reminders')
-      .select('*')
-      .order('date', { ascending: true })
-    if (err) setError(err.message)
-    else setReminders((data ?? []) as unknown as Reminder[])
+    try {
+      const q = query(collection(db, 'reminders'), orderBy('date', 'asc'))
+      const snap = await getDocs(q)
+      setReminders(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Reminder))
+    } catch (e: unknown) {
+      setError((e as Error).message)
+    }
     setLoading(false)
   }, [])
 
   useEffect(() => { fetch() }, [fetch])
 
   const create = async (reminder: Omit<Reminder, 'id' | 'created_at'>) => {
-    const { data, error: err } = await supabase
-      .from('reminders')
-      .insert(reminder)
-      .select()
-      .single()
-    if (err) return { error: err.message }
-    setReminders(prev => [...prev, data as unknown as Reminder])
-    return { error: null }
+    try {
+      const ref = await addDoc(collection(db, 'reminders'), {
+        ...reminder,
+        created_at: new Date().toISOString(),
+      })
+      setReminders(prev => [...prev, { id: ref.id, ...reminder, created_at: new Date().toISOString() } as Reminder])
+      return { error: null }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
+    }
   }
 
   const toggleComplete = async (id: string) => {
     const r = reminders.find(r => r.id === id)
     if (!r) return
-    const { error: err } = await supabase
-      .from('reminders')
-      .update({ completed: !r.completed })
-      .eq('id', id)
-    if (!err) {
+    try {
+      await updateDoc(doc(db, 'reminders', id), { completed: !r.completed })
       setReminders(prev => prev.map(r => r.id === id ? { ...r, completed: !r.completed } : r))
+    } catch {
+      // silent fail
     }
   }
 
   const remove = async (id: string) => {
-    const { error: err } = await supabase
-      .from('reminders')
-      .delete()
-      .eq('id', id)
-    if (!err) setReminders(prev => prev.filter(r => r.id !== id))
+    try {
+      await deleteDoc(doc(db, 'reminders', id))
+      setReminders(prev => prev.filter(r => r.id !== id))
+    } catch {
+      // silent fail
+    }
   }
 
   return { reminders, loading, error, refetch: fetch, create, toggleComplete, remove }

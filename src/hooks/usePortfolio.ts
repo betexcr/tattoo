@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import {
+  collection, query, orderBy, where, getDocs, addDoc, updateDoc, deleteDoc, doc,
+} from 'firebase/firestore'
+import { db } from '../lib/firebase'
 import type { PortfolioItem } from '../types'
 
 export function usePortfolio(publishedOnly = true) {
@@ -9,59 +12,61 @@ export function usePortfolio(publishedOnly = true) {
 
   const fetch = useCallback(async () => {
     setLoading(true)
-    let query = supabase
-      .from('portfolio_items')
-      .select('*')
-      .order('sort_order', { ascending: true })
-
-    if (publishedOnly) query = query.eq('published', true)
-
-    const { data, error: err } = await query
-    if (err) setError(err.message)
-    else setItems((data ?? []) as unknown as PortfolioItem[])
+    try {
+      const q = publishedOnly
+        ? query(collection(db, 'portfolio_items'), where('published', '==', true), orderBy('sort_order', 'asc'))
+        : query(collection(db, 'portfolio_items'), orderBy('sort_order', 'asc'))
+      const snap = await getDocs(q)
+      setItems(snap.docs.map(d => ({ id: d.id, ...d.data() }) as PortfolioItem))
+    } catch (e: unknown) {
+      setError((e as Error).message)
+    }
     setLoading(false)
   }, [publishedOnly])
 
   useEffect(() => { fetch() }, [fetch])
 
   const create = async (item: Omit<PortfolioItem, 'id' | 'created_at'>) => {
-    const { data, error: err } = await supabase
-      .from('portfolio_items')
-      .insert(item)
-      .select()
-      .single()
-    if (err) return { error: err.message }
-    setItems(prev => [...prev, data as unknown as PortfolioItem])
-    return { error: null }
+    try {
+      const ref = await addDoc(collection(db, 'portfolio_items'), {
+        ...item,
+        created_at: new Date().toISOString(),
+      })
+      setItems(prev => [...prev, { id: ref.id, ...item, created_at: new Date().toISOString() } as PortfolioItem])
+      return { error: null }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
+    }
   }
 
   const update = async (id: string, updates: Partial<PortfolioItem>) => {
-    const { error: err } = await supabase
-      .from('portfolio_items')
-      .update(updates)
-      .eq('id', id)
-    if (err) return { error: err.message }
-    setItems(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i))
-    return { error: null }
+    try {
+      await updateDoc(doc(db, 'portfolio_items', id), updates)
+      setItems(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i))
+      return { error: null }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
+    }
   }
 
   const remove = async (id: string) => {
-    const { error: err } = await supabase
-      .from('portfolio_items')
-      .delete()
-      .eq('id', id)
-    if (err) return { error: err.message }
-    setItems(prev => prev.filter(i => i.id !== id))
-    return { error: null }
+    try {
+      await deleteDoc(doc(db, 'portfolio_items', id))
+      setItems(prev => prev.filter(i => i.id !== id))
+      return { error: null }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
+    }
   }
 
   const reorder = async (id: string, newOrder: number) => {
-    const { error: err } = await supabase
-      .from('portfolio_items')
-      .update({ sort_order: newOrder })
-      .eq('id', id)
-    if (!err) await fetch()
-    return { error: err?.message ?? null }
+    try {
+      await updateDoc(doc(db, 'portfolio_items', id), { sort_order: newOrder })
+      await fetch()
+      return { error: null }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
+    }
   }
 
   return { items, loading, error, refetch: fetch, create, update, remove, reorder }

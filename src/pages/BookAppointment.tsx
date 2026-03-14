@@ -99,7 +99,7 @@ export default function BookAppointment() {
   const goNext = async () => {
     if (step === STEPS.length - 1) {
       await create({
-        client_id: user?.id ?? null,
+        client_id: user?.uid ?? null,
         client_name: contact.name,
         date: selectedDate,
         time: selectedTime,

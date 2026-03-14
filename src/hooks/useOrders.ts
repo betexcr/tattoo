@@ -1,4 +1,5 @@
-import { supabase } from '../lib/supabase'
+import { collection, addDoc } from 'firebase/firestore'
+import { db, auth } from '../lib/firebase'
 import type { Order } from '../types'
 
 interface CreateOrderInput {
@@ -18,35 +19,44 @@ interface CreateOrderInput {
 
 export function useOrders() {
   const create = async (input: CreateOrderInput): Promise<{ error: string | null; data?: Order }> => {
-    const user = (await supabase.auth.getUser()).data.user
+    try {
+      const user = auth.currentUser
 
-    const { data: order, error: orderErr } = await supabase
-      .from('orders')
-      .insert({
-        client_id: user?.id ?? null,
+      const orderRef = await addDoc(collection(db, 'orders'), {
+        client_id: user?.uid ?? null,
         client_name: input.client_name,
         client_email: input.client_email,
         client_phone: input.client_phone ?? '',
         client_address: input.client_address ?? '',
         total: input.total,
+        status: 'pending',
+        created_at: new Date().toISOString(),
       })
-      .select()
-      .single()
 
-    if (orderErr || !order) return { error: orderErr?.message ?? 'Failed to create order' }
+      for (const item of input.items) {
+        await addDoc(collection(db, 'order_items'), {
+          order_id: orderRef.id,
+          ...item,
+        })
+      }
 
-    const orderItems = input.items.map(i => ({
-      order_id: order.id,
-      ...i,
-    }))
-
-    const { error: itemsErr } = await supabase
-      .from('order_items')
-      .insert(orderItems)
-
-    if (itemsErr) return { error: itemsErr.message }
-
-    return { error: null, data: order as unknown as Order }
+      return {
+        error: null,
+        data: {
+          id: orderRef.id,
+          client_id: user?.uid ?? null,
+          client_name: input.client_name,
+          client_email: input.client_email,
+          client_phone: input.client_phone ?? '',
+          client_address: input.client_address ?? '',
+          total: input.total,
+          status: 'pending',
+          created_at: new Date().toISOString(),
+        } as Order,
+      }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
+    }
   }
 
   return { create }

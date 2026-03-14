@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import {
+  collection, query, orderBy, where, getDocs,
+} from 'firebase/firestore'
+import { db } from '../lib/firebase'
 import type { ShopItem } from '../types'
 
 export function useShop(category?: string) {
@@ -9,11 +12,15 @@ export function useShop(category?: string) {
 
   const fetch = useCallback(async () => {
     setLoading(true)
-    let query = supabase.from('shop_items').select('*').order('created_at', { ascending: true })
-    if (category) query = query.eq('category', category)
-    const { data, error: err } = await query
-    if (err) setError(err.message)
-    else setItems((data ?? []) as unknown as ShopItem[])
+    try {
+      const q = category
+        ? query(collection(db, 'shop_items'), where('category', '==', category), orderBy('created_at', 'asc'))
+        : query(collection(db, 'shop_items'), orderBy('created_at', 'asc'))
+      const snap = await getDocs(q)
+      setItems(snap.docs.map(d => ({ id: d.id, ...d.data() }) as ShopItem))
+    } catch (e: unknown) {
+      setError((e as Error).message)
+    }
     setLoading(false)
   }, [category])
 

@@ -1,0 +1,96 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isArtist() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'artist';
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Profiles: users read/update own, artists read all
+    match /profiles/{userId} {
+      allow read: if isOwner(userId) || isArtist();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+    }
+
+    // Portfolio: public read for published, artists full access
+    match /portfolio_items/{itemId} {
+      allow read: if true;
+      allow create, update, delete: if isArtist();
+    }
+
+    // Shop items: public read, artists full access
+    match /shop_items/{itemId} {
+      allow read: if true;
+      allow create, update, delete: if isArtist();
+    }
+
+    // Courses: public read, artists full access
+    match /courses/{courseId} {
+      allow read: if true;
+      allow create, delete: if isArtist();
+      allow update: if isSignedIn();
+    }
+
+    // Studio settings: public read, artists update
+    match /studio_settings/{docId} {
+      allow read: if true;
+      allow write: if isArtist();
+    }
+
+    // Appointments: authenticated can create, clients see own, artists see all
+    match /appointments/{apptId} {
+      allow read: if isArtist() || (isSignedIn() && resource.data.client_id == request.auth.uid);
+      allow create: if isSignedIn();
+      allow update, delete: if isArtist();
+    }
+
+    // Orders: authenticated can create, clients see own, artists see all
+    match /orders/{orderId} {
+      allow read: if isArtist() || (isSignedIn() && resource.data.client_id == request.auth.uid);
+      allow create: if isSignedIn();
+      allow update: if isArtist();
+    }
+
+    // Order items: same as orders
+    match /order_items/{itemId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isArtist();
+    }
+
+    // Course reservations: authenticated can create, artists see all
+    match /course_reservations/{resId} {
+      allow read: if isArtist() || (isSignedIn() && resource.data.client_id == request.auth.uid);
+      allow create: if isSignedIn();
+    }
+
+    // Chat messages: clients see own + send, artists see all + send + update
+    match /chat_messages/{msgId} {
+      allow read: if isArtist() || (isSignedIn() && resource.data.client_id == request.auth.uid);
+      allow create: if isSignedIn();
+      allow update: if isArtist();
+    }
+
+    // Reminders: artists only
+    match /reminders/{remId} {
+      allow read, write: if isArtist();
+    }
+
+    // Contact submissions: anyone can create, artists can read
+    match /contact_submissions/{subId} {
+      allow create: if true;
+      allow read: if isArtist();
+    }
+  }
+}

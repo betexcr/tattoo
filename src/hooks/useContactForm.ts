@@ -1,4 +1,5 @@
-import { supabase } from '../lib/supabase'
+import { collection, addDoc } from 'firebase/firestore'
+import { db } from '../lib/firebase'
 
 interface ContactInput {
   name: string
@@ -11,10 +12,15 @@ interface ContactInput {
 
 export function useContactForm() {
   const submit = async (input: ContactInput) => {
-    const { error } = await supabase
-      .from('contact_submissions')
-      .insert(input)
-    return { error: error?.message ?? null }
+    try {
+      await addDoc(collection(db, 'contact_submissions'), {
+        ...input,
+        created_at: new Date().toISOString(),
+      })
+      return { error: null }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
+    }
   }
 
   return { submit }

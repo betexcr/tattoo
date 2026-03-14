@@ -101,7 +101,7 @@ interface ChatbotMessage {
 
 export default function Chat() {
   const { user } = useAuth()
-  const clientId = user?.id
+  const clientId = user?.uid
   const {
     messages: dbMessages,
     send,

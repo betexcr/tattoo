@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import {
+  collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, doc,
+} from 'firebase/firestore'
+import { db } from '../lib/firebase'
 import type { Appointment } from '../types'
 
 export function useAppointments(clientOnly = false) {
@@ -9,57 +12,60 @@ export function useAppointments(clientOnly = false) {
 
   const fetch = useCallback(async () => {
     setLoading(true)
-    const { data, error: err } = await supabase
-      .from('appointments')
-      .select('*')
-      .order('date', { ascending: true })
-
-    if (err) setError(err.message)
-    else setAppointments((data ?? []) as unknown as Appointment[])
+    try {
+      const q = query(collection(db, 'appointments'), orderBy('date', 'asc'))
+      const snap = await getDocs(q)
+      setAppointments(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Appointment))
+    } catch (e: unknown) {
+      setError((e as Error).message)
+    }
     setLoading(false)
   }, [])
 
   useEffect(() => { fetch() }, [fetch])
 
   const create = async (appt: Omit<Appointment, 'id' | 'created_at'>) => {
-    const { data, error: err } = await supabase
-      .from('appointments')
-      .insert(appt)
-      .select()
-      .single()
-    if (err) return { error: err.message }
-    setAppointments(prev => [...prev, data as unknown as Appointment])
-    return { error: null, data: data as unknown as Appointment }
+    try {
+      const ref = await addDoc(collection(db, 'appointments'), {
+        ...appt,
+        created_at: new Date().toISOString(),
+      })
+      const newAppt = { id: ref.id, ...appt, created_at: new Date().toISOString() } as Appointment
+      setAppointments(prev => [...prev, newAppt])
+      return { error: null, data: newAppt }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
+    }
   }
 
   const updateStatus = async (id: string, status: Appointment['status']) => {
-    const { error: err } = await supabase
-      .from('appointments')
-      .update({ status })
-      .eq('id', id)
-    if (err) return { error: err.message }
-    setAppointments(prev => prev.map(a => a.id === id ? { ...a, status } : a))
-    return { error: null }
+    try {
+      await updateDoc(doc(db, 'appointments', id), { status })
+      setAppointments(prev => prev.map(a => a.id === id ? { ...a, status } : a))
+      return { error: null }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
+    }
   }
 
   const updateAppointment = async (id: string, updates: Partial<Appointment>) => {
-    const { error: err } = await supabase
-      .from('appointments')
-      .update(updates)
-      .eq('id', id)
-    if (err) return { error: err.message }
-    setAppointments(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a))
-    return { error: null }
+    try {
+      await updateDoc(doc(db, 'appointments', id), updates)
+      setAppointments(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a))
+      return { error: null }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
+    }
   }
 
   const remove = async (id: string) => {
-    const { error: err } = await supabase
-      .from('appointments')
-      .delete()
-      .eq('id', id)
-    if (err) return { error: err.message }
-    setAppointments(prev => prev.filter(a => a.id !== id))
-    return { error: null }
+    try {
+      await deleteDoc(doc(db, 'appointments', id))
+      setAppointments(prev => prev.filter(a => a.id !== id))
+      return { error: null }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
+    }
   }
 
   const getOccupiedSlots = useCallback((): Record<string, string[]> => {
@@ -74,9 +80,7 @@ export function useAppointments(clientOnly = false) {
     return slots
   }, [appointments])
 
-  const filtered = clientOnly
-    ? appointments
-    : appointments
+  const filtered = clientOnly ? appointments : appointments
 
   return {
     appointments: filtered,

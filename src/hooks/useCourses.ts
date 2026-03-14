@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import {
+  collection, query, orderBy, getDocs, addDoc, updateDoc, doc,
+} from 'firebase/firestore'
+import { db, auth } from '../lib/firebase'
 import type { Course } from '../types'
 
 export function useCourses() {
@@ -9,42 +12,41 @@ export function useCourses() {
 
   const fetch = useCallback(async () => {
     setLoading(true)
-    const { data, error: err } = await supabase
-      .from('courses')
-      .select('*')
-      .order('date', { ascending: true })
-    if (err) setError(err.message)
-    else setCourses((data ?? []) as unknown as Course[])
+    try {
+      const q = query(collection(db, 'courses'), orderBy('date', 'asc'))
+      const snap = await getDocs(q)
+      setCourses(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Course))
+    } catch (e: unknown) {
+      setError((e as Error).message)
+    }
     setLoading(false)
   }, [])
 
   useEffect(() => { fetch() }, [fetch])
 
   const reserve = async (courseId: string, name: string, email: string, phone: string) => {
-    const user = (await supabase.auth.getUser()).data.user
+    try {
+      const user = auth.currentUser
 
-    const { error: err } = await supabase
-      .from('course_reservations')
-      .insert({
+      await addDoc(collection(db, 'course_reservations'), {
         course_id: courseId,
-        client_id: user?.id ?? null,
+        client_id: user?.uid ?? null,
         name,
         email,
         phone,
+        created_at: new Date().toISOString(),
       })
 
-    if (err) return { error: err.message }
+      const course = courses.find(c => c.id === courseId)
+      if (course && course.spots > 0) {
+        await updateDoc(doc(db, 'courses', courseId), { spots: course.spots - 1 })
+        setCourses(prev => prev.map(c => c.id === courseId ? { ...c, spots: c.spots - 1 } : c))
+      }
 
-    const course = courses.find(c => c.id === courseId)
-    if (course && course.spots > 0) {
-      await supabase
-        .from('courses')
-        .update({ spots: course.spots - 1 })
-        .eq('id', courseId)
-      setCourses(prev => prev.map(c => c.id === courseId ? { ...c, spots: c.spots - 1 } : c))
+      return { error: null }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
     }
-
-    return { error: null }
   }
 
   return { courses, loading, error, refetch: fetch, reserve }

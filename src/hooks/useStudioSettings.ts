@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { db } from '../lib/firebase'
 import type { StudioSettings } from '../types'
+
+const SETTINGS_DOC = doc(db, 'studio_settings', 'main')
 
 export function useStudioSettings() {
   const [settings, setSettings] = useState<StudioSettings | null>(null)
@@ -9,27 +12,27 @@ export function useStudioSettings() {
 
   const fetch = useCallback(async () => {
     setLoading(true)
-    const { data, error: err } = await supabase
-      .from('studio_settings')
-      .select('*')
-      .limit(1)
-      .single()
-    if (err) setError(err.message)
-    else setSettings(data as unknown as StudioSettings)
+    try {
+      const snap = await getDoc(SETTINGS_DOC)
+      if (snap.exists()) {
+        setSettings({ id: snap.id, ...snap.data() } as StudioSettings)
+      }
+    } catch (e: unknown) {
+      setError((e as Error).message)
+    }
     setLoading(false)
   }, [])
 
   useEffect(() => { fetch() }, [fetch])
 
   const save = async (updates: Partial<StudioSettings>) => {
-    if (!settings) return { error: 'No settings loaded' }
-    const { error: err } = await supabase
-      .from('studio_settings')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', settings.id)
-    if (err) return { error: err.message }
-    setSettings(prev => prev ? { ...prev, ...updates } : prev)
-    return { error: null }
+    try {
+      await setDoc(SETTINGS_DOC, { ...updates, updated_at: new Date().toISOString() }, { merge: true })
+      setSettings(prev => prev ? { ...prev, ...updates } : prev)
+      return { error: null }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
+    }
   }
 
   return { settings, loading, error, refetch: fetch, save }

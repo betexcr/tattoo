@@ -1,24 +1,31 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { supabase } from '../lib/supabase'
+import {
+  collection, query, where, orderBy, getDocs, addDoc, updateDoc, doc,
+  onSnapshot, type Unsubscribe,
+} from 'firebase/firestore'
+import { db } from '../lib/firebase'
 import type { ChatMessage, ChatConversation } from '../types'
-import type { RealtimeChannel } from '@supabase/supabase-js'
 
 export function useChat(clientId?: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const channelRef = useRef<RealtimeChannel | null>(null)
+  const unsubRef = useRef<Unsubscribe | null>(null)
 
   const fetchMessages = useCallback(async () => {
     if (!clientId) { setLoading(false); return }
     setLoading(true)
-    const { data, error: err } = await supabase
-      .from('chat_messages')
-      .select('*')
-      .eq('client_id', clientId)
-      .order('created_at', { ascending: true })
-    if (err) setError(err.message)
-    else setMessages((data ?? []) as unknown as ChatMessage[])
+    try {
+      const q = query(
+        collection(db, 'chat_messages'),
+        where('client_id', '==', clientId),
+        orderBy('created_at', 'asc'),
+      )
+      const snap = await getDocs(q)
+      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() }) as ChatMessage))
+    } catch (e: unknown) {
+      setError((e as Error).message)
+    }
     setLoading(false)
   }, [clientId])
 
@@ -26,64 +33,46 @@ export function useChat(clientId?: string) {
 
   const subscribe = useCallback(() => {
     if (!clientId) return
-    const channel = supabase
-      .channel(`chat:${clientId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `client_id=eq.${clientId}`,
-        },
-        (payload) => {
-          setMessages(prev => [...prev, payload.new as unknown as ChatMessage])
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `client_id=eq.${clientId}`,
-        },
-        (payload) => {
-          setMessages(prev =>
-            prev.map(m => m.id === (payload.new as { id: string }).id
-              ? payload.new as unknown as ChatMessage
-              : m
-            )
-          )
-        }
-      )
-      .subscribe()
-
-    channelRef.current = channel
+    const q = query(
+      collection(db, 'chat_messages'),
+      where('client_id', '==', clientId),
+      orderBy('created_at', 'asc'),
+    )
+    const unsub = onSnapshot(q, (snap) => {
+      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() }) as ChatMessage))
+    })
+    unsubRef.current = unsub
   }, [clientId])
 
   const unsubscribe = useCallback(() => {
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current)
-      channelRef.current = null
+    if (unsubRef.current) {
+      unsubRef.current()
+      unsubRef.current = null
     }
   }, [])
 
   const send = async (text: string, senderRole: 'client' | 'artist') => {
     if (!clientId) return { error: 'No client ID' }
-    const { error: err } = await supabase
-      .from('chat_messages')
-      .insert({ client_id: clientId, sender_role: senderRole, text })
-    return { error: err?.message ?? null }
+    try {
+      await addDoc(collection(db, 'chat_messages'), {
+        client_id: clientId,
+        sender_role: senderRole,
+        text,
+        read: false,
+        created_at: new Date().toISOString(),
+      })
+      return { error: null }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
+    }
   }
 
   const markRead = async () => {
     if (!clientId) return
-    await supabase
-      .from('chat_messages')
-      .update({ read: true })
-      .eq('client_id', clientId)
-      .eq('read', false)
+    const unreadMsgs = messages.filter(m => !m.read)
+    for (const m of unreadMsgs) {
+      await updateDoc(doc(db, 'chat_messages', m.id), { read: true })
+    }
     setMessages(prev => prev.map(m => ({ ...m, read: true })))
   }
 
@@ -96,44 +85,47 @@ export function useChatConversations() {
 
   const fetch = useCallback(async () => {
     setLoading(true)
-    const { data: msgs } = await supabase
-      .from('chat_messages')
-      .select('client_id, text, created_at, read, sender_role')
-      .order('created_at', { ascending: false })
+    try {
+      const q = query(
+        collection(db, 'chat_messages'),
+        orderBy('created_at', 'desc'),
+      )
+      const snap = await getDocs(q)
+      const msgs = snap.docs.map(d => d.data())
 
-    if (!msgs || msgs.length === 0) {
+      if (msgs.length === 0) {
+        setConversations([])
+        setLoading(false)
+        return
+      }
+
+      const profileSnap = await getDocs(collection(db, 'profiles'))
+      const profileMap = new Map<string, string>()
+      profileSnap.docs.forEach(d => {
+        profileMap.set(d.id, (d.data().full_name as string) || 'Cliente')
+      })
+
+      const convMap = new Map<string, ChatConversation>()
+      for (const m of msgs) {
+        const cid = m.client_id as string
+        if (!convMap.has(cid)) {
+          convMap.set(cid, {
+            client_id: cid,
+            client_name: profileMap.get(cid) ?? 'Cliente',
+            last_message: m.text as string,
+            last_timestamp: m.created_at as string,
+            unread: 0,
+          })
+        }
+        if (!m.read && m.sender_role === 'client') {
+          convMap.get(cid)!.unread += 1
+        }
+      }
+
+      setConversations([...convMap.values()])
+    } catch {
       setConversations([])
-      setLoading(false)
-      return
     }
-
-    const clientIds = [...new Set(msgs.map(m => m.client_id))]
-
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, full_name')
-      .in('id', clientIds)
-
-    const profileMap = new Map((profiles ?? []).map(p => [p.id, p.full_name]))
-
-    const convMap = new Map<string, ChatConversation>()
-    for (const m of msgs) {
-      if (!convMap.has(m.client_id)) {
-        convMap.set(m.client_id, {
-          client_id: m.client_id,
-          client_name: profileMap.get(m.client_id) ?? 'Cliente',
-          last_message: m.text,
-          last_timestamp: m.created_at,
-          unread: 0,
-        })
-      }
-      if (!m.read && m.sender_role === 'client') {
-        const c = convMap.get(m.client_id)!
-        c.unread += 1
-      }
-    }
-
-    setConversations([...convMap.values()])
     setLoading(false)
   }, [])
 

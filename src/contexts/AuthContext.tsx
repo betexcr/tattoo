@@ -1,11 +1,18 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
-import type { User, Session } from '@supabase/supabase-js'
-import { supabase } from '../lib/supabase'
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  type User,
+} from 'firebase/auth'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { auth, db } from '../lib/firebase'
 import type { Profile } from '../types'
 
 interface AuthState {
   user: User | null
-  session: Session | null
+  session: unknown
   profile: Profile | null
   isArtist: boolean
   loading: boolean
@@ -19,70 +26,69 @@ const AuthContext = createContext<AuthState | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const fetchProfile = useCallback(async (userId: string) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    if (data) {
-      setProfile(data as unknown as Profile)
+  const fetchProfile = useCallback(async (uid: string) => {
+    const snap = await getDoc(doc(db, 'profiles', uid))
+    if (snap.exists()) {
+      setProfile({ id: snap.id, ...snap.data() } as Profile)
     }
   }, [])
 
   const refreshProfile = useCallback(async () => {
-    if (user) await fetchProfile(user.id)
+    if (user) await fetchProfile(user.uid)
   }, [user, fetchProfile])
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s)
-      setUser(s?.user ?? null)
-      if (s?.user) fetchProfile(s.user.id)
-      setLoading(false)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s)
-      setUser(s?.user ?? null)
-      if (s?.user) {
-        fetchProfile(s.user.id)
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      setUser(u)
+      if (u) {
+        await fetchProfile(u.uid)
       } else {
         setProfile(null)
       }
       setLoading(false)
     })
-
-    return () => subscription.unsubscribe()
+    return unsub
   }, [fetchProfile])
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    return { error: error?.message ?? null }
+    try {
+      await signInWithEmailAndPassword(auth, email, password)
+      return { error: null }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
+    }
   }
 
   const signUp = async (email: string, password: string, fullName: string, role = 'client') => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName, role } },
-    })
-    return { error: error?.message ?? null }
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password)
+      await setDoc(doc(db, 'profiles', cred.user.uid), {
+        full_name: fullName,
+        phone: '',
+        role,
+        avatar_url: '',
+        created_at: new Date().toISOString(),
+      })
+      return { error: null }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
+    }
   }
 
-  const signOut = async () => {
-    await supabase.auth.signOut()
+  const handleSignOut = async () => {
+    await firebaseSignOut(auth)
     setProfile(null)
   }
 
   const isArtist = profile?.role === 'artist'
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, isArtist, loading, signIn, signUp, signOut, refreshProfile }}>
+    <AuthContext.Provider
+      value={{ user, session: null, profile, isArtist, loading, signIn, signUp, signOut: handleSignOut, refreshProfile }}
+    >
       {children}
     </AuthContext.Provider>
   )
