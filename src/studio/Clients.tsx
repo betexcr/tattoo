@@ -1,13 +1,17 @@
 import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, ArrowLeft, MessageCircle, CalendarPlus, Phone, Mail } from 'lucide-react'
+import { Search, ArrowLeft, MessageCircle, CalendarPlus, Phone, Mail, UserCheck, Users } from 'lucide-react'
 import { useAppointments } from '../hooks/useAppointments'
+import { useClients } from '../hooks/useClients'
 import type { Appointment } from '../types'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 type SortKey = 'nombre' | 'visitas' | 'gasto'
+type ViewTab = 'all' | 'registered'
 
 interface ClientEntry {
+  id?: string
   name: string
   phone: string
   email: string
@@ -15,6 +19,8 @@ interface ClientEntry {
   totalSpent: number
   lastVisit: string
   firstVisit: string
+  registered: boolean
+  registeredAt?: string
   appointments: Appointment[]
 }
 
@@ -36,8 +42,9 @@ function formatDateSpanish(dateStr: string): string {
   })
 }
 
-function buildClientList(appointmentsList: Appointment[]): ClientEntry[] {
+function buildClientList(appointmentsList: Appointment[], registeredProfiles: { id: string; full_name: string; phone: string; created_at: string }[]): ClientEntry[] {
   const byName = new Map<string, ClientEntry>()
+
   for (const apt of appointmentsList) {
     const existing = byName.get(apt.client_name)
     const deposit = apt.deposit ?? 0
@@ -50,6 +57,7 @@ function buildClientList(appointmentsList: Appointment[]): ClientEntry[] {
         totalSpent: deposit,
         lastVisit: apt.date,
         firstVisit: apt.date,
+        registered: false,
         appointments: [apt],
       })
     } else {
@@ -62,6 +70,31 @@ function buildClientList(appointmentsList: Appointment[]): ClientEntry[] {
       if (apt.date < existing.firstVisit) existing.firstVisit = apt.date
     }
   }
+
+  for (const profile of registeredProfiles) {
+    const match = byName.get(profile.full_name)
+    if (match) {
+      match.registered = true
+      match.id = profile.id
+      match.registeredAt = profile.created_at
+      if (profile.phone && !match.phone) match.phone = profile.phone
+    } else {
+      byName.set(profile.full_name, {
+        id: profile.id,
+        name: profile.full_name,
+        phone: profile.phone || '',
+        email: '',
+        visits: 0,
+        totalSpent: 0,
+        lastVisit: '',
+        firstVisit: '',
+        registered: true,
+        registeredAt: profile.created_at,
+        appointments: [],
+      })
+    }
+  }
+
   return Array.from(byName.values())
 }
 
@@ -80,8 +113,10 @@ const itemVariants = {
 
 export default function Clients() {
   const { appointments } = useAppointments()
+  const { clients: registeredClients, loading: clientsLoading } = useClients()
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<SortKey>('nombre')
+  const [viewTab, setViewTab] = useState<ViewTab>('all')
   const [selectedClient, setSelectedClient] = useState<ClientEntry | null>(null)
   const [clientNotes, setClientNotes] = useState<Record<string, string>>({})
 
@@ -91,12 +126,13 @@ export default function Clients() {
     setClientNotes((prev) => ({ ...prev, [selectedClient.name]: value }))
   }
 
-  const clientList = useMemo(() => buildClientList(appointments), [appointments])
+  const clientList = useMemo(() => buildClientList(appointments, registeredClients), [appointments, registeredClients])
 
   const filteredAndSorted = useMemo(() => {
     let list = clientList.filter((c) =>
       c.name.toLowerCase().includes(search.toLowerCase().trim())
     )
+    if (viewTab === 'registered') list = list.filter(c => c.registered)
     if (sort === 'nombre') {
       list = [...list].sort((a, b) => a.name.localeCompare(b.name))
     } else if (sort === 'visitas') {
@@ -105,7 +141,7 @@ export default function Clients() {
       list = [...list].sort((a, b) => b.totalSpent - a.totalSpent)
     }
     return list
-  }, [clientList, search, sort])
+  }, [clientList, search, sort, viewTab])
 
   return (
     <div className="p-4 pb-24">
@@ -255,6 +291,29 @@ export default function Clients() {
             animate="visible"
             className="space-y-4"
           >
+            {clientsLoading && <LoadingSpinner message="Cargando clientes..." />}
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setViewTab('all')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  viewTab === 'all' ? 'bg-gold text-ink' : 'bg-ink-light text-subtle hover:text-cream border border-white/5'
+                }`}
+              >
+                <Users size={14} />
+                Todos ({clientList.length})
+              </button>
+              <button
+                onClick={() => setViewTab('registered')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  viewTab === 'registered' ? 'bg-gold text-ink' : 'bg-ink-light text-subtle hover:text-cream border border-white/5'
+                }`}
+              >
+                <UserCheck size={14} />
+                Registrados ({clientList.filter(c => c.registered).length})
+              </button>
+            </div>
+
             <div className="relative">
               <Search
                 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-subtle"
@@ -299,14 +358,27 @@ export default function Clients() {
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-cream truncate">{client.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-cream truncate">{client.name}</p>
+                      {client.registered && (
+                        <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-medium bg-emerald-500/20 text-emerald-400">
+                          Registrado
+                        </span>
+                      )}
+                    </div>
                     {client.phone && (
                       <p className="text-xs text-subtle truncate">{client.phone}</p>
                     )}
                     <div className="flex gap-3 mt-1 text-[11px] text-subtle">
-                      <span>{client.visits} visitas</span>
-                      <span>€{client.totalSpent} gastado</span>
-                      <span>{formatDateSpanish(client.lastVisit)}</span>
+                      {client.visits > 0 ? (
+                        <>
+                          <span>{client.visits} visitas</span>
+                          <span>€{client.totalSpent} gastado</span>
+                          <span>{formatDateSpanish(client.lastVisit)}</span>
+                        </>
+                      ) : (
+                        <span>Sin citas aún{client.registeredAt ? ` · Registrado ${formatDateSpanish(client.registeredAt.slice(0, 10))}` : ''}</span>
+                      )}
                     </div>
                   </div>
                 </motion.button>
