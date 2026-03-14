@@ -20,7 +20,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
-import { tattooStyles } from '../data/mock'
+import { tattooStyles } from '../data/constants'
 
 type SizeOption = 'small' | 'medium' | 'large'
 type ColorMode = 'negro' | 'color'

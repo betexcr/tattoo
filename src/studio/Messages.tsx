@@ -1,13 +1,8 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Send, Bot } from 'lucide-react'
-import {
-  chatConversations,
-  appointments,
-  type ChatMessage,
-  type ChatConversation,
-} from '../data/mock'
+import { ArrowLeft, Send } from 'lucide-react'
+import { useChatConversations, useChat } from '../hooks/useChat'
 
 const QUICK_REPLIES = [
   'Tu cita está confirmada',
@@ -40,11 +35,6 @@ function formatRelativeTime(iso: string): string {
   return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 }
 
-function getPhoneForClient(clientName: string): string {
-  const apt = appointments.find((a) => a.client === clientName)
-  return apt?.phone ?? ''
-}
-
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -59,18 +49,20 @@ const itemVariants = {
 }
 
 export default function Messages() {
-  const [conversations, setConversations] = useState<ChatConversation[]>(
-    () => [...chatConversations]
-  )
-  const [activeId, setActiveId] = useState<string | null>(null)
+  const { conversations } = useChatConversations()
+  const [activeClientId, setActiveClientId] = useState<string | null>(null)
   const [inputText, setInputText] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const { messages, send, markRead, subscribe, unsubscribe } = useChat(
+    activeClientId ?? undefined
+  )
 
   const sortedConversations = useMemo(
     () =>
       [...conversations].sort(
         (a, b) =>
-          new Date(b.lastTimestamp).getTime() - new Date(a.lastTimestamp).getTime()
+          new Date(b.last_timestamp).getTime() - new Date(a.last_timestamp).getTime()
       ),
     [conversations]
   )
@@ -80,38 +72,26 @@ export default function Messages() {
     [conversations]
   )
 
-  const activeConversation = activeId
-    ? conversations.find((c) => c.id === activeId)
+  const activeConversation = activeClientId
+    ? conversations.find((c) => c.client_id === activeClientId)
     : null
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [activeConversation?.messages])
+  }, [messages])
 
-  const handleSend = () => {
-    const text = inputText.trim()
-    if (!text || !activeId) return
-
-    const newMsg: ChatMessage = {
-      id: `m-${Date.now()}`,
-      from: 'artist',
-      text,
-      timestamp: new Date().toISOString(),
-      read: true,
+  useEffect(() => {
+    if (activeClientId) {
+      subscribe()
+      markRead()
+      return () => unsubscribe()
     }
+  }, [activeClientId, subscribe, unsubscribe, markRead])
 
-    setConversations((prev) =>
-      prev.map((c) => {
-        if (c.id !== activeId) return c
-        return {
-          ...c,
-          lastMessage: text,
-          lastTimestamp: newMsg.timestamp,
-          unread: 0,
-          messages: [...c.messages, newMsg],
-        }
-      })
-    )
+  const handleSend = async () => {
+    const text = inputText.trim()
+    if (!text || !activeClientId) return
+    await send(text, 'artist')
     setInputText('')
   }
 
@@ -119,13 +99,8 @@ export default function Messages() {
     setInputText((prev) => (prev ? `${prev} ${text}` : text))
   }
 
-  const handleOpenConversation = (id: string) => {
-    setActiveId(id)
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === id ? { ...c, unread: 0 } : c
-      )
-    )
+  const handleOpenConversation = (clientId: string) => {
+    setActiveClientId(clientId)
   }
 
   return (
@@ -142,20 +117,15 @@ export default function Messages() {
           >
             <header className="flex items-center gap-3 px-4 py-3 border-b border-white/5 bg-ink-light/95 shrink-0">
               <button
-                onClick={() => setActiveId(null)}
+                onClick={() => setActiveClientId(null)}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-subtle hover:text-cream transition-colors"
               >
                 <ArrowLeft size={20} />
               </button>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-cream truncate">
-                  {activeConversation.userName}
+                  {activeConversation.client_name}
                 </p>
-                {getPhoneForClient(activeConversation.userName) && (
-                  <p className="text-xs text-subtle truncate">
-                    {getPhoneForClient(activeConversation.userName)}
-                  </p>
-                )}
               </div>
               <Link
                 to="/studio/clients"
@@ -166,39 +136,31 @@ export default function Messages() {
             </header>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {activeConversation.messages.map((msg, i) => {
-                const prev = activeConversation.messages[i - 1]
+              {messages.map((msg, i) => {
+                const prev = messages[i - 1]
                 const showTimestamp =
                   !prev ||
-                  new Date(msg.timestamp).getTime() -
-                    new Date(prev.timestamp).getTime() >
+                  new Date(msg.created_at).getTime() -
+                    new Date(prev.created_at).getTime() >
                     5 * 60 * 1000
 
                 return (
                   <div key={msg.id}>
                     {showTimestamp && (
                       <p className="text-center text-[10px] text-subtle mb-2">
-                        {formatRelativeTime(msg.timestamp)}
+                        {formatRelativeTime(msg.created_at)}
                       </p>
                     )}
                     <div
-                      className={`flex ${msg.from === 'artist' ? 'justify-end' : 'justify-start'}`}
+                      className={`flex ${msg.sender_role === 'artist' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
                         className={`max-w-[85%] px-4 py-2 rounded-2xl ${
-                          msg.from === 'user'
+                          msg.sender_role === 'client'
                             ? 'bg-ink-medium text-cream rounded-tl-md'
-                            : msg.from === 'artist'
-                              ? 'bg-gold/20 text-cream rounded-tr-md'
-                              : 'bg-ink-medium text-cream rounded-tl-md'
+                            : 'bg-gold/20 text-cream rounded-tr-md'
                         }`}
                       >
-                        {msg.from === 'bot' && (
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <Bot size={12} className="text-subtle" />
-                            <span className="text-[10px] text-subtle">Bot</span>
-                          </div>
-                        )}
                         <p className="text-sm whitespace-pre-wrap break-words">
                           {msg.text}
                         </p>
@@ -256,25 +218,25 @@ export default function Messages() {
             )}
 
             <div className="space-y-2">
-              {sortedConversations.map((conv: ChatConversation) => (
+              {sortedConversations.map((conv) => (
                 <motion.button
-                  key={conv.id}
+                  key={conv.client_id}
                   variants={itemVariants}
-                  onClick={() => handleOpenConversation(conv.id)}
+                  onClick={() => handleOpenConversation(conv.client_id)}
                   className="w-full flex items-center gap-3 p-3 rounded-xl bg-ink-light border border-white/5 hover:border-gold/20 transition-colors text-left"
                 >
                   <div className="w-11 h-11 rounded-full bg-gradient-to-br from-gold/30 to-gold-dark/30 flex items-center justify-center shrink-0">
                     <span className="text-gold font-serif font-semibold text-sm">
-                      {getInitials(conv.userName)}
+                      {getInitials(conv.client_name)}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-cream truncate">{conv.userName}</p>
-                    <p className="text-xs text-subtle truncate">{conv.lastMessage}</p>
+                    <p className="font-medium text-cream truncate">{conv.client_name}</p>
+                    <p className="text-xs text-subtle truncate">{conv.last_message}</p>
                   </div>
                   <div className="shrink-0 flex flex-col items-end gap-1">
                     <span className="text-[10px] text-subtle">
-                      {formatRelativeTime(conv.lastTimestamp)}
+                      {formatRelativeTime(conv.last_timestamp)}
                     </span>
                     {conv.unread > 0 && (
                       <span className="w-5 h-5 rounded-full bg-gold text-ink text-[10px] font-bold flex items-center justify-center">

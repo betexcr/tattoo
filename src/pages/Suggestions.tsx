@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Heart, Flame, ChevronRight } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
-import { suggestions } from '../data/mock'
+import { suggestions } from '../data/constants'
 
 const QUIZ_QUESTIONS = [
   {

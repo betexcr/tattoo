@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import PageHeader from '../components/PageHeader'
-import { portfolioItems, tattooStyles } from '../data/mock'
-import type { PortfolioItem } from '../data/mock'
+import { tattooStyles } from '../data/constants'
+import { usePortfolio } from '../hooks/usePortfolio'
+import type { PortfolioItem } from '../types'
 
 const FILTER_STYLES = ['Fine Line', 'Blackwork', 'Geometric', 'Dotwork', 'Watercolor', 'Mandala', 'Neo Traditional']
 const STYLE_FILTERS = ['Todos', ...tattooStyles.filter((s) => FILTER_STYLES.includes(s))]
@@ -21,6 +22,7 @@ const cardVariants = {
 }
 
 export default function Portfolio() {
+  const { items: portfolioItems, loading } = usePortfolio()
   const [selectedStyle, setSelectedStyle] = useState('Todos')
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null)
 
@@ -28,6 +30,14 @@ export default function Portfolio() {
     selectedStyle === 'Todos'
       ? portfolioItems
       : portfolioItems.filter((item) => item.style === selectedStyle)
+
+  if (loading) {
+    return (
+      <div className="min-h-dvh pb-6 flex items-center justify-center">
+        <p className="text-subtle text-sm">Cargando...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-dvh pb-6">
@@ -68,7 +78,7 @@ export default function Portfolio() {
           >
             <div className="relative overflow-hidden rounded-xl border border-white/5 hover:border-gold/30 transition-colors">
               <img
-                src={item.image}
+                src={item.image_url}
                 alt={item.title}
                 className="w-full aspect-[4/5] object-cover transition-transform duration-300 group-hover:scale-105"
               />
@@ -104,7 +114,7 @@ export default function Portfolio() {
             >
               <div className="relative">
                 <img
-                  src={selectedItem.image}
+                  src={selectedItem.image_url}
                   alt={selectedItem.title}
                   className="w-full aspect-[4/5] object-cover"
                 />

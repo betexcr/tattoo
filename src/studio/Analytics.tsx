@@ -1,7 +1,9 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Euro } from 'lucide-react'
-import { appointments, shopItems, courses } from '../data/mock'
+import { useAppointments } from '../hooks/useAppointments'
+import { useShop } from '../hooks/useShop'
+import { useCourses } from '../hooks/useCourses'
 
 const MONTHLY_TARGET = 2000
 
@@ -19,6 +21,10 @@ const itemVariants = {
 }
 
 export default function Analytics() {
+  const { appointments } = useAppointments()
+  const { items: shopItems } = useShop()
+  const { courses } = useCourses()
+
   const stats = useMemo(() => {
     const confirmedOrCompleted = appointments.filter(
       (a) => a.status === 'confirmed' || a.status === 'completed'
@@ -51,7 +57,7 @@ export default function Analytics() {
     const maxStyleCount = Math.max(...styleRanked.map(([, c]) => c), 1)
 
     const byBodyPart = appointments.reduce<Record<string, number>>((acc, a) => {
-      acc[a.bodyPart] = (acc[a.bodyPart] ?? 0) + 1
+      acc[a.body_part] = (acc[a.body_part] ?? 0) + 1
       return acc
     }, {})
     const bodyRanked = Object.entries(byBodyPart)
@@ -59,14 +65,14 @@ export default function Analytics() {
       .slice(0, 5)
     const maxBodyCount = Math.max(...bodyRanked.map(([, c]) => c), 1)
 
-    const uniqueClients = new Set(appointments.map((a) => a.client)).size
+    const uniqueClients = new Set(appointments.map((a) => a.client_name)).size
     const avgDeposit =
       confirmedOrCompleted.length > 0
         ? totalRevenue / confirmedOrCompleted.length
         : 0
     const clientCounts = appointments.reduce<Record<string, number>>(
       (acc, a) => {
-        acc[a.client] = (acc[a.client] ?? 0) + 1
+        acc[a.client_name] = (acc[a.client_name] ?? 0) + 1
         return acc
       },
       {}
@@ -112,7 +118,7 @@ export default function Analytics() {
       dayDensity,
       maxDensity,
     }
-  }, [])
+  }, [appointments, shopItems, courses])
 
   return (
     <motion.div

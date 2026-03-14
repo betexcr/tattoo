@@ -1,73 +1,84 @@
-# React + TypeScript + Vite
+# Ink & Soul — Tattoo Art Studio
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A mobile-first web app for a tattoo artist to showcase their portfolio, manage appointments, sell art, offer courses, and chat with clients. Built with React + TypeScript + Vite + TailwindCSS + Supabase.
 
-Currently, two official plugins are available:
+## Setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 1. Install dependencies
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Create a Supabase project
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. Go to [supabase.com](https://supabase.com) and create a free project
+2. Copy your **Project URL** and **anon public key** from Settings > API
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 3. Configure environment
+
+```bash
+cp .env.local.example .env.local
 ```
+
+Edit `.env.local` and fill in your Supabase credentials:
+
+```
+VITE_SUPABASE_URL=https://YOUR_PROJECT_ID.supabase.co
+VITE_SUPABASE_ANON_KEY=YOUR_ANON_KEY_HERE
+```
+
+### 4. Set up the database
+
+In your Supabase dashboard, go to **SQL Editor** and run these files in order:
+
+1. `supabase-schema.sql` — creates all tables, RLS policies, triggers, and indexes
+2. `supabase-seed.sql` — populates initial data (portfolio, shop items, courses, reminders)
+
+### 5. Create the artist account
+
+In the Supabase dashboard, go to **Authentication > Users** and create a user. Then in the SQL Editor, update their profile role:
+
+```sql
+UPDATE public.profiles SET role = 'artist' WHERE id = 'THE_USER_UUID';
+```
+
+### 6. Run the dev server
+
+```bash
+npm run dev
+```
+
+## Deployment (Vercel)
+
+1. Push to GitHub
+2. Import the repo in [vercel.com](https://vercel.com)
+3. Add environment variables in Vercel:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+4. Deploy — the `vercel.json` handles SPA routing
+
+## Project Structure
+
+```
+src/
+  lib/supabase.ts          Supabase client singleton
+  types/index.ts           TypeScript interfaces
+  types/database.ts        Supabase database types
+  data/constants.ts        Static reference data (styles, body parts, etc.)
+  contexts/AuthContext.tsx  Auth state provider
+  hooks/                   Data hooks (useAppointments, useChat, etc.)
+  pages/                   Client-facing pages
+  studio/                  Artist admin pages (protected)
+  components/              Shared UI components
+supabase-schema.sql        Database schema & RLS policies
+supabase-seed.sql          Seed data
+```
+
+## Tech Stack
+
+- **Frontend**: React 19, TypeScript, Vite, TailwindCSS v4
+- **Backend**: Supabase (PostgreSQL, Auth, Realtime, RLS)
+- **Animations**: Framer Motion
+- **Routing**: React Router DOM
+- **Icons**: Lucide React

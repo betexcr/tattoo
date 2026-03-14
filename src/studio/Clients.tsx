@@ -2,8 +2,8 @@ import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, ArrowLeft, MessageCircle, CalendarPlus, Phone, Mail } from 'lucide-react'
-import { appointments } from '../data/mock'
-import type { Appointment } from '../data/mock'
+import { useAppointments } from '../hooks/useAppointments'
+import type { Appointment } from '../types'
 
 type SortKey = 'nombre' | 'visitas' | 'gasto'
 
@@ -39,11 +39,11 @@ function formatDateSpanish(dateStr: string): string {
 function buildClientList(appointmentsList: Appointment[]): ClientEntry[] {
   const byName = new Map<string, ClientEntry>()
   for (const apt of appointmentsList) {
-    const existing = byName.get(apt.client)
+    const existing = byName.get(apt.client_name)
     const deposit = apt.deposit ?? 0
     if (!existing) {
-      byName.set(apt.client, {
-        name: apt.client,
+      byName.set(apt.client_name, {
+        name: apt.client_name,
         phone: apt.phone ?? '',
         email: apt.email ?? '',
         visits: 1,
@@ -79,6 +79,7 @@ const itemVariants = {
 }
 
 export default function Clients() {
+  const { appointments } = useAppointments()
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<SortKey>('nombre')
   const [selectedClient, setSelectedClient] = useState<ClientEntry | null>(null)
@@ -90,7 +91,7 @@ export default function Clients() {
     setClientNotes((prev) => ({ ...prev, [selectedClient.name]: value }))
   }
 
-  const clientList = useMemo(() => buildClientList(appointments), [])
+  const clientList = useMemo(() => buildClientList(appointments), [appointments])
 
   const filteredAndSorted = useMemo(() => {
     let list = clientList.filter((c) =>
@@ -188,7 +189,7 @@ export default function Clients() {
                             {formatDateSpanish(apt.date)} · {apt.time}
                           </p>
                           <p className="text-xs text-subtle mt-0.5">
-                            {apt.style} · {apt.bodyPart}
+                            {apt.style} · {apt.body_part}
                           </p>
                           <p className="text-xs text-cream-dark mt-1 line-clamp-2">
                             {apt.description}

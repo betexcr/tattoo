@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, X, Check } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
-import { reminders as initialReminders, type Reminder } from '../data/mock'
+import { useReminders } from '../hooks/useReminders'
+import type { Reminder } from '../types'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -60,43 +61,16 @@ const initialFormState = {
 }
 
 export default function Reminders() {
-  const [completedIds, setCompletedIds] = useState<Set<string>>(
-    () => new Set(initialReminders.filter((r) => r.completed).map((r) => r.id))
-  )
+  const { reminders, create, toggleComplete } = useReminders()
   const [showSheet, setShowSheet] = useState(false)
   const [form, setForm] = useState(initialFormState)
 
-  const [addedReminders, setAddedReminders] = useState<Reminder[]>([])
-
-  const allReminders = useMemo(
-    () => [...initialReminders, ...addedReminders],
-    [addedReminders]
-  )
-
-  const remindersWithCompleted = useMemo(
-    () =>
-      allReminders.map((r) => ({
-        ...r,
-        completed: completedIds.has(r.id),
-      })),
-    [completedIds, allReminders]
-  )
-
-  const toggleCompleted = (id: string) => {
-    setCompletedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
   const groupedReminders = useMemo(() => {
-    const today: typeof remindersWithCompleted = []
-    const tomorrow: typeof remindersWithCompleted = []
-    const upcoming: typeof remindersWithCompleted = []
+    const today: Reminder[] = []
+    const tomorrow: Reminder[] = []
+    const upcoming: Reminder[] = []
 
-    const sorted = [...remindersWithCompleted].sort(
+    const sorted = [...reminders].sort(
       (a, b) => new Date(a.date + 'T' + a.time).getTime() - new Date(b.date + 'T' + b.time).getTime()
     )
 
@@ -108,24 +82,22 @@ export default function Reminders() {
     }
 
     return { today, tomorrow, upcoming }
-  }, [remindersWithCompleted])
+  }, [reminders])
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.title || !form.date || !form.time) return
-    const newReminder: Reminder = {
-      id: `new-${Date.now()}`,
+    await create({
       title: form.title,
       date: form.date,
       time: form.time,
       type: form.type,
       completed: false,
-    }
-    setAddedReminders((prev) => [...prev, newReminder])
+    })
     setForm(initialFormState)
     setShowSheet(false)
   }
 
-  const renderReminderCard = (reminder: Reminder & { completed: boolean }) => {
+  const renderReminderCard = (reminder: Reminder) => {
     const badgeStyles = getTypeBadgeStyles(reminder.type)
     return (
       <motion.article
@@ -136,7 +108,7 @@ export default function Reminders() {
         }`}
       >
         <button
-          onClick={() => toggleCompleted(reminder.id)}
+          onClick={() => toggleComplete(reminder.id)}
           className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
             reminder.completed
               ? 'bg-gold/30 border-gold text-gold'
@@ -210,7 +182,7 @@ export default function Reminders() {
             </motion.section>
           )}
 
-          {remindersWithCompleted.length === 0 && (
+          {reminders.length === 0 && (
             <motion.p variants={itemVariants} className="text-subtle text-sm py-8 text-center">
               No hay recordatorios
             </motion.p>

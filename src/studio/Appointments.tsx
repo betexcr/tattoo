@@ -10,12 +10,9 @@ import {
   CheckCheck,
   AlertTriangle,
 } from 'lucide-react'
-import {
-  appointments as initialAppointments,
-  bodyParts,
-  tattooStyles,
-  type Appointment,
-} from '../data/mock'
+import { bodyParts, tattooStyles } from '../data/constants'
+import { useAppointments } from '../hooks/useAppointments'
+import type { Appointment } from '../types'
 
 const WEEKDAY_LABELS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
@@ -77,7 +74,7 @@ const itemVariants = {
 }
 
 export default function Appointments() {
-  const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments)
+  const { appointments, create, updateStatus: hookUpdateStatus } = useAppointments()
   const [viewMode, setViewMode] = useState<ViewMode>('calendar')
   const [calendarView, setCalendarView] = useState({ year: 2026, month: 2 })
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
@@ -193,28 +190,30 @@ export default function Appointments() {
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
   ]
 
-  const updateStatus = (id: string, status: Appointment['status']) => {
-    setAppointments((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)))
+  const handleUpdateStatus = async (id: string, status: Appointment['status']) => {
+    await hookUpdateStatus(id, status)
     setRejectConfirmId(null)
     setCancelConfirmId(null)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.client.trim() || !form.date || !form.time) return
-    const newAppointment: Appointment = {
-      id: String(Date.now()),
-      client: form.client.trim(),
-      phone: form.phone || undefined,
-      email: form.email || undefined,
+    await create({
+      client_id: null,
+      client_name: form.client.trim(),
+      phone: form.phone || '',
+      email: form.email || '',
       date: form.date,
       time: form.time,
       description: form.description.trim(),
-      bodyPart: form.bodyPart || '',
+      body_part: form.bodyPart || '',
       style: form.style || '',
       status: form.status,
       deposit: Number(form.deposit) || 0,
-    }
-    setAppointments((prev) => [...prev, newAppointment])
+      reference_images: [],
+      size: '',
+      notes: '',
+    })
     setForm(initialFormState)
     setModalOpen(false)
   }
@@ -238,7 +237,7 @@ export default function Appointments() {
       >
         <div className="p-4">
           <div className="flex items-start justify-between gap-3 mb-2">
-            <h3 className="font-serif text-cream font-medium">{apt.client}</h3>
+            <h3 className="font-serif text-cream font-medium">{apt.client_name}</h3>
             <span className={`text-[10px] px-2 py-1 rounded-full shrink-0 ${styles.badge}`}>
               {styles.label}
             </span>
@@ -254,7 +253,7 @@ export default function Appointments() {
             <span>·</span>
             <span>{apt.time}</span>
             <span>·</span>
-            <span>{apt.bodyPart}</span>
+            <span>{apt.body_part}</span>
           </div>
           <span className="inline-block text-[10px] text-gold/90 px-2 py-0.5 rounded bg-gold/10 mb-2">
             {apt.style}
@@ -278,7 +277,7 @@ export default function Appointments() {
                         <AlertTriangle size={14} className="text-amber-400 shrink-0" />
                         <span className="text-xs text-subtle">¿Seguro?</span>
                         <button
-                          onClick={() => updateStatus(apt.id, 'rejected')}
+                          onClick={() => handleUpdateStatus(apt.id, 'rejected')}
                           className="px-2 py-1 rounded-lg bg-red-500/20 text-red-400 text-xs border border-red-500/30 hover:bg-red-500/30"
                         >
                           Sí, rechazar
@@ -299,7 +298,7 @@ export default function Appointments() {
                         className="flex items-center gap-2"
                       >
                         <button
-                          onClick={() => updateStatus(apt.id, 'confirmed')}
+                          onClick={() => handleUpdateStatus(apt.id, 'confirmed')}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-medium hover:bg-emerald-500/30"
                         >
                           <Check size={14} />
@@ -332,7 +331,7 @@ export default function Appointments() {
                         <AlertTriangle size={14} className="text-amber-400 shrink-0" />
                         <span className="text-xs text-subtle">¿Cancelar cita?</span>
                         <button
-                          onClick={() => updateStatus(apt.id, 'rejected')}
+                          onClick={() => handleUpdateStatus(apt.id, 'rejected')}
                           className="px-2 py-1 rounded-lg bg-red-500/20 text-red-400 text-xs border border-red-500/30 hover:bg-red-500/30"
                         >
                           Sí
@@ -353,7 +352,7 @@ export default function Appointments() {
                         className="flex items-center gap-2"
                       >
                         <button
-                          onClick={() => updateStatus(apt.id, 'completed')}
+                          onClick={() => handleUpdateStatus(apt.id, 'completed')}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gold/50 text-gold text-xs font-medium hover:bg-gold/10"
                         >
                           <CheckCheck size={14} />

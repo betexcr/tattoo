@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, X, CalendarPlus, Check, Phone, MessageCircle, CheckCheck, AlertTriangle } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
-import { appointments as initialAppointments, bodyParts, tattooStyles, type Appointment } from '../data/mock'
+import { bodyParts, tattooStyles } from '../data/constants'
+import { useAppointments } from '../hooks/useAppointments'
+import type { Appointment } from '../types'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -65,7 +67,7 @@ const initialFormState = {
 type TabKey = 'pending' | 'confirmed' | 'completed'
 
 export default function Agenda() {
-  const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments)
+  const { appointments, create, updateStatus } = useAppointments()
   const [activeTab, setActiveTab] = useState<TabKey>('pending')
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState(initialFormState)
@@ -96,27 +98,29 @@ export default function Agenda() {
         ? confirmedAppointments
         : completedAppointments
 
-  const updateStatus = (id: string, status: Appointment['status']) => {
-    setAppointments((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status } : a))
-    )
+  const handleStatusUpdate = (id: string, status: Appointment['status']) => {
+    updateStatus(id, status)
     setRejectConfirmId(null)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.client || !form.date || !form.time) return
-    const newAppointment: Appointment = {
-      id: `new-${Date.now()}`,
-      client: form.client,
+    await create({
+      client_id: null,
+      client_name: form.client,
       date: form.date,
       time: form.time,
       description: form.description,
-      bodyPart: form.bodyPart,
+      body_part: form.bodyPart,
       style: form.style,
       status: 'pending',
       deposit: Number(form.deposit) || 0,
-    }
-    setAppointments((prev) => [...prev, newAppointment])
+      phone: '',
+      email: '',
+      reference_images: [],
+      size: '',
+      notes: '',
+    })
     setForm(initialFormState)
     setShowModal(false)
   }
@@ -194,7 +198,7 @@ export default function Agenda() {
                 >
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-3 mb-2">
-                      <h3 className="font-serif text-cream font-medium">{apt.client}</h3>
+                      <h3 className="font-serif text-cream font-medium">{apt.client_name}</h3>
                       <span className={`text-[10px] px-2 py-1 rounded-full shrink-0 ${styles.badge}`}>
                         {styles.label}
                       </span>
@@ -204,7 +208,7 @@ export default function Agenda() {
                       <span>·</span>
                       <span>{apt.time}</span>
                       <span>·</span>
-                      <span>{apt.bodyPart}</span>
+                      <span>{apt.body_part}</span>
                     </div>
                     {apt.phone && (
                       <div className="flex items-center gap-1.5 mt-2 text-subtle text-xs">
@@ -242,7 +246,7 @@ export default function Agenda() {
                                 <AlertTriangle size={14} className="text-amber-400 shrink-0" />
                                 <span className="text-xs text-subtle">¿Seguro?</span>
                                 <button
-                                  onClick={() => updateStatus(apt.id, 'rejected')}
+                                  onClick={() => handleStatusUpdate(apt.id, 'rejected')}
                                   className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/20 text-red-400 text-xs border border-red-500/30 hover:bg-red-500/30 transition-colors"
                                 >
                                   Sí, rechazar
@@ -263,7 +267,7 @@ export default function Agenda() {
                                 className="flex items-center gap-2"
                               >
                                 <button
-                                  onClick={() => updateStatus(apt.id, 'confirmed')}
+                                  onClick={() => handleStatusUpdate(apt.id, 'confirmed')}
                                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-medium hover:bg-emerald-500/30 transition-colors"
                                 >
                                   <Check size={14} />
@@ -284,7 +288,7 @@ export default function Agenda() {
 
                       {apt.status === 'confirmed' && (
                         <button
-                          onClick={() => updateStatus(apt.id, 'completed')}
+                          onClick={() => handleStatusUpdate(apt.id, 'completed')}
                           className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 text-subtle text-xs hover:bg-white/10 hover:text-cream transition-colors"
                         >
                           <CheckCheck size={14} />

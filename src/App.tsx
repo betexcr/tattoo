@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
+import RequireArtist from './components/RequireArtist'
 import StudioLayout from './studio/StudioLayout'
 import Dashboard from './studio/Dashboard'
 import PortfolioManager from './studio/PortfolioManager'
@@ -21,6 +22,7 @@ import Suggestions from './pages/Suggestions'
 import Courses from './pages/Courses'
 import BookAppointment from './pages/BookAppointment'
 import Chat from './pages/Chat'
+import Login from './pages/Login'
 
 export default function App() {
   return (
@@ -40,14 +42,17 @@ export default function App() {
         <Route path="/courses" element={<Courses />} />
       </Route>
       <Route path="/book" element={<BookAppointment />} />
-      <Route element={<StudioLayout />}>
-        <Route path="/studio" element={<Dashboard />} />
-        <Route path="/studio/appointments" element={<Appointments />} />
-        <Route path="/studio/clients" element={<Clients />} />
-        <Route path="/studio/messages" element={<Messages />} />
-        <Route path="/studio/portfolio" element={<PortfolioManager />} />
-        <Route path="/studio/analytics" element={<Analytics />} />
-        <Route path="/studio/settings" element={<StudioSettings />} />
+      <Route path="/login" element={<Login />} />
+      <Route element={<RequireArtist />}>
+        <Route element={<StudioLayout />}>
+          <Route path="/studio" element={<Dashboard />} />
+          <Route path="/studio/appointments" element={<Appointments />} />
+          <Route path="/studio/clients" element={<Clients />} />
+          <Route path="/studio/messages" element={<Messages />} />
+          <Route path="/studio/portfolio" element={<PortfolioManager />} />
+          <Route path="/studio/analytics" element={<Analytics />} />
+          <Route path="/studio/settings" element={<StudioSettings />} />
+        </Route>
       </Route>
     </Routes>
   )

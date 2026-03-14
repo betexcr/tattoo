@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import PageHeader from '../components/PageHeader'
-import { courses } from '../data/mock'
-import type { Course } from '../data/mock'
+import { useCourses } from '../hooks/useCourses'
+import type { Course } from '../types'
 
 const LEVEL_STYLES: Record<Course['level'], string> = {
   beginner: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
@@ -42,6 +42,7 @@ const cardVariants = {
 const INITIAL_FORM = { name: '', email: '', phone: '' }
 
 export default function Courses() {
+  const { courses, reserve } = useCourses()
   const [reservingCourse, setReservingCourse] = useState<Course | null>(null)
   const [reservationForm, setReservationForm] = useState(INITIAL_FORM)
   const [reserved, setReserved] = useState<Set<string>>(new Set())
@@ -57,10 +58,18 @@ export default function Courses() {
     return () => clearTimeout(t)
   }, [showSuccess])
 
-  const handleConfirmReserva = () => {
+  const handleConfirmReserva = async () => {
     if (!reservingCourse) return
-    setReserved((prev) => new Set(prev).add(reservingCourse.id))
-    setShowSuccess(true)
+    const { error } = await reserve(
+      reservingCourse.id,
+      reservationForm.name,
+      reservationForm.email,
+      reservationForm.phone
+    )
+    if (!error) {
+      setReserved((prev) => new Set(prev).add(reservingCourse.id))
+      setShowSuccess(true)
+    }
   }
 
   return (
@@ -96,7 +105,7 @@ export default function Courses() {
             >
               <div className="relative aspect-[16/9] overflow-hidden">
                 <img
-                  src={course.image}
+                  src={course.image_url}
                   alt={course.title}
                   className="w-full h-full object-cover"
                 />

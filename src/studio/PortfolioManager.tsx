@@ -9,11 +9,9 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react'
-import {
-  portfolioItems as initialPortfolio,
-  tattooStyles,
-} from '../data/mock'
-import type { PortfolioItem } from '../data/mock'
+import { tattooStyles } from '../data/constants'
+import { usePortfolio } from '../hooks/usePortfolio'
+import type { PortfolioItem } from '../types'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -29,19 +27,16 @@ const itemVariants = {
 }
 
 export default function PortfolioManager() {
-  const [portfolio, setPortfolio] = useState<PortfolioItem[]>(initialPortfolio)
+  const { items: portfolio, create, update, remove } = usePortfolio(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null)
   const [formData, setFormData] = useState<Partial<PortfolioItem>>({
     title: '',
     style: '',
     description: '',
-    image: '',
+    image_url: '',
   })
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
-  const [publishedIds, setPublishedIds] = useState<Set<string>>(
-    () => new Set(initialPortfolio.map((p) => p.id))
-  )
 
   const totalItems = portfolio.length
   const styleBreakdown = portfolio.reduce<Record<string, number>>((acc, item) => {
@@ -55,7 +50,7 @@ export default function PortfolioManager() {
       title: item.title,
       style: item.style,
       description: item.description,
-      image: item.image,
+      image_url: item.image_url,
     })
     setEditModalOpen(true)
   }
@@ -66,70 +61,52 @@ export default function PortfolioManager() {
       title: '',
       style: tattooStyles[0] ?? '',
       description: '',
-      image: '',
+      image_url: '',
     })
     setEditModalOpen(true)
   }
 
-  const handleSave = () => {
-    if (!formData.title || !formData.style || !formData.image) return
+  const handleSave = async () => {
+    if (!formData.title || !formData.style || !formData.image_url) return
     if (selectedItem) {
-      setPortfolio((prev) =>
-        prev.map((p) =>
-          p.id === selectedItem.id
-            ? { ...p, ...formData, id: p.id }
-            : p
-        )
-      )
+      const { error } = await update(selectedItem.id, {
+        title: formData.title,
+        style: formData.style,
+        description: formData.description ?? '',
+        image_url: formData.image_url,
+      })
+      if (!error) setEditModalOpen(false)
     } else {
-      const maxId = portfolio.length
-        ? Math.max(...portfolio.map((p) => parseInt(p.id, 10) || 0))
-        : 0
-      const newId = String(maxId + 1)
-      setPortfolio((prev) => [
-        ...prev,
-        {
-          id: newId,
-          title: formData.title as string,
-          style: formData.style as string,
-          description: (formData.description ?? '') as string,
-          image: formData.image as string,
-        },
-      ])
-      setPublishedIds((prev) => new Set([...prev, newId]))
+      const { error } = await create({
+        title: formData.title as string,
+        style: formData.style as string,
+        description: (formData.description ?? '') as string,
+        image_url: formData.image_url as string,
+        published: true,
+        sort_order: portfolio.length,
+      })
+      if (!error) setEditModalOpen(false)
     }
-    setEditModalOpen(false)
   }
 
-  const handleDelete = (id: string) => {
-    setPortfolio((prev) => prev.filter((p) => p.id !== id))
-    setPublishedIds((prev) => {
-      const next = new Set(prev)
-      next.delete(id)
-      return next
-    })
+  const handleDelete = async (id: string) => {
+    await remove(id)
     setDeleteConfirmId(null)
   }
 
-  const moveItem = (id: string, dir: -1 | 1) => {
-    setPortfolio((prev) => {
-      const idx = prev.findIndex((p) => p.id === id)
-      if (idx < 0) return prev
-      const target = idx + dir
-      if (target < 0 || target >= prev.length) return prev
-      const next = [...prev]
-      ;[next[idx], next[target]] = [next[target], next[idx]]
-      return next
-    })
+  const moveItem = async (id: string, dir: -1 | 1) => {
+    const idx = portfolio.findIndex((p) => p.id === id)
+    if (idx < 0) return
+    const targetIdx = idx + dir
+    if (targetIdx < 0 || targetIdx >= portfolio.length) return
+    const targetItem = portfolio[targetIdx]
+    const currentItem = portfolio[idx]
+    await update(id, { sort_order: targetItem.sort_order })
+    await update(targetItem.id, { sort_order: currentItem.sort_order })
   }
 
-  const togglePublished = (id: string) => {
-    setPublishedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+  const togglePublished = async (item: PortfolioItem) => {
+    await update(item.id, { published: !item.published })
   }
 
   return (
@@ -171,7 +148,7 @@ export default function PortfolioManager() {
               className="group relative rounded-xl overflow-hidden bg-ink-light border border-white/5 aspect-[3/4]"
             >
               <img
-                src={item.image}
+                src={item.image_url}
                 alt={item.title}
                 className="w-full h-full object-cover"
               />
@@ -203,11 +180,11 @@ export default function PortfolioManager() {
 
               {/* Published toggle */}
               <button
-                onClick={() => togglePublished(item.id)}
+                onClick={() => togglePublished(item)}
                 className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center hover:bg-black/60 transition-colors"
-                title={publishedIds.has(item.id) ? 'Publicado' : 'Borrador'}
+                title={item.published ? 'Publicado' : 'Borrador'}
               >
-                {publishedIds.has(item.id) ? (
+                {item.published ? (
                   <Eye size={14} className="text-emerald-400" />
                 ) : (
                   <EyeOff size={14} className="text-subtle" />
@@ -341,9 +318,9 @@ export default function PortfolioManager() {
                   </label>
                   <input
                     type="url"
-                    value={formData.image}
+                    value={formData.image_url}
                     onChange={(e) =>
-                      setFormData((f) => ({ ...f, image: e.target.value }))
+                      setFormData((f) => ({ ...f, image_url: e.target.value }))
                     }
                     className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle focus:outline-none focus:border-gold/50"
                     placeholder="https://..."
@@ -359,7 +336,7 @@ export default function PortfolioManager() {
                   <button
                     onClick={handleSave}
                     disabled={
-                      !formData.title || !formData.style || !formData.image
+                      !formData.title || !formData.style || !formData.image_url
                     }
                     className="flex-1 py-3 rounded-xl bg-gold text-ink font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gold-light transition-colors"
                   >

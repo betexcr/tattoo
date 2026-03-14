@@ -10,8 +10,14 @@ import {
   ChevronRight,
   Sparkles,
   Lock,
+  Star,
+  ArrowRight,
+  MessageCircle,
 } from 'lucide-react'
-import { appointments, suggestions } from '../data/mock'
+import { suggestions } from '../data/constants'
+import { usePortfolio } from '../hooks/usePortfolio'
+import { useShop } from '../hooks/useShop'
+import { useCourses } from '../hooks/useCourses'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -35,28 +41,32 @@ const lineVariants = {
   },
 }
 
-const upcomingAppointments = appointments
-  .filter((a) => a.status !== 'completed')
-  .sort((a, b) => new Date(a.date + 'T' + a.time).getTime() - new Date(b.date + 'T' + b.time).getTime())
-  .slice(0, 2)
-
-const trendingSuggestions = suggestions.slice(0, 3)
+const topSuggestions = suggestions.sort((a, b) => b.popularity - a.popularity).slice(0, 3)
 
 const quickActions = [
-  { to: '/portfolio', label: 'Portfolio', icon: Image },
-  { to: '/book', label: 'Reservar Cita', icon: CalendarPlus },
-  { to: '/designer', label: 'Tattoo Designer', icon: PenTool },
-  { to: '/visualizer', label: 'Body Visualizer', icon: User },
-  { to: '/shop', label: 'Tienda', icon: ShoppingBag },
-  { to: '/courses', label: 'Cursos', icon: GraduationCap },
+  { to: '/portfolio', label: 'Portfolio', icon: Image, desc: 'Ver trabajos' },
+  { to: '/book', label: 'Reservar', icon: CalendarPlus, desc: 'Agendar cita' },
+  { to: '/designer', label: 'Diseñador', icon: PenTool, desc: 'Crea tu tattoo' },
+  { to: '/visualizer', label: 'Visualizar', icon: User, desc: 'En tu cuerpo' },
+  { to: '/shop', label: 'Tienda', icon: ShoppingBag, desc: 'Arte exclusivo' },
+  { to: '/courses', label: 'Cursos', icon: GraduationCap, desc: 'Aprende' },
 ]
 
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr)
-  return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })
-}
+const reviews = [
+  { name: 'Lucía M.', text: 'Un trabajo increíble. Valentina captó exactamente lo que quería. Totalmente recomendable.', rating: 5, style: 'Fine Line' },
+  { name: 'Andrés P.', text: 'El estudio es precioso y la atención impecable. Mi tatuaje sanó perfecto.', rating: 5, style: 'Geometric' },
+  { name: 'Carmen R.', text: 'Ya llevo 3 tatuajes con ella. Cada vez supera mis expectativas. Artista de verdad.', rating: 5, style: 'Dotwork' },
+]
 
 export default function Home() {
+  const { items: allPortfolioItems } = usePortfolio()
+  const { items: allShopItems } = useShop()
+  const { courses: allCourses } = useCourses()
+
+  const featuredWork = allPortfolioItems.slice(0, 6)
+  const featuredProducts = allShopItems.filter((s) => s.in_stock).slice(0, 4)
+  const nextCourse = allCourses[0]
+
   return (
     <div className="min-h-dvh">
       {/* Hero */}
@@ -64,90 +74,92 @@ export default function Home() {
         initial="hidden"
         animate="visible"
         variants={containerVariants}
-        className="relative overflow-hidden px-5 pt-12 pb-16"
-        style={{
-          background: 'linear-gradient(180deg, var(--color-ink) 0%, var(--color-ink-light) 40%, var(--color-gold-dark) 100%)',
-        }}
+        className="relative overflow-hidden px-5 pt-14 pb-20"
       >
-        <motion.div variants={itemVariants} className="space-y-4">
-          <h1 className="font-serif text-4xl tracking-[0.2em] text-cream drop-shadow-lg">
-            INK & SOUL
-          </h1>
-          <p className="text-gold-light/90 text-sm tracking-widest uppercase font-sans">
-            Arte que vive en tu piel
-          </p>
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(180deg, var(--color-ink) 0%, var(--color-ink-light) 50%, var(--color-gold-dark) 100%)',
+          }}
+        />
+        <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-gold/5 blur-3xl" />
+        <div className="absolute bottom-8 left-0 w-32 h-32 rounded-full bg-gold/3 blur-2xl" />
+
+        <div className="relative z-10 space-y-4">
+          <motion.div variants={itemVariants}>
+            <p className="text-gold/70 text-[10px] tracking-[0.35em] uppercase font-sans mb-2">Tattoo Art Studio</p>
+            <h1 className="font-serif text-4xl tracking-[0.15em] text-cream drop-shadow-lg">
+              INK & SOUL
+            </h1>
+          </motion.div>
+          <motion.p variants={itemVariants} className="text-cream-dark/80 text-sm leading-relaxed max-w-[280px]">
+            Arte que vive en tu piel. Diseños únicos, hechos con pasión y dedicación.
+          </motion.p>
           <motion.div
             variants={lineVariants}
             className="h-px w-24 bg-gradient-to-r from-gold to-gold-light/50 rounded-full"
           />
-          <motion.div variants={itemVariants}>
+          <motion.div variants={itemVariants} className="flex gap-3 pt-2">
             <Link
               to="/book"
-              className="inline-flex items-center gap-2 mt-4 px-6 py-3 rounded-full bg-gold text-ink text-sm font-medium hover:bg-gold-light transition-colors active:scale-[0.97]"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gold text-ink text-sm font-medium hover:bg-gold-light transition-colors active:scale-[0.97]"
             >
-              <Sparkles size={16} />
-              Reservar mi cita
+              <Sparkles size={15} />
+              Reservar cita
+            </Link>
+            <Link
+              to="/portfolio"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-gold/30 text-gold text-sm font-medium hover:bg-gold/5 transition-colors"
+            >
+              Ver portfolio
             </Link>
           </motion.div>
-        </motion.div>
+        </div>
       </motion.section>
 
-      {/* Próximas Citas */}
+      {/* Featured Work - Horizontal scroll */}
       <motion.section
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: '-50px' }}
         variants={containerVariants}
-        className="px-5 py-8"
+        className="py-8"
       >
-        <motion.div variants={itemVariants} className="flex items-center justify-between mb-4">
-          <h2 className="font-serif text-xl text-cream">Próximas Citas</h2>
+        <motion.div variants={itemVariants} className="flex items-center justify-between px-5 mb-4">
+          <h2 className="font-serif text-xl text-cream">Trabajos Recientes</h2>
           <Link
-            to="/agenda"
+            to="/portfolio"
             className="text-xs text-gold hover:text-gold-light transition-colors flex items-center gap-1"
           >
-            Ver todas
+            Ver todos
             <ChevronRight size={14} />
           </Link>
         </motion.div>
-        <div className="space-y-3">
-          {upcomingAppointments.length > 0 ? (
-            upcomingAppointments.map((apt) => (
-              <motion.div
-                key={apt.id}
-                variants={itemVariants}
-                className="flex items-center gap-4 p-4 rounded-xl bg-ink-medium/60 border border-white/5 hover:border-gold/20 transition-colors"
-              >
-                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-gold/10 flex flex-col items-center justify-center">
-                  <span className="text-[10px] text-gold uppercase font-medium">
-                    {formatDate(apt.date).split(' ')[0]}
-                  </span>
-                  <span className="text-gold font-serif text-lg leading-none">
-                    {new Date(apt.date).getDate()}
-                  </span>
+        <motion.div
+          variants={itemVariants}
+          className="flex gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {featuredWork.map((item) => (
+            <Link
+              key={item.id}
+              to="/portfolio"
+              className="shrink-0 w-36 group"
+            >
+              <div className="relative w-36 h-48 rounded-xl overflow-hidden border border-white/5 group-hover:border-gold/30 transition-all">
+                <img
+                  src={item.image_url}
+                  alt={item.title}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-2.5">
+                  <p className="text-cream text-xs font-medium truncate">{item.title}</p>
+                  <span className="text-gold/70 text-[10px]">{item.style}</span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-cream font-medium truncate">{apt.client}</p>
-                  <p className="text-subtle text-sm truncate">{apt.description}</p>
-                  <p className="text-gold/80 text-xs mt-0.5">{apt.time} · {apt.bodyPart}</p>
-                </div>
-                <span
-                  className={`text-[10px] px-2 py-1 rounded-full ${
-                    apt.status === 'confirmed'
-                      ? 'bg-gold/20 text-gold'
-                      : 'bg-rose/20 text-rose'
-                  }`}
-                >
-                  {apt.status === 'confirmed' ? 'Confirmada' : 'Pendiente'}
-                </span>
-              </motion.div>
-            ))
-          ) : (
-            <motion.p variants={itemVariants} className="text-subtle text-sm py-4">
-              No hay citas próximas
-            </motion.p>
-          )}
-        </div>
+              </div>
+            </Link>
+          ))}
+        </motion.div>
       </motion.section>
 
       {/* Quick Actions */}
@@ -156,38 +168,144 @@ export default function Home() {
         whileInView="visible"
         viewport={{ once: true, margin: '-50px' }}
         variants={containerVariants}
-        className="px-5 py-8"
+        className="px-5 py-6"
       >
         <motion.h2 variants={itemVariants} className="font-serif text-xl text-cream mb-4">
-          Accesos rápidos
+          Explora
         </motion.h2>
-        <div className="grid grid-cols-2 gap-3">
-          {quickActions.map(({ to, label, icon: Icon }) => (
+        <div className="grid grid-cols-3 gap-2.5">
+          {quickActions.map(({ to, label, icon: Icon, desc }) => (
             <motion.div key={to} variants={itemVariants}>
               <Link
                 to={to}
-                className="flex flex-col items-center justify-center gap-2 p-5 rounded-xl bg-ink-medium/40 border border-white/5 hover:border-gold/30 hover:bg-ink-medium/60 transition-all active:scale-[0.98]"
+                className="flex flex-col items-center gap-1.5 p-4 rounded-xl bg-ink-medium/40 border border-white/5 hover:border-gold/30 hover:bg-ink-medium/60 transition-all active:scale-[0.98]"
               >
-                <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center text-gold">
-                  <Icon size={20} strokeWidth={1.5} />
+                <div className="w-9 h-9 rounded-full bg-gold/10 flex items-center justify-center text-gold">
+                  <Icon size={18} strokeWidth={1.5} />
                 </div>
-                <span className="text-cream text-sm font-medium text-center">{label}</span>
+                <span className="text-cream text-xs font-medium">{label}</span>
+                <span className="text-subtle text-[10px]">{desc}</span>
               </Link>
             </motion.div>
           ))}
         </div>
       </motion.section>
 
-      {/* Trending */}
+      {/* CTA Banner - Book */}
       <motion.section
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: '-50px' }}
         variants={containerVariants}
-        className="px-5 pb-12"
+        className="px-5 py-4"
+      >
+        <motion.div variants={itemVariants}>
+          <Link
+            to="/book"
+            className="block relative overflow-hidden rounded-2xl border border-gold/20 bg-gradient-to-r from-ink-light to-ink-medium/80 p-5"
+          >
+            <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-gold/10 blur-2xl" />
+            <div className="relative z-10 flex items-center justify-between">
+              <div>
+                <p className="font-serif text-cream text-lg">¿Listo para tu tatuaje?</p>
+                <p className="text-subtle text-xs mt-1">Reserva online en minutos. Respuesta en 24h.</p>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center text-gold shrink-0">
+                <ArrowRight size={18} />
+              </div>
+            </div>
+          </Link>
+        </motion.div>
+      </motion.section>
+
+      {/* Shop Preview */}
+      <motion.section
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-50px' }}
+        variants={containerVariants}
+        className="py-8"
+      >
+        <motion.div variants={itemVariants} className="flex items-center justify-between px-5 mb-4">
+          <h2 className="font-serif text-xl text-cream">Tienda</h2>
+          <Link
+            to="/shop"
+            className="text-xs text-gold hover:text-gold-light transition-colors flex items-center gap-1"
+          >
+            Ver todo
+            <ChevronRight size={14} />
+          </Link>
+        </motion.div>
+        <motion.div
+          variants={itemVariants}
+          className="flex gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {featuredProducts.map((item) => (
+            <Link
+              key={item.id}
+              to="/shop"
+              className="shrink-0 w-40 group"
+            >
+              <div className="relative w-40 h-52 rounded-xl overflow-hidden border border-white/5 group-hover:border-gold/30 transition-all">
+                <img
+                  src={item.image_url}
+                  alt={item.title}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <p className="text-cream text-xs font-medium truncate">{item.title}</p>
+                  <span className="text-gold font-semibold text-sm">€{item.price}</span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </motion.div>
+      </motion.section>
+
+      {/* Reviews */}
+      <motion.section
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-50px' }}
+        variants={containerVariants}
+        className="px-5 py-8"
+      >
+        <motion.h2 variants={itemVariants} className="font-serif text-xl text-cream mb-4">
+          Lo que dicen nuestros clientes
+        </motion.h2>
+        <div className="space-y-3">
+          {reviews.map((review, i) => (
+            <motion.div
+              key={i}
+              variants={itemVariants}
+              className="p-4 rounded-xl bg-ink-medium/40 border border-white/5"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex gap-0.5">
+                  {Array.from({ length: review.rating }).map((_, j) => (
+                    <Star key={j} size={12} className="text-gold fill-gold" />
+                  ))}
+                </div>
+                <span className="text-[10px] text-subtle px-1.5 py-0.5 rounded bg-white/5">{review.style}</span>
+              </div>
+              <p className="text-cream-dark text-sm leading-relaxed italic">"{review.text}"</p>
+              <p className="text-subtle text-xs mt-2">— {review.name}</p>
+            </motion.div>
+          ))}
+        </div>
+      </motion.section>
+
+      {/* Trending Styles */}
+      <motion.section
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-50px' }}
+        variants={containerVariants}
+        className="px-5 py-6"
       >
         <motion.div variants={itemVariants} className="flex items-center justify-between mb-4">
-          <h2 className="font-serif text-xl text-cream">Trending</h2>
+          <h2 className="font-serif text-xl text-cream">Estilos Populares</h2>
           <Link
             to="/suggestions"
             className="text-xs text-gold hover:text-gold-light transition-colors flex items-center gap-1"
@@ -196,35 +314,99 @@ export default function Home() {
             <ChevronRight size={14} />
           </Link>
         </motion.div>
-        <div className="space-y-3">
-          {trendingSuggestions.map((s) => (
-            <motion.div
-              key={s.id}
-              variants={itemVariants}
-              className="p-4 rounded-xl bg-ink-medium/40 border border-white/5 hover:border-gold/20 transition-colors"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-cream font-medium">{s.title}</p>
-                  <p className="text-subtle text-sm mt-0.5">{s.description}</p>
-                  <span className="inline-block mt-2 text-[10px] text-gold/80 px-2 py-0.5 rounded bg-gold/10">
-                    {s.style}
-                  </span>
-                </div>
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gold/10 flex items-center justify-center">
-                  <span className="text-gold text-xs font-medium">{s.popularity}%</span>
-                </div>
-              </div>
+        <div className="flex gap-2 flex-wrap">
+          {topSuggestions.map((s) => (
+            <motion.div key={s.id} variants={itemVariants}>
+              <Link
+                to="/suggestions"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-ink-medium/40 border border-white/5 hover:border-gold/30 transition-all"
+              >
+                <span className="text-cream text-sm">{s.title}</span>
+                <span className="w-6 h-6 rounded-full bg-gold/10 flex items-center justify-center text-gold text-[10px] font-bold">
+                  {s.popularity}
+                </span>
+              </Link>
             </motion.div>
           ))}
         </div>
       </motion.section>
 
+      {/* Next Course */}
+      {nextCourse && (
+        <motion.section
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-50px' }}
+          variants={containerVariants}
+          className="px-5 py-6"
+        >
+          <motion.div variants={itemVariants} className="flex items-center justify-between mb-4">
+            <h2 className="font-serif text-xl text-cream">Próximo Curso</h2>
+            <Link
+              to="/courses"
+              className="text-xs text-gold hover:text-gold-light transition-colors flex items-center gap-1"
+            >
+              Todos los cursos
+              <ChevronRight size={14} />
+            </Link>
+          </motion.div>
+          <motion.div variants={itemVariants}>
+            <Link to="/courses" className="block group">
+              <div className="relative rounded-2xl overflow-hidden border border-white/5 group-hover:border-gold/20 transition-all">
+                <img
+                  src={nextCourse.image_url}
+                  alt={nextCourse.title}
+                  className="w-full h-40 object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/60 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <p className="font-serif text-cream text-lg">{nextCourse.title}</p>
+                  <div className="flex items-center gap-3 mt-1.5 text-xs text-subtle">
+                    <span>{new Date(nextCourse.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}</span>
+                    <span>·</span>
+                    <span>{nextCourse.duration}</span>
+                    <span>·</span>
+                    <span className="text-gold font-medium">€{nextCourse.price}</span>
+                  </div>
+                  <p className="text-cream-dark/70 text-xs mt-1.5">{nextCourse.spots} plazas disponibles</p>
+                </div>
+              </div>
+            </Link>
+          </motion.div>
+        </motion.section>
+      )}
+
+      {/* Contact CTA */}
+      <motion.section
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-50px' }}
+        variants={containerVariants}
+        className="px-5 py-6"
+      >
+        <motion.div variants={itemVariants} className="flex gap-3">
+          <Link
+            to="/chat"
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-ink-medium/40 border border-white/5 text-cream text-sm font-medium hover:border-gold/20 transition-all"
+          >
+            <MessageCircle size={16} className="text-gold" />
+            Chat
+          </Link>
+          <Link
+            to="/contact"
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gold/10 border border-gold/20 text-gold text-sm font-medium hover:bg-gold/20 transition-all"
+          >
+            Contactar
+            <ArrowRight size={14} />
+          </Link>
+        </motion.div>
+      </motion.section>
+
       {/* Artist Access */}
-      <div className="px-5 pb-12">
+      <div className="px-5 pb-12 pt-4">
         <Link
           to="/studio"
-          className="flex items-center justify-center gap-2 py-3 rounded-xl border border-white/5 bg-ink-medium/30 text-subtle text-xs hover:text-cream-dark hover:border-gold/20 transition-all"
+          className="flex items-center justify-center gap-2 py-3 rounded-xl border border-white/5 bg-ink-medium/20 text-subtle text-xs hover:text-cream-dark hover:border-gold/20 transition-all"
         >
           <Lock size={12} />
           Acceso Artista

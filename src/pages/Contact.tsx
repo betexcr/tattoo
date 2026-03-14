@@ -2,7 +2,8 @@ import { useState } from 'react'
 import PageHeader from '../components/PageHeader'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Phone, Mail, MapPin, Clock, Instagram, Video, LayoutGrid, CheckCircle } from 'lucide-react'
-import { bodyParts, tattooStyles } from '../data/mock'
+import { bodyParts, tattooStyles } from '../data/constants'
+import { useContactForm } from '../hooks/useContactForm'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -47,6 +48,7 @@ const socialLinks = [
 ]
 
 export default function Contact() {
+  const { submit } = useContactForm()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -57,8 +59,16 @@ export default function Contact() {
   })
   const [submitted, setSubmitted] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    await submit({
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      message: formData.message,
+      tattoo_style: formData.tattooStyle,
+      body_part: formData.bodyPart,
+    })
     setSubmitted(true)
     setFormData({ name: '', email: '', phone: '', message: '', tattooStyle: '', bodyPart: '' })
     setTimeout(() => setSubmitted(false), 4000)

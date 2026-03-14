@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import PageHeader from '../components/PageHeader'
-import { portfolioItems } from '../data/mock'
-import type { PortfolioItem } from '../data/mock'
+import { usePortfolio } from '../hooks/usePortfolio'
+import type { PortfolioItem } from '../types'
 
 type BodyZone =
   | 'head'
@@ -452,6 +452,7 @@ function BodySVGBack({
 }
 
 export default function BodyVisualizer() {
+  const { items: portfolioItems } = usePortfolio()
   const [selectedZone, setSelectedZone] = useState<BodyZone | null>(null)
   const [selectedView, setSelectedView] = useState<ViewMode>('front')
   const [selectedDesign, setSelectedDesign] = useState<PortfolioItem | null>(null)
@@ -498,9 +499,9 @@ export default function BodyVisualizer() {
           className="rounded-2xl bg-ink-light/50 border border-white/5 p-6 mb-6"
         >
           {selectedView === 'front' ? (
-            <BodySVGFront selectedZone={selectedZone} onZoneClick={handleZoneClick} designImage={selectedDesign?.image ?? null} />
+            <BodySVGFront selectedZone={selectedZone} onZoneClick={handleZoneClick} designImage={selectedDesign?.image_url ?? null} />
           ) : (
-            <BodySVGBack selectedZone={selectedZone} onZoneClick={handleZoneClick} designImage={selectedDesign?.image ?? null} />
+            <BodySVGBack selectedZone={selectedZone} onZoneClick={handleZoneClick} designImage={selectedDesign?.image_url ?? null} />
           )}
         </motion.div>
 
@@ -534,7 +535,7 @@ export default function BodyVisualizer() {
                 }`}
               >
                 <img
-                  src={item.image}
+                  src={item.image_url}
                   alt={item.title}
                   className="w-full h-full object-cover"
                 />

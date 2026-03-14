@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Save, Image as ImageIcon, CheckCircle } from 'lucide-react'
+import { useStudioSettings } from '../hooks/useStudioSettings'
 
 interface DaySchedule {
   open: boolean
@@ -63,6 +64,7 @@ const defaultPrices: Record<string, PriceRange> = {
 }
 
 export default function StudioSettings() {
+  const { settings: dbSettings, loading: settingsLoading, save: saveSettings } = useStudioSettings()
   const [settings, setSettings] = useState({
     studioName: 'INK & SOUL',
     artistName: 'Valentina Reyes',
@@ -80,6 +82,31 @@ export default function StudioSettings() {
     reminderNotification: true,
     depositReceived: true,
   })
+
+  useEffect(() => {
+    if (dbSettings) {
+      const social = (dbSettings.social_links ?? {}) as Record<string, string>
+      const notif = (dbSettings.notifications ?? {}) as Record<string, boolean>
+      setSettings((prev) => ({
+        ...prev,
+        studioName: dbSettings.studio_name,
+        artistName: dbSettings.artist_name,
+        bio: dbSettings.bio ?? '',
+        phone: dbSettings.phone ?? '',
+        email: dbSettings.email ?? '',
+        address: dbSettings.address ?? '',
+        schedule: (dbSettings.schedule as Record<string, DaySchedule>) ?? prev.schedule,
+        prices: (dbSettings.prices as Record<string, PriceRange>) ?? prev.prices,
+        instagram: social.instagram ?? '',
+        tiktok: social.tiktok ?? '',
+        website: social.website ?? '',
+        newBooking: notif.new_booking ?? true,
+        messageNotification: notif.message_notification ?? true,
+        reminderNotification: notif.reminder_notification ?? true,
+        depositReceived: notif.deposit_received ?? true,
+      }))
+    }
+  }, [dbSettings])
 
   const updateSchedule = (day: string, updates: Partial<DaySchedule>) => {
     setSettings((s) => ({
@@ -103,12 +130,40 @@ export default function StudioSettings() {
 
   const [saved, setSaved] = useState(false)
 
-  const handleSave = () => {
-    try {
-      localStorage.setItem('studio-settings', JSON.stringify(settings))
-    } catch { /* storage full or unavailable */ }
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+  const handleSave = async () => {
+    const { error } = await saveSettings({
+      studio_name: settings.studioName,
+      artist_name: settings.artistName,
+      bio: settings.bio,
+      phone: settings.phone,
+      email: settings.email,
+      address: settings.address,
+      schedule: settings.schedule as Record<string, unknown>,
+      prices: settings.prices as Record<string, unknown>,
+      social_links: {
+        instagram: settings.instagram,
+        tiktok: settings.tiktok,
+        website: settings.website,
+      },
+      notifications: {
+        new_booking: settings.newBooking,
+        message_notification: settings.messageNotification,
+        reminder_notification: settings.reminderNotification,
+        deposit_received: settings.depositReceived,
+      },
+    })
+    if (!error) {
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    }
+  }
+
+  if (settingsLoading) {
+    return (
+      <div className="p-4 pb-28 flex items-center justify-center min-h-[200px]">
+        <p className="text-subtle">Cargando configuración...</p>
+      </div>
+    )
   }
 
   return (
@@ -419,7 +474,8 @@ export default function StudioSettings() {
         </AnimatePresence>
         <button
           onClick={handleSave}
-          className="w-full py-4 rounded-xl bg-gold text-ink font-serif font-semibold flex items-center justify-center gap-2 hover:bg-gold-light transition-colors"
+          disabled={!dbSettings}
+          className="w-full py-4 rounded-xl bg-gold text-ink font-serif font-semibold flex items-center justify-center gap-2 hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Save size={20} />
           Guardar Cambios

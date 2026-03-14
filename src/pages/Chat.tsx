@@ -1,13 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Bot, ArrowLeft, Check, CheckCheck } from 'lucide-react'
+import { Send, Bot, Check, CheckCheck } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
-import {
-  chatConversations,
-  chatbotResponses,
-  type ChatMessage,
-  type ChatConversation,
-} from '../data/mock'
+import { chatbotResponses } from '../data/constants'
+import { useChat } from '../hooks/useChat'
+import { useAuth } from '../contexts/AuthContext'
+import type { ChatMessage } from '../types'
 
 const QUICK_REPLIES: { label: string; key: keyof typeof chatbotResponses }[] = [
   { label: 'Precios', key: 'precio' },
@@ -20,6 +18,48 @@ const QUICK_REPLIES: { label: string; key: keyof typeof chatbotResponses }[] = [
   { label: 'Cancelación', key: 'cancelar' },
   { label: 'Preparación', key: 'preparacion' },
 ]
+
+const ARTIST_NAME = 'Valentina Reyes'
+const ARTIST_INITIALS = 'VR'
+
+const ARTIST_RESPONSES = [
+  '¡Gracias por tu mensaje! Lo reviso y te contesto en un momento 😊',
+  'Qué buena idea! Me encantaría trabajar en eso. ¿Tienes alguna referencia visual?',
+  'Perfecto, lo anoto. ¿Hay algo más que quieras comentarme?',
+  '¡Me encanta! Podemos hablar de los detalles cuando vengas al estudio.',
+  'Claro que sí, sin problema. ¿Quieres que te reserve un hueco esta semana?',
+  '¡Genial! Te preparo un boceto y te lo enseño antes de la cita.',
+  'Buena elección de zona. El resultado va a quedar increíble ahí.',
+  'Recuerda hidratar bien la zona los días previos a tu cita 🙌',
+]
+
+interface ArtistDisplayMessage {
+  id: string
+  from: 'user' | 'artist'
+  text: string
+  timestamp: string
+  read: boolean
+}
+
+const INITIAL_MESSAGES: ArtistDisplayMessage[] = [
+  {
+    id: 'welcome-1',
+    from: 'artist',
+    text: '¡Hola! Bienvenido/a a INK & SOUL. Soy Valentina, ¿en qué puedo ayudarte? 😊',
+    timestamp: new Date(Date.now() - 86400000).toISOString(),
+    read: true,
+  },
+]
+
+function dbToDisplay(msg: ChatMessage): ArtistDisplayMessage {
+  return {
+    id: msg.id,
+    from: msg.sender_role === 'client' ? 'user' : 'artist',
+    text: msg.text,
+    timestamp: msg.created_at,
+    read: msg.read,
+  }
+}
 
 function formatRelativeTime(iso: string): string {
   const date = new Date(iso)
@@ -36,15 +76,6 @@ function formatRelativeTime(iso: string): string {
   return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 }
 
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
-}
-
 function findChatbotMatch(text: string): string | null {
   const normalized = text
     .toLowerCase()
@@ -59,7 +90,7 @@ function findChatbotMatch(text: string): string | null {
 }
 
 const FALLBACK_BOT_RESPONSE =
-  'No tengo una respuesta específica para eso. ¿Te gustaría hablar directamente con la artista? Puedes contactarla en la sección de Contacto o iniciar una conversación.'
+  'No tengo una respuesta específica para eso. ¿Te gustaría hablar directamente con la artista? Usa la pestaña "Artista" para enviarle un mensaje.'
 
 interface ChatbotMessage {
   id: string
@@ -69,36 +100,81 @@ interface ChatbotMessage {
 }
 
 export default function Chat() {
-  const [conversations, setConversations] = useState<ChatConversation[]>(
-    () => [...chatConversations]
-  )
-  const [activeConversation, setActiveConversation] = useState<string | null>(
-    null
-  )
-  const [activeTab, setActiveTab] = useState<'conversations' | 'assistant'>(
-    'conversations'
-  )
+  const { user } = useAuth()
+  const clientId = user?.id
+  const {
+    messages: dbMessages,
+    send,
+    markRead,
+    subscribe,
+    unsubscribe,
+  } = useChat(clientId)
+  const [activeTab, setActiveTab] = useState<'artist' | 'assistant'>('artist')
+  const [messages, setMessages] = useState<ArtistDisplayMessage[]>(INITIAL_MESSAGES)
   const [chatbotMessages, setChatbotMessages] = useState<ChatbotMessage[]>([])
   const [inputText, setInputText] = useState('')
   const [isTyping, setIsTyping] = useState(false)
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const chatScrollRef = useRef<HTMLDivElement>(null)
-
-  const sortedConversations = [...conversations].sort(
-    (a, b) =>
-      new Date(b.lastTimestamp).getTime() -
-      new Date(a.lastTimestamp).getTime()
-  )
-
-  const activeConv = conversations.find((c) => c.id === activeConversation)
+  const [artistTyping, setArtistTyping] = useState(false)
+  const artistScrollRef = useRef<HTMLDivElement>(null)
+  const botScrollRef = useRef<HTMLDivElement>(null)
+  const responseIndexRef = useRef(0)
 
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (activeTab === 'artist' && clientId) {
+      subscribe()
+      markRead()
+      return () => unsubscribe()
+    }
+  }, [activeTab, clientId, subscribe, unsubscribe, markRead])
+
+  useEffect(() => {
+    artistScrollRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, artistTyping, dbMessages])
+
+  useEffect(() => {
+    botScrollRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chatbotMessages])
 
-  useEffect(() => {
-    chatScrollRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [activeConv?.messages])
+  const handleSendToArtist = async () => {
+    if (!inputText.trim()) return
+    const text = inputText.trim()
+    setInputText('')
+
+    if (user) {
+      await send(text, 'client')
+    } else {
+      const newMsg: ArtistDisplayMessage = {
+        id: `m-${Date.now()}`,
+        from: 'user',
+        text,
+        timestamp: new Date().toISOString(),
+        read: false,
+      }
+      setMessages((prev) => [...prev, newMsg])
+
+      setTimeout(() => {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === newMsg.id ? { ...m, read: true } : m))
+        )
+      }, 1500)
+
+      setArtistTyping(true)
+      const delay = 2000 + Math.random() * 2000
+      setTimeout(() => {
+        setArtistTyping(false)
+        const replyText = ARTIST_RESPONSES[responseIndexRef.current % ARTIST_RESPONSES.length]
+        responseIndexRef.current += 1
+        const reply: ArtistDisplayMessage = {
+          id: `ar-${Date.now()}`,
+          from: 'artist',
+          text: replyText,
+          timestamp: new Date().toISOString(),
+          read: true,
+        }
+        setMessages((prev) => [...prev, reply])
+      }, delay)
+    }
+  }
 
   const handleSendChatbotMessage = (question: string, responseKey?: string) => {
     const userMsg: ChatbotMessage = {
@@ -130,224 +206,153 @@ export default function Chat() {
     handleSendChatbotMessage(label, key)
   }
 
-  const handleSendConversationMessage = () => {
-    if (!activeConversation || !inputText.trim()) return
-    const newMsg: ChatMessage = {
-      id: `m-${Date.now()}`,
-      from: 'user',
-      text: inputText.trim(),
-      timestamp: new Date().toISOString(),
-      read: false,
-    }
-    setConversations((prev) =>
-      prev.map((c) => {
-        if (c.id !== activeConversation) return c
-        return {
-          ...c,
-          lastMessage: newMsg.text,
-          lastTimestamp: newMsg.timestamp,
-          messages: [...c.messages, newMsg],
-        }
-      })
-    )
-    setInputText('')
-  }
-
-  if (activeConversation && activeConv) {
-    return (
-      <div className="min-h-dvh bg-ink flex flex-col">
-        <motion.header
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="sticky top-0 z-40 bg-ink/90 backdrop-blur-lg border-b border-white/5"
-        >
-          <div className="flex items-center gap-3 px-4 h-14">
-            <button
-              onClick={() => setActiveConversation(null)}
-              className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
-            >
-              <ArrowLeft size={18} />
-            </button>
-            <div className="flex-1 flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center shrink-0">
-                <span className="text-gold text-sm font-medium">
-                  {getInitials(activeConv.userName)}
-                </span>
-              </div>
-              <div className="min-w-0">
-                <h1 className="font-serif text-cream truncate">
-                  {activeConv.userName}
-                </h1>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="text-[11px] text-subtle">En línea</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.header>
-
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-          <AnimatePresence initial={false}>
-            {activeConv.messages.map((msg) => (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 12, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.2 }}
-                className={`flex ${msg.from === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[85%] flex flex-col items-${msg.from === 'user' ? 'end' : 'start'}`}
-                >
-                  <div
-                    className={`px-4 py-2.5 rounded-2xl ${
-                      msg.from === 'user'
-                        ? 'bg-gold/20 text-cream rounded-br-md'
-                        : msg.from === 'bot'
-                          ? 'bg-ink-medium text-cream rounded-bl-md flex items-start gap-2'
-                          : 'bg-ink-medium text-cream rounded-bl-md'
-                    }`}
-                  >
-                    {msg.from === 'bot' && (
-                      <Bot size={14} className="text-gold shrink-0 mt-0.5" />
-                    )}
-                    <p className="text-sm whitespace-pre-wrap break-words">
-                      {msg.text}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <span className="text-[10px] text-subtle">
-                      {formatRelativeTime(msg.timestamp)}
-                    </span>
-                    {msg.from === 'user' && (
-                      <span className="text-gold">
-                        {msg.read ? (
-                          <CheckCheck size={12} />
-                        ) : (
-                          <Check size={12} />
-                        )}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-          <div ref={chatScrollRef} />
-        </div>
-
-        <div className="sticky bottom-0 bg-ink/95 backdrop-blur-lg border-t border-white/5 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  handleSendConversationMessage()
-                }
-              }}
-              placeholder="Escribe un mensaje..."
-              className="flex-1 px-4 py-3 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle/60 focus:outline-none focus:border-gold/50"
-            />
-            <button
-              onClick={handleSendConversationMessage}
-              disabled={!inputText.trim()}
-              className="w-12 h-12 rounded-xl bg-gold text-ink flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gold-light transition-colors"
-            >
-              <Send size={18} />
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-dvh bg-ink">
+    <div className="min-h-dvh bg-ink flex flex-col">
       <PageHeader title="Chat" subtitle="Mensajes" showBack={false} />
 
-      <div className="px-4 pt-2">
+      {/* Tab toggle */}
+      <div className="px-4 pt-1 pb-2">
         <div className="flex rounded-xl bg-ink-light p-1 border border-white/5">
           <button
-            onClick={() => setActiveTab('conversations')}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === 'conversations'
+            onClick={() => setActiveTab('artist')}
+            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+              activeTab === 'artist'
                 ? 'bg-gold text-ink'
                 : 'text-subtle hover:text-cream'
             }`}
           >
-            Conversaciones
+            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold ${
+              activeTab === 'artist' ? 'bg-ink/20 text-ink' : 'bg-gold/20 text-gold'
+            }`}>
+              {ARTIST_INITIALS}
+            </div>
+            Artista
           </button>
           <button
             onClick={() => setActiveTab('assistant')}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
               activeTab === 'assistant'
                 ? 'bg-gold text-ink'
                 : 'text-subtle hover:text-cream'
             }`}
           >
+            <Bot size={14} />
             Asistente Virtual
           </button>
         </div>
       </div>
 
-      {activeTab === 'conversations' ? (
-        <div className="px-4 py-4 space-y-2">
-          <AnimatePresence mode="popLayout">
-            {sortedConversations.map((conv, i) => (
-              <motion.button
-                key={conv.id}
-                initial={{ opacity: 0, y: 10 }}
+      {activeTab === 'artist' ? (
+        /* Direct chat with the artist */
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Artist info bar */}
+          <div className="px-4 py-2.5 border-b border-white/5 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center shrink-0">
+              <span className="text-ink text-xs font-bold">{ARTIST_INITIALS}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-cream text-sm font-medium">{ARTIST_NAME}</p>
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span className="text-[10px] text-subtle">Normalmente responde en menos de 1h</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+            <AnimatePresence initial={false}>
+              {(user ? dbMessages.map(dbToDisplay) : messages).map((msg) => (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 12, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.2 }}
+                  className={`flex ${msg.from === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div className={`max-w-[85%] flex flex-col ${msg.from === 'user' ? 'items-end' : 'items-start'}`}>
+                    {msg.from === 'artist' && (
+                      <span className="text-[10px] text-gold/60 mb-1 ml-1">Valentina</span>
+                    )}
+                    <div
+                      className={`px-4 py-2.5 rounded-2xl ${
+                        msg.from === 'user'
+                          ? 'bg-gold/20 text-cream rounded-br-md'
+                          : 'bg-ink-medium text-cream rounded-bl-md'
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <span className="text-[10px] text-subtle">
+                        {formatRelativeTime(msg.timestamp)}
+                      </span>
+                      {msg.from === 'user' && (
+                        <span className="text-gold">
+                          {msg.read ? <CheckCheck size={12} /> : <Check size={12} />}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            {!user && artistTyping && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03 }}
-                onClick={() => {
-                  setActiveConversation(conv.id)
-                  setConversations((prev) =>
-                    prev.map((c) =>
-                      c.id === conv.id
-                        ? {
-                            ...c,
-                            unread: 0,
-                            messages: c.messages.map((m) => ({ ...m, read: true })),
-                          }
-                        : c
-                    )
-                  )
-                }}
-                className="w-full flex items-center gap-4 p-4 rounded-xl bg-ink-light border border-white/5 hover:border-gold/20 transition-colors text-left"
+                className="flex justify-start"
               >
-                <div className="w-12 h-12 rounded-full bg-gold/20 flex items-center justify-center shrink-0">
-                  <span className="text-gold font-medium">
-                    {getInitials(conv.userName)}
-                  </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-gold/60">Valentina</span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-cream truncate">
-                    {conv.userName}
-                  </p>
-                  <p className="text-sm text-subtle truncate">
-                    {conv.lastMessage}
-                  </p>
+              </motion.div>
+            )}
+            {!user && artistTyping && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-start"
+              >
+                <div className="bg-ink-medium rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-gold/60 animate-bounce [animation-delay:-0.3s]" />
+                  <span className="w-2 h-2 rounded-full bg-gold/60 animate-bounce [animation-delay:-0.15s]" />
+                  <span className="w-2 h-2 rounded-full bg-gold/60 animate-bounce" />
                 </div>
-                <div className="flex flex-col items-end gap-1 shrink-0">
-                  <span className="text-[11px] text-subtle">
-                    {formatRelativeTime(conv.lastTimestamp)}
-                  </span>
-                  {conv.unread > 0 && (
-                    <span className="w-5 h-5 rounded-full bg-gold text-ink text-[10px] font-bold flex items-center justify-center">
-                      {conv.unread}
-                    </span>
-                  )}
-                </div>
-              </motion.button>
-            ))}
-          </AnimatePresence>
+              </motion.div>
+            )}
+            <div ref={artistScrollRef} />
+          </div>
+
+          {/* Input */}
+          <div className="sticky bottom-0 bg-ink/95 backdrop-blur-lg border-t border-white/5 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSendToArtist()
+                  }
+                }}
+                placeholder="Escribe un mensaje a Valentina..."
+                className="flex-1 px-4 py-3 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle/60 focus:outline-none focus:border-gold/50"
+              />
+              <button
+                onClick={handleSendToArtist}
+                disabled={!inputText.trim()}
+                className="w-12 h-12 rounded-xl bg-gold text-ink flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gold-light transition-colors"
+              >
+                <Send size={18} />
+              </button>
+            </div>
+          </div>
         </div>
       ) : (
-        <div className="flex flex-col h-[calc(100dvh-12rem)]">
+        /* Chatbot / Virtual Assistant */
+        <div className="flex-1 flex flex-col min-h-0">
           <div className="flex-1 overflow-y-auto px-4 py-4">
             <motion.div
               initial={{ opacity: 0, y: 8 }}
@@ -394,14 +399,9 @@ export default function Chat() {
                       }`}
                     >
                       {msg.from === 'bot' && (
-                        <Bot
-                          size={14}
-                          className="text-gold shrink-0 mt-0.5"
-                        />
+                        <Bot size={14} className="text-gold shrink-0 mt-0.5" />
                       )}
-                      <p className="text-sm whitespace-pre-wrap break-words">
-                        {msg.text}
-                      </p>
+                      <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
                     </div>
                   </motion.div>
                 ))}
@@ -420,7 +420,7 @@ export default function Chat() {
                   </motion.div>
                 )}
               </AnimatePresence>
-              <div ref={scrollRef} />
+              <div ref={botScrollRef} />
             </div>
           </div>
 

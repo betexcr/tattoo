@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ShoppingCart, X, Frame, Shirt, Footprints, Watch, Trash2 } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
-import { shopItems } from '../data/mock'
-import type { ShopItem } from '../data/mock'
+import { useShop } from '../hooks/useShop'
+import { useOrders } from '../hooks/useOrders'
+import type { ShopItem } from '../types'
 
 type Category = ShopItem['category'] | ''
 type CartLine = { item: ShopItem; size: string; color: string; qty: number }
@@ -44,6 +45,8 @@ const cardVariants = {
 }
 
 export default function Shop() {
+  const { items: shopItems, loading } = useShop()
+  const { create: createOrder } = useOrders()
   const [categoryFilter, setCategoryFilter] = useState<Category>('')
   const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null)
   const [cart, setCart] = useState<CartLine[]>([])
@@ -66,7 +69,7 @@ export default function Shop() {
     cat === '' ? shopItems.length : shopItems.filter((i) => i.category === cat).length
 
   const handleAddToCart = () => {
-    if (!selectedItem?.inStock) return
+    if (!selectedItem?.in_stock) return
     const size = selectedSize || (selectedItem.sizes?.[0] ?? '')
     const color = selectedColor || (selectedItem.colors?.[0] ?? '')
     setCart((prev) => {
@@ -96,10 +99,26 @@ export default function Shop() {
     setNotifyEmail('')
   }
 
-  const handleCheckoutSubmit = () => {
-    setCheckoutStep('success')
-    setCart([])
-    setCheckoutForm({ name: '', email: '', phone: '', address: '' })
+  const handleCheckoutSubmit = async () => {
+    const { error } = await createOrder({
+      client_name: checkoutForm.name,
+      client_email: checkoutForm.email,
+      client_phone: checkoutForm.phone,
+      client_address: checkoutForm.address,
+      total: cart.reduce((sum, c) => sum + c.item.price * c.qty, 0),
+      items: cart.map(c => ({
+        shop_item_id: c.item.id,
+        quantity: c.qty,
+        size: c.size,
+        color: c.color,
+        price: c.item.price,
+      })),
+    })
+    if (!error) {
+      setCheckoutStep('success')
+      setCart([])
+      setCheckoutForm({ name: '', email: '', phone: '', address: '' })
+    }
   }
 
   const closeCartDrawer = () => {
@@ -111,6 +130,14 @@ export default function Shop() {
     setSelectedItem(item)
     setSelectedSize(item.sizes?.[0] ?? '')
     setSelectedColor(item.colors?.[0] ?? '')
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-dvh pb-6 flex items-center justify-center">
+        <p className="text-subtle text-sm">Cargando...</p>
+      </div>
+    )
   }
 
   return (
@@ -198,11 +225,11 @@ export default function Shop() {
             variants={cardVariants}
             layout
             onClick={() => openDetail(item)}
-            className={`cursor-pointer group ${!item.inStock ? 'opacity-50' : ''}`}
+            className={`cursor-pointer group ${!item.in_stock ? 'opacity-50' : ''}`}
           >
             <div className="relative overflow-hidden rounded-2xl border border-white/5 hover:border-gold/20 transition-all">
               <img
-                src={item.image}
+                src={item.image_url}
                 alt={item.title}
                 className="w-full aspect-[4/5] object-cover transition-transform duration-500 group-hover:scale-105"
               />
@@ -215,7 +242,7 @@ export default function Shop() {
                 </span>
               </div>
 
-              {!item.inStock && (
+              {!item.in_stock && (
                 <div className="absolute top-2.5 right-2.5">
                   <span className="px-2 py-0.5 rounded-lg bg-red-500/20 text-red-400 text-[9px] font-medium uppercase tracking-wider">
                     Agotado
@@ -342,7 +369,7 @@ export default function Shop() {
                           className="flex gap-3 p-3 rounded-xl bg-ink border border-white/5"
                         >
                           <img
-                            src={line.item.image}
+                            src={line.item.image_url}
                             alt={line.item.title}
                             className="w-14 h-14 rounded-lg object-cover shrink-0"
                           />
@@ -410,7 +437,7 @@ export default function Shop() {
                 {/* Image */}
                 <div className="relative mx-4 rounded-2xl overflow-hidden">
                   <img
-                    src={selectedItem.image}
+                    src={selectedItem.image_url}
                     alt={selectedItem.title}
                     className="w-full aspect-square object-cover"
                   />
@@ -481,7 +508,7 @@ export default function Shop() {
                     </div>
                   )}
 
-                  {!selectedItem.inStock && (
+                  {!selectedItem.in_stock && (
                     <div className="p-3 rounded-xl bg-red-500/5 border border-red-500/10 space-y-2">
                       {notifiedItems.has(selectedItem.id) ? (
                         <p className="text-gold text-xs font-medium">Te avisaremos cuando esté disponible.</p>
@@ -515,14 +542,14 @@ export default function Shop() {
               <div className="p-5 pt-3 border-t border-white/5">
                 <button
                   onClick={handleAddToCart}
-                  disabled={!selectedItem.inStock}
+                  disabled={!selectedItem.in_stock}
                   className={`w-full py-3.5 rounded-2xl font-medium transition-all text-sm ${
-                    selectedItem.inStock
+                    selectedItem.in_stock
                       ? 'bg-gold text-ink hover:bg-gold-light active:scale-[0.98] shadow-lg shadow-gold/20'
                       : 'bg-ink-medium text-subtle cursor-not-allowed'
                   }`}
                 >
-                  {selectedItem.inStock ? `Añadir al Carrito · €${selectedItem.price}` : 'Agotado'}
+                  {selectedItem.in_stock ? `Añadir al Carrito · €${selectedItem.price}` : 'Agotado'}
                 </button>
               </div>
             </motion.div>

@@ -13,7 +13,9 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
-import { tattooStyles, bodyParts, occupiedSlots } from '../data/mock'
+import { tattooStyles, bodyParts } from '../data/constants'
+import { useAppointments } from '../hooks/useAppointments'
+import { useAuth } from '../contexts/AuthContext'
 
 const STEPS = [
   { id: 'style', title: 'Estilo', subtitle: 'Elige tu estilo de tatuaje' },
@@ -56,6 +58,9 @@ const slideVariants = {
 
 export default function BookAppointment() {
   const navigate = useNavigate()
+  const { create, getOccupiedSlots } = useAppointments()
+  const { user } = useAuth()
+  const occupiedSlots = getOccupiedSlots()
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState(1)
 
@@ -91,8 +96,24 @@ export default function BookAppointment() {
     }
   }
 
-  const goNext = () => {
+  const goNext = async () => {
     if (step === STEPS.length - 1) {
+      await create({
+        client_id: user?.id ?? null,
+        client_name: contact.name,
+        date: selectedDate,
+        time: selectedTime,
+        description,
+        body_part: selectedBodyPart,
+        style: selectedStyle,
+        status: 'pending',
+        deposit: 0,
+        phone: contact.phone,
+        email: contact.email,
+        reference_images: referenceImages,
+        size: selectedSize,
+        notes: contact.notes,
+      } as any)
       setBooked(true)
       return
     }
@@ -178,7 +199,7 @@ export default function BookAppointment() {
     }
 
     return cells
-  }, [calendarView, today])
+  }, [calendarView, today, occupiedSlots])
 
   const timeSlotsForDate = useMemo(() => {
     if (!selectedDate) return []

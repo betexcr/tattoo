@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -13,11 +13,8 @@ import {
   BarChart3,
   Settings,
 } from 'lucide-react'
-import {
-  appointments,
-  chatConversations,
-} from '../data/mock'
-import type { Appointment } from '../data/mock'
+import { useAppointments } from '../hooks/useAppointments'
+import { useChatConversations } from '../hooks/useChat'
 
 const TODAY = new Date().toISOString().slice(0, 10)
 
@@ -64,9 +61,8 @@ const itemVariants = {
 }
 
 export default function Dashboard() {
-  const [localAppointments, setLocalAppointments] = useState<Appointment[]>(
-    () => appointments
-  )
+  const { appointments: localAppointments, updateStatus } = useAppointments()
+  const { conversations: chatConvs } = useChatConversations()
 
   const pendingAppointments = useMemo(
     () => localAppointments.filter((a) => a.status === 'pending'),
@@ -94,15 +90,8 @@ export default function Dashboard() {
 
   const displaySchedule = todayAppointments.length > 0 ? todayAppointments : upcomingAppointments.slice(0, 3)
 
-  const totalUnread = useMemo(
-    () => chatConversations.reduce((sum, c) => sum + c.unread, 0),
-    []
-  )
-
-  const unreadConversations = useMemo(
-    () => chatConversations.filter((c) => c.unread > 0),
-    []
-  )
+  const totalUnread = chatConvs.reduce((sum, c) => sum + c.unread, 0)
+  const unreadConversations = chatConvs.filter((c) => c.unread > 0)
 
   const monthlyRevenue = useMemo(() => {
     const now = new Date()
@@ -120,19 +109,11 @@ export default function Dashboard() {
   const maxRevenue = Math.max(...MOCK_DAILY_REVENUE, 1)
 
   const handleConfirm = (id: string) => {
-    setLocalAppointments((prev) =>
-      prev.map((a) =>
-        a.id === id ? { ...a, status: 'confirmed' as const } : a
-      )
-    )
+    updateStatus(id, 'confirmed')
   }
 
   const handleReject = (id: string) => {
-    setLocalAppointments((prev) =>
-      prev.map((a) =>
-        a.id === id ? { ...a, status: 'rejected' as const } : a
-      )
-    )
+    updateStatus(id, 'rejected')
   }
 
   return (
@@ -221,9 +202,9 @@ export default function Dashboard() {
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="font-medium text-cream">{apt.client}</p>
+                    <p className="font-medium text-cream">{apt.client_name}</p>
                     <p className="text-xs text-subtle">
-                      {apt.date} · {apt.time} · {apt.style} · {apt.bodyPart}
+                      {apt.date} · {apt.time} · {apt.style} · {apt.body_part}
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -267,12 +248,12 @@ export default function Dashboard() {
                   </p>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-cream">{apt.client}</p>
+                  <p className="font-medium text-cream">{apt.client_name}</p>
                   <p className="text-xs text-subtle truncate mt-0.5">
                     {apt.description}
                   </p>
                   <span className="inline-block mt-2 px-2.5 py-1 rounded-lg bg-white/5 text-subtle text-xs">
-                    {apt.bodyPart}
+                    {apt.body_part}
                   </span>
                 </div>
               </div>
@@ -294,19 +275,19 @@ export default function Dashboard() {
           <div className="space-y-2">
             {unreadConversations.map((conv) => (
               <Link
-                key={conv.id}
+                key={conv.client_id}
                 to="/studio/messages"
                 className="flex items-center gap-3 p-3 rounded-xl bg-ink-light border border-white/5 hover:border-rose/20 transition-colors"
               >
                 <div className="w-10 h-10 rounded-full bg-rose/20 flex items-center justify-center shrink-0">
                   <span className="text-rose-dark text-sm font-medium">
-                    {getInitials(conv.userName)}
+                    {getInitials(conv.client_name)}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-cream truncate">{conv.userName}</p>
+                  <p className="font-medium text-cream truncate">{conv.client_name}</p>
                   <p className="text-xs text-subtle truncate">
-                    {conv.lastMessage}
+                    {conv.last_message}
                   </p>
                 </div>
                 <span className="shrink-0 w-6 h-6 rounded-full bg-rose text-ink text-xs font-bold flex items-center justify-center">
