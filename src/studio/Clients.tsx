@@ -1,7 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, ArrowLeft, MessageCircle, CalendarPlus, Phone, Mail, UserCheck, Users } from 'lucide-react'
+import { collection, getDocs, doc, setDoc } from 'firebase/firestore'
+import { db } from '../lib/firebase'
 import { useAppointments } from '../hooks/useAppointments'
 import { useClients } from '../hooks/useClients'
 import type { Appointment } from '../types'
@@ -119,11 +121,26 @@ export default function Clients() {
   const [viewTab, setViewTab] = useState<ViewTab>('all')
   const [selectedClient, setSelectedClient] = useState<ClientEntry | null>(null)
   const [clientNotes, setClientNotes] = useState<Record<string, string>>({})
+  const [noteSaveTimer, setNoteSaveTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    getDocs(collection(db, 'client_notes')).then(snap => {
+      const notes: Record<string, string> = {}
+      snap.docs.forEach(d => { notes[d.id] = (d.data().text as string) ?? '' })
+      setClientNotes(notes)
+    }).catch(() => {})
+  }, [])
 
   const currentNotes = selectedClient ? (clientNotes[selectedClient.name] ?? '') : ''
+  const persistNote = useCallback((name: string, text: string) => {
+    setDoc(doc(db, 'client_notes', name), { text, updated_at: new Date().toISOString() }).catch(() => {})
+  }, [])
   const setCurrentNotes = (value: string) => {
     if (!selectedClient) return
-    setClientNotes((prev) => ({ ...prev, [selectedClient.name]: value }))
+    setClientNotes(prev => ({ ...prev, [selectedClient.name]: value }))
+    if (noteSaveTimer) clearTimeout(noteSaveTimer)
+    const name = selectedClient.name
+    setNoteSaveTimer(setTimeout(() => persistNote(name, value), 800))
   }
 
   const clientList = useMemo(() => buildClientList(appointments, registeredClients), [appointments, registeredClients])

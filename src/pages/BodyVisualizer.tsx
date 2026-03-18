@@ -567,7 +567,7 @@ export default function BodyVisualizer() {
         )}
 
         {/* Agendar Cita button */}
-        <Link to="/agenda">
+        <Link to="/book">
           <motion.button
             whileTap={{ scale: 0.98 }}
             className="w-full py-3.5 rounded-full bg-gold text-ink font-medium hover:bg-gold-light transition-colors"

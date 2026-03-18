@@ -42,10 +42,9 @@ const cardVariants = {
 const INITIAL_FORM = { name: '', email: '', phone: '' }
 
 export default function Courses() {
-  const { courses, reserve } = useCourses()
+  const { courses, reservedIds, reserve } = useCourses()
   const [reservingCourse, setReservingCourse] = useState<Course | null>(null)
   const [reservationForm, setReservationForm] = useState(INITIAL_FORM)
-  const [reserved, setReserved] = useState<Set<string>>(new Set())
   const [showSuccess, setShowSuccess] = useState(false)
 
   useEffect(() => {
@@ -67,7 +66,6 @@ export default function Courses() {
       reservationForm.phone
     )
     if (!error) {
-      setReserved((prev) => new Set(prev).add(reservingCourse.id))
       setShowSuccess(true)
     }
   }
@@ -130,13 +128,13 @@ export default function Courses() {
                   <span>•</span>
                   <span>{course.duration}</span>
                   <span>•</span>
-                  <span>{course.spots - (reserved.has(course.id) ? 1 : 0)} plazas disponibles</span>
+                  <span>{course.spots} plazas disponibles</span>
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-gold font-semibold text-lg">
                     €{course.price}
                   </span>
-                  {reserved.has(course.id) ? (
+                  {reservedIds.has(course.id) ? (
                     <button
                       disabled
                       className="px-6 py-2.5 rounded-full bg-emerald-500/30 text-emerald-400 font-medium text-sm cursor-not-allowed"

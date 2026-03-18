@@ -92,5 +92,41 @@ service cloud.firestore {
       allow create: if true;
       allow read: if isArtist();
     }
+
+    // Notifications: users read/update own, artists can create for any user
+    match /notifications/{notifId} {
+      allow read: if isSignedIn() && resource.data.user_id == request.auth.uid;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource.data.user_id == request.auth.uid;
+    }
+
+    // Stock notifications: authenticated create, artists read all
+    match /stock_notifications/{notifId} {
+      allow create: if isSignedIn();
+      allow read: if isArtist();
+    }
+
+    // Design shares: authenticated create, artists read all
+    match /design_shares/{shareId} {
+      allow create: if isSignedIn();
+      allow read: if isArtist() || (isSignedIn() && resource.data.client_id == request.auth.uid);
+    }
+
+    // Reviews: public read, authenticated create
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+    }
+
+    // Client notes: artists only
+    match /client_notes/{noteId} {
+      allow read, write: if isArtist();
+    }
+
+    // User likes: users read/write own
+    match /user_likes/{likeId} {
+      allow read, write: if isSignedIn() && resource.data.user_id == request.auth.uid;
+      allow create: if isSignedIn();
+    }
   }
 }

@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   X, Palette, PenTool, Eye, Lightbulb,
-  GraduationCap, User, Phone, Bell, ShoppingBag, LogIn, LogOut, LayoutDashboard,
+  GraduationCap, User, Phone, Bell, ShoppingBag, LogIn, LogOut, LayoutDashboard, UserCircle,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -76,6 +76,14 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                     <p className="text-xs text-subtle truncate">{user.email}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    <NavLink
+                      to="/account"
+                      onClick={onClose}
+                      className="w-8 h-8 rounded-lg bg-gold/10 flex items-center justify-center text-gold hover:bg-gold/20 transition-colors"
+                      title="Mi Cuenta"
+                    >
+                      <UserCircle size={16} />
+                    </NavLink>
                     {isArtist && (
                       <NavLink
                         to="/studio"
@@ -113,7 +121,7 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
             </div>
 
             <div className="p-4 pb-8 space-y-1">
-              {menuItems.map(({ to, icon: Icon, label, desc }) => (
+              {menuItems.filter(item => item.to !== '/reminders' || isArtist).map(({ to, icon: Icon, label, desc }) => (
                 <NavLink
                   key={to}
                   to={to}

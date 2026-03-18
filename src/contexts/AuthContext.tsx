@@ -4,6 +4,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
+  sendPasswordResetEmail,
   type User,
 } from 'firebase/auth'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
@@ -18,6 +19,7 @@ interface AuthState {
   loading: boolean
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
   signUp: (email: string, password: string, fullName: string, role?: string) => Promise<{ error: string | null }>
+  resetPassword: (email: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
 }
@@ -78,6 +80,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const resetPassword = async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email)
+      return { error: null }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
+    }
+  }
+
   const handleSignOut = async () => {
     await firebaseSignOut(auth)
     setProfile(null)
@@ -87,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, session: null, profile, isArtist, loading, signIn, signUp, signOut: handleSignOut, refreshProfile }}
+      value={{ user, session: null, profile, isArtist, loading, signIn, signUp, resetPassword, signOut: handleSignOut, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>

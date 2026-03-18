@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, X, CalendarPlus, Check, Phone, MessageCircle, CheckCheck, AlertTriangle } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
-import { bodyParts, tattooStyles } from '../data/constants'
+import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { useAppointments } from '../hooks/useAppointments'
+import { useAuth } from '../contexts/AuthContext'
 import type { Appointment } from '../types'
 
 const containerVariants = {
@@ -67,7 +68,9 @@ const initialFormState = {
 type TabKey = 'pending' | 'confirmed' | 'completed'
 
 export default function Agenda() {
-  const { appointments, create, updateStatus } = useAppointments()
+  const { config } = useStudioConfig()
+  const { user, isArtist } = useAuth()
+  const { appointments, create, updateStatus } = useAppointments(isArtist ? undefined : user?.uid)
   const [activeTab, setActiveTab] = useState<TabKey>('pending')
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState(initialFormState)
@@ -232,7 +235,7 @@ export default function Agenda() {
                         Chat
                       </Link>
 
-                      {apt.status === 'pending' && (
+                      {isArtist && apt.status === 'pending' && (
                         <div className="flex items-center gap-2 ml-auto">
                           <AnimatePresence mode="wait">
                             {rejectConfirmId === apt.id ? (
@@ -286,7 +289,7 @@ export default function Agenda() {
                         </div>
                       )}
 
-                      {apt.status === 'confirmed' && (
+                      {isArtist && apt.status === 'confirmed' && (
                         <button
                           onClick={() => handleStatusUpdate(apt.id, 'completed')}
                           className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 text-subtle text-xs hover:bg-white/10 hover:text-cream transition-colors"
@@ -310,16 +313,18 @@ export default function Agenda() {
         </motion.div>
       </div>
 
-      {/* FAB */}
-      <motion.button
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => setShowModal(true)}
-        className="fixed bottom-24 right-5 z-40 w-14 h-14 rounded-full bg-gold text-ink flex items-center justify-center shadow-lg shadow-gold/25 hover:bg-gold-light transition-colors"
-      >
-        <Plus size={24} strokeWidth={2.5} />
-      </motion.button>
+      {/* FAB (artist only) */}
+      {isArtist && (
+        <motion.button
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowModal(true)}
+          className="fixed bottom-24 right-5 z-40 w-14 h-14 rounded-full bg-gold text-ink flex items-center justify-center shadow-lg shadow-gold/25 hover:bg-gold-light transition-colors"
+        >
+          <Plus size={24} strokeWidth={2.5} />
+        </motion.button>
+      )}
 
       {/* Modal / Sheet */}
       <AnimatePresence>
@@ -397,7 +402,7 @@ export default function Agenda() {
                     className="w-full px-4 py-3 rounded-xl bg-ink border border-white/5 text-cream focus:outline-none focus:border-gold/50"
                   >
                     <option value="">Seleccionar</option>
-                    {bodyParts.map((part) => (
+                    {config.body_parts.map((part) => (
                       <option key={part} value={part}>{part}</option>
                     ))}
                   </select>
@@ -410,7 +415,7 @@ export default function Agenda() {
                     className="w-full px-4 py-3 rounded-xl bg-ink border border-white/5 text-cream focus:outline-none focus:border-gold/50"
                   >
                     <option value="">Seleccionar</option>
-                    {tattooStyles.map((style) => (
+                    {config.tattoo_styles.map((style) => (
                       <option key={style} value={style}>{style}</option>
                     ))}
                   </select>

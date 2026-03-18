@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShoppingCart, X, Frame, Shirt, Footprints, Watch, Trash2 } from 'lucide-react'
+import { ShoppingCart, X, Frame, Shirt, Footprints, Watch, Trash2, Search } from 'lucide-react'
+import { collection, addDoc, query, where, getDocs } from 'firebase/firestore'
+import { db } from '../lib/firebase'
 import PageHeader from '../components/PageHeader'
 import { useShop } from '../hooks/useShop'
 import { useOrders } from '../hooks/useOrders'
+import { useAuth } from '../contexts/AuthContext'
 import type { ShopItem } from '../types'
 
 type Category = ShopItem['category'] | ''
@@ -47,6 +50,7 @@ const cardVariants = {
 export default function Shop() {
   const { items: shopItems, loading } = useShop()
   const { create: createOrder } = useOrders()
+  const { user } = useAuth()
   const [categoryFilter, setCategoryFilter] = useState<Category>('')
   const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null)
   const [cart, setCart] = useState<CartLine[]>([])
@@ -57,13 +61,26 @@ export default function Shop() {
   const [notifiedItems, setNotifiedItems] = useState<Set<string>>(new Set())
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'form' | 'success'>('cart')
   const [checkoutForm, setCheckoutForm] = useState({ name: '', email: '', phone: '', address: '' })
+  const [shopSearch, setShopSearch] = useState('')
+
+  useEffect(() => {
+    if (!user) return
+    const q = query(collection(db, 'stock_notifications'), where('user_id', '==', user.uid))
+    getDocs(q).then(snap => {
+      setNotifiedItems(new Set(snap.docs.map(d => d.data().item_id as string)))
+    }).catch(() => {})
+  }, [user])
 
   const cartCount = cart.reduce((sum, c) => sum + c.qty, 0)
 
-  const filteredItems =
-    categoryFilter === ''
-      ? shopItems
-      : shopItems.filter((item) => item.category === categoryFilter)
+  const filteredItems = useMemo(() => {
+    let items = categoryFilter === '' ? shopItems : shopItems.filter(item => item.category === categoryFilter)
+    if (shopSearch.trim()) {
+      const q = shopSearch.toLowerCase()
+      items = items.filter(item => item.title.toLowerCase().includes(q) || item.description.toLowerCase().includes(q))
+    }
+    return items
+  }, [shopItems, categoryFilter, shopSearch])
 
   const categoryCount = (cat: Category) =>
     cat === '' ? shopItems.length : shopItems.filter((i) => i.category === cat).length
@@ -93,10 +110,18 @@ export default function Shop() {
     setCart((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const handleNotifyStock = () => {
+  const handleNotifyStock = async () => {
     if (!selectedItem || !notifyEmail.trim()) return
-    setNotifiedItems((prev) => new Set(prev).add(selectedItem.id))
-    setNotifyEmail('')
+    try {
+      await addDoc(collection(db, 'stock_notifications'), {
+        item_id: selectedItem.id,
+        email: notifyEmail.trim(),
+        user_id: user?.uid ?? null,
+        created_at: new Date().toISOString(),
+      })
+      setNotifiedItems(prev => new Set(prev).add(selectedItem.id))
+      setNotifyEmail('')
+    } catch { /* fail silently */ }
   }
 
   const handleCheckoutSubmit = async () => {
@@ -166,8 +191,22 @@ export default function Shop() {
         }
       />
 
-      {/* Category tabs */}
+      {/* Search */}
       <div className="px-5 pt-3 pb-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-subtle" />
+          <input
+            type="text"
+            value={shopSearch}
+            onChange={e => setShopSearch(e.target.value)}
+            placeholder="Buscar productos..."
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle text-sm focus:outline-none focus:border-gold/40 transition-colors"
+          />
+        </div>
+      </div>
+
+      {/* Category tabs */}
+      <div className="px-5 pt-1 pb-2">
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {CATEGORY_TABS.map(({ label, value, icon: Icon }) => (
             <button

@@ -2,10 +2,8 @@ import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Euro } from 'lucide-react'
 import { useAppointments } from '../hooks/useAppointments'
-import { useShop } from '../hooks/useShop'
-import { useCourses } from '../hooks/useCourses'
-
-const MONTHLY_TARGET = 2000
+import { useOrders } from '../hooks/useOrders'
+import { useStudioConfig } from '../contexts/StudioConfigContext'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -22,18 +20,21 @@ const itemVariants = {
 
 export default function Analytics() {
   const { appointments } = useAppointments()
-  const { items: shopItems } = useShop()
-  const { courses } = useCourses()
+  const { orders } = useOrders()
+  const { config } = useStudioConfig()
+
+  const MONTHLY_TARGET = (config.prices as Record<string, number>).monthly_target ?? 2000
 
   const stats = useMemo(() => {
     const confirmedOrCompleted = appointments.filter(
       (a) => a.status === 'confirmed' || a.status === 'completed'
     )
-    const totalRevenue = confirmedOrCompleted.reduce((s, a) => s + a.deposit, 0)
-    const tattooRevenue = totalRevenue
-    const shopRevenue = shopItems.reduce((s, i) => s + i.price, 0)
-    const coursesRevenue = courses.reduce((s, c) => s + c.price, 0)
-    const totalFromAll = tattooRevenue + shopRevenue + coursesRevenue
+    const tattooRevenue = confirmedOrCompleted.reduce((s, a) => s + a.deposit, 0)
+    const shopRevenue = orders
+      .filter(o => o.status !== 'pending')
+      .reduce((s, o) => s + o.total, 0)
+    const totalRevenue = tattooRevenue + shopRevenue
+    const totalFromAll = totalRevenue
 
     const byStatus = {
       confirmed: appointments.filter((a) => a.status === 'confirmed').length,
@@ -98,7 +99,6 @@ export default function Analytics() {
       totalRevenue,
       tattooRevenue,
       shopRevenue,
-      coursesRevenue,
       totalFromAll,
       byStatus,
       totalAppts,
@@ -118,7 +118,7 @@ export default function Analytics() {
       dayDensity,
       maxDensity,
     }
-  }, [appointments, shopItems, courses])
+  }, [appointments, orders])
 
   return (
     <motion.div
@@ -191,7 +191,7 @@ export default function Analytics() {
               <div className="w-3 h-3 rounded-full bg-rose shrink-0" />
               <div className="flex-1">
                 <div className="flex justify-between text-xs mb-0.5">
-                  <span className="text-cream">Tienda</span>
+                  <span className="text-cream">Tienda (pedidos)</span>
                   <span className="text-rose">€{stats.shopRevenue}</span>
                 </div>
                 <div className="h-2 rounded-full bg-ink overflow-hidden">
@@ -202,25 +202,6 @@ export default function Analytics() {
                     }}
                     transition={{ duration: 0.6 }}
                     className="h-full rounded-full bg-rose"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-emerald-400 shrink-0" />
-              <div className="flex-1">
-                <div className="flex justify-between text-xs mb-0.5">
-                  <span className="text-cream">Cursos</span>
-                  <span className="text-emerald-400">€{stats.coursesRevenue}</span>
-                </div>
-                <div className="h-2 rounded-full bg-ink overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{
-                      width: `${(stats.coursesRevenue / (stats.totalFromAll || 1)) * 100}%`,
-                    }}
-                    transition={{ duration: 0.6 }}
-                    className="h-full rounded-full bg-emerald-400"
                   />
                 </div>
               </div>

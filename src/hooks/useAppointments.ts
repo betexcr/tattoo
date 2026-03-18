@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, doc,
+  where,
 } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import type { Appointment } from '../types'
 
-export function useAppointments(clientOnly = false) {
+export function useAppointments(clientId?: string | null) {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -13,14 +14,17 @@ export function useAppointments(clientOnly = false) {
   const fetch = useCallback(async () => {
     setLoading(true)
     try {
-      const q = query(collection(db, 'appointments'), orderBy('date', 'asc'))
+      const constraints = clientId
+        ? [where('client_id', '==', clientId), orderBy('date', 'asc')]
+        : [orderBy('date', 'asc')]
+      const q = query(collection(db, 'appointments'), ...constraints)
       const snap = await getDocs(q)
       setAppointments(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Appointment))
     } catch (e: unknown) {
       setError((e as Error).message)
     }
     setLoading(false)
-  }, [])
+  }, [clientId])
 
   useEffect(() => { fetch() }, [fetch])
 
@@ -80,7 +84,10 @@ export function useAppointments(clientOnly = false) {
     return slots
   }, [appointments])
 
-  const filtered = clientOnly ? appointments : appointments
+  const filtered = useMemo(
+    () => clientId ? appointments.filter(a => a.client_id === clientId) : appointments,
+    [appointments, clientId],
+  )
 
   return {
     appointments: filtered,

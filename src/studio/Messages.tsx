@@ -3,13 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Send } from 'lucide-react'
 import { useChatConversations, useChat } from '../hooks/useChat'
-
-const QUICK_REPLIES = [
-  'Tu cita está confirmada',
-  'Enviaré el boceto pronto',
-  'Recuerda los cuidados post-tattoo',
-  '¿Podemos reagendar?',
-]
+import { useStudioConfig } from '../contexts/StudioConfigContext'
 
 function getInitials(name: string): string {
   return name
@@ -49,6 +43,8 @@ const itemVariants = {
 }
 
 export default function Messages() {
+  const { config } = useStudioConfig()
+  const quickReplies = config.chat_config.canned_responses.slice(0, 6)
   const { conversations } = useChatConversations()
   const [activeClientId, setActiveClientId] = useState<string | null>(null)
   const [inputText, setInputText] = useState('')
@@ -174,7 +170,7 @@ export default function Messages() {
 
             <div className="p-4 border-t border-white/5 bg-ink shrink-0 space-y-2">
               <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                {QUICK_REPLIES.map((text) => (
+                {quickReplies.map((text) => (
                   <button
                     key={text}
                     onClick={() => handleQuickReply(text)}

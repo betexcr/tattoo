@@ -1,5 +1,6 @@
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Image,
   CalendarPlus,
@@ -13,11 +14,14 @@ import {
   Star,
   ArrowRight,
   MessageCircle,
+  Plus,
 } from 'lucide-react'
-import { suggestions } from '../data/constants'
+import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { usePortfolio } from '../hooks/usePortfolio'
 import { useShop } from '../hooks/useShop'
 import { useCourses } from '../hooks/useCourses'
+import { useReviews } from '../hooks/useReviews'
+import { useAuth } from '../contexts/AuthContext'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -41,8 +45,6 @@ const lineVariants = {
   },
 }
 
-const topSuggestions = suggestions.sort((a, b) => b.popularity - a.popularity).slice(0, 3)
-
 const quickActions = [
   { to: '/portfolio', label: 'Portfolio', icon: Image, desc: 'Ver trabajos' },
   { to: '/book', label: 'Reservar', icon: CalendarPlus, desc: 'Agendar cita' },
@@ -52,20 +54,40 @@ const quickActions = [
   { to: '/courses', label: 'Cursos', icon: GraduationCap, desc: 'Aprende' },
 ]
 
-const reviews = [
-  { name: 'Lucía M.', text: 'Un trabajo increíble. Valentina captó exactamente lo que quería. Totalmente recomendable.', rating: 5, style: 'Fine Line' },
-  { name: 'Andrés P.', text: 'El estudio es precioso y la atención impecable. Mi tatuaje sanó perfecto.', rating: 5, style: 'Geometric' },
-  { name: 'Carmen R.', text: 'Ya llevo 3 tatuajes con ella. Cada vez supera mis expectativas. Artista de verdad.', rating: 5, style: 'Dotwork' },
-]
-
 export default function Home() {
+  const { config } = useStudioConfig()
   const { items: allPortfolioItems } = usePortfolio()
   const { items: allShopItems } = useShop()
   const { courses: allCourses } = useCourses()
+  const { reviews: dbReviews, create: createReview } = useReviews()
+  const { profile } = useAuth()
+  const [showReviewForm, setShowReviewForm] = useState(false)
+  const [reviewForm, setReviewForm] = useState({ name: '', text: '', rating: 5, style: '' })
+  const [reviewSubmitted, setReviewSubmitted] = useState(false)
+
+  const topSuggestions = useMemo(
+    () => [...config.suggestions].sort((a, b) => b.popularity - a.popularity).slice(0, 3),
+    [config.suggestions]
+  )
 
   const featuredWork = allPortfolioItems.slice(0, 6)
   const featuredProducts = allShopItems.filter((s) => s.in_stock).slice(0, 4)
   const nextCourse = allCourses[0]
+  const allReviews = useMemo(() => {
+    const fromDb = dbReviews.map(r => ({ name: r.name, text: r.text, rating: r.rating, style: r.style }))
+    return [...fromDb, ...config.home_content.reviews]
+  }, [dbReviews, config.home_content.reviews])
+  const reviews = allReviews.slice(0, 6)
+
+  const handleReviewSubmit = async () => {
+    if (!reviewForm.text.trim() || !reviewForm.name.trim()) return
+    const { error } = await createReview(reviewForm)
+    if (!error) {
+      setReviewSubmitted(true)
+      setReviewForm({ name: '', text: '', rating: 5, style: '' })
+      setTimeout(() => { setShowReviewForm(false); setReviewSubmitted(false) }, 2000)
+    }
+  }
 
   return (
     <div className="min-h-dvh">
@@ -87,13 +109,13 @@ export default function Home() {
 
         <div className="relative z-10 space-y-4">
           <motion.div variants={itemVariants}>
-            <p className="text-gold/70 text-[10px] tracking-[0.35em] uppercase font-sans mb-2">Tattoo Art Studio</p>
+            <p className="text-gold/70 text-[10px] tracking-[0.35em] uppercase font-sans mb-2">{config.home_content.subtitle}</p>
             <h1 className="font-serif text-4xl tracking-[0.15em] text-cream drop-shadow-lg">
-              INK & SOUL
+              {config.studio_name}
             </h1>
           </motion.div>
           <motion.p variants={itemVariants} className="text-cream-dark/80 text-sm leading-relaxed max-w-[280px]">
-            Arte que vive en tu piel. Diseños únicos, hechos con pasión y dedicación.
+            {config.home_content.tagline}
           </motion.p>
           <motion.div
             variants={lineVariants}
@@ -271,9 +293,72 @@ export default function Home() {
         variants={containerVariants}
         className="px-5 py-8"
       >
-        <motion.h2 variants={itemVariants} className="font-serif text-xl text-cream mb-4">
-          Lo que dicen nuestros clientes
-        </motion.h2>
+        <motion.div variants={itemVariants} className="flex items-center justify-between mb-4">
+          <h2 className="font-serif text-xl text-cream">Lo que dicen nuestros clientes</h2>
+          <button
+            onClick={() => { setShowReviewForm(true); if (profile) setReviewForm(f => ({ ...f, name: profile.full_name })) }}
+            className="flex items-center gap-1 text-xs text-gold hover:text-gold-light transition-colors"
+          >
+            <Plus size={14} />
+            Dejar reseña
+          </button>
+        </motion.div>
+
+        <AnimatePresence>
+          {showReviewForm && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden mb-4"
+            >
+              {reviewSubmitted ? (
+                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
+                  <p className="text-emerald-400 text-sm font-medium">Gracias por tu reseña</p>
+                </div>
+              ) : (
+                <div className="p-4 rounded-xl bg-ink-medium/40 border border-white/5 space-y-3">
+                  <input
+                    type="text"
+                    placeholder="Tu nombre"
+                    value={reviewForm.name}
+                    onChange={e => setReviewForm(f => ({ ...f, name: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm"
+                  />
+                  <textarea
+                    placeholder="Tu experiencia..."
+                    value={reviewForm.text}
+                    onChange={e => setReviewForm(f => ({ ...f, text: e.target.value }))}
+                    rows={2}
+                    className="w-full px-3 py-2 rounded-lg bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm resize-none"
+                  />
+                  <div className="flex items-center gap-4">
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map(n => (
+                        <button key={n} onClick={() => setReviewForm(f => ({ ...f, rating: n }))}>
+                          <Star size={18} className={n <= reviewForm.rating ? 'text-gold fill-gold' : 'text-subtle'} />
+                        </button>
+                      ))}
+                    </div>
+                    <select
+                      value={reviewForm.style}
+                      onChange={e => setReviewForm(f => ({ ...f, style: e.target.value }))}
+                      className="flex-1 px-2 py-1 rounded-lg bg-ink border border-white/10 text-cream text-xs"
+                    >
+                      <option value="">Estilo</option>
+                      {config.tattoo_styles.slice(0, 8).map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setShowReviewForm(false)} className="flex-1 py-2 rounded-lg border border-white/10 text-subtle text-sm">Cancelar</button>
+                    <button onClick={handleReviewSubmit} className="flex-1 py-2 rounded-lg bg-gold text-ink text-sm font-medium">Enviar</button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div className="space-y-3">
           {reviews.map((review, i) => (
             <motion.div
@@ -287,7 +372,7 @@ export default function Home() {
                     <Star key={j} size={12} className="text-gold fill-gold" />
                   ))}
                 </div>
-                <span className="text-[10px] text-subtle px-1.5 py-0.5 rounded bg-white/5">{review.style}</span>
+                {review.style && <span className="text-[10px] text-subtle px-1.5 py-0.5 rounded bg-white/5">{review.style}</span>}
               </div>
               <p className="text-cream-dark text-sm leading-relaxed italic">"{review.text}"</p>
               <p className="text-subtle text-xs mt-2">— {review.name}</p>
@@ -394,7 +479,7 @@ export default function Home() {
           </Link>
           <Link
             to="/contact"
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gold/10 border border-gold/20 text-gold text-sm font-medium hover:bg-gold/20 transition-all"
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gold/10 border border-gold/20 text-gold text-sm font-medium hover:bg-gold/20 transition-colors"
           >
             Contactar
             <ArrowRight size={14} />

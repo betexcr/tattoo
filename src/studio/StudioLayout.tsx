@@ -6,6 +6,7 @@ import {
   CalendarDays,
   Users,
   MessageCircle,
+  Package,
   Image,
   BarChart3,
   Settings,
@@ -22,6 +23,7 @@ const navItems = [
 ]
 
 const moreItems = [
+  { to: '/studio/orders', icon: Package, label: 'Pedidos', desc: 'Gestionar pedidos' },
   { to: '/studio/portfolio', icon: Image, label: 'Portfolio', desc: 'Gestionar trabajos' },
   { to: '/studio/analytics', icon: BarChart3, label: 'Analíticas', desc: 'Métricas del negocio' },
   { to: '/studio/settings', icon: Settings, label: 'Configuración', desc: 'Ajustes del estudio' },
@@ -38,6 +40,7 @@ export default function StudioLayout() {
     if (path.includes('appointments')) return 'Citas'
     if (path.includes('clients')) return 'Clientes'
     if (path.includes('messages')) return 'Mensajes'
+    if (path.includes('orders')) return 'Pedidos'
     if (path.includes('portfolio')) return 'Portfolio'
     if (path.includes('analytics')) return 'Analíticas'
     if (path.includes('settings')) return 'Configuración'

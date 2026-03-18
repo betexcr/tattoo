@@ -1,50 +1,19 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Heart, Flame, ChevronRight } from 'lucide-react'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { db } from '../lib/firebase'
 import PageHeader from '../components/PageHeader'
-import { suggestions } from '../data/constants'
+import { useStudioConfig } from '../contexts/StudioConfigContext'
+import { useAuth } from '../contexts/AuthContext'
 
-const QUIZ_QUESTIONS = [
-  {
-    id: 'q1',
-    question: '¿Qué te atrae más?',
-    options: ['Naturaleza', 'Geometría', 'Animales', 'Símbolos'],
-  },
-  {
-    id: 'q2',
-    question: '¿Prefieres diseños...',
-    options: ['Pequeños y discretos', 'Medianos', 'Grandes y llamativos'],
-  },
-  {
-    id: 'q3',
-    question: '¿Qué estética te representa?',
-    options: ['Minimalista', 'Detallada', 'Colorida', 'Oscura'],
-  },
-] as const
-
-const STYLE_RECOMMENDATIONS: Record<string, { style: string; description: string }> = {
-  'Naturaleza-Minimalista': { style: 'Fine Line', description: 'Líneas delicadas con elementos botánicos' },
-  'Naturaleza-Detallada': { style: 'Neo Traditional', description: 'Flores y naturaleza con detalles ricos' },
-  'Naturaleza-Colorida': { style: 'Watercolor', description: 'Naturaleza con splash de colores' },
-  'Naturaleza-Oscura': { style: 'Blackwork', description: 'Elementos naturales en negro intenso' },
-  'Geometría-Minimalista': { style: 'Geometric', description: 'Formas puras y líneas limpias' },
-  'Geometría-Detallada': { style: 'Mandala', description: 'Patrones geométricos intrincados' },
-  'Geometría-Colorida': { style: 'Neo Traditional', description: 'Geometría con acentos de color' },
-  'Geometría-Oscura': { style: 'Blackwork', description: 'Geometría sagrada en negro' },
-  'Animales-Minimalista': { style: 'Fine Line', description: 'Siluetas de animales delicadas' },
-  'Animales-Detallada': { style: 'Dotwork', description: 'Fauna con texturas y detalles' },
-  'Animales-Colorida': { style: 'Neo Traditional', description: 'Animales con colores vibrantes' },
-  'Animales-Oscura': { style: 'Tribal', description: 'Animales en estilo tribal oscuro' },
-  'Símbolos-Minimalista': { style: 'Minimalist', description: 'Símbolos simples y elegantes' },
-  'Símbolos-Detallada': { style: 'Ornamental', description: 'Símbolos decorativos elaborados' },
-  'Símbolos-Colorida': { style: 'Traditional', description: 'Símbolos clásicos con color' },
-  'Símbolos-Oscura': { style: 'Blackwork', description: 'Símbolos en negro sólido' },
-}
-
-function getStyleRecommendation(answers: string[]): { style: string; description: string } {
+function getStyleRecommendation(
+  answers: string[],
+  styleRecommendations: Record<string, { style: string; description: string }>
+): { style: string; description: string } {
   const key = `${answers[0]}-${answers[2]}`
-  return STYLE_RECOMMENDATIONS[key] ?? {
+  return styleRecommendations[key] ?? {
     style: 'Fine Line',
     description: 'Líneas delicadas y elegantes para cualquier diseño',
   }
@@ -63,23 +32,42 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 }
 
-const TRENDING_THRESHOLD = 85
-
 export default function Suggestions() {
+  const { config } = useStudioConfig()
+  const { user } = useAuth()
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set())
   const [quizOpen, setQuizOpen] = useState(false)
   const [quizStep, setQuizStep] = useState(0)
   const [quizAnswers, setQuizAnswers] = useState<string[]>([])
 
+  useEffect(() => {
+    if (!user) return
+    getDoc(doc(db, 'user_likes', user.uid)).then(snap => {
+      if (snap.exists()) {
+        const data = snap.data()
+        if (Array.isArray(data.liked_ids)) setLikedIds(new Set(data.liked_ids))
+      }
+    }).catch(() => {})
+  }, [user])
+
+  const persistLikes = useCallback((ids: Set<string>) => {
+    if (!user) return
+    setDoc(doc(db, 'user_likes', user.uid), { user_id: user.uid, liked_ids: [...ids] }, { merge: true }).catch(() => {})
+  }, [user])
+
+  const quizQuestions = config.quiz_config.questions
+  const styleRecommendations = config.quiz_config.style_recommendations
+  const trendingThreshold = config.quiz_config.trending_threshold
+
   const sortedSuggestions = useMemo(
-    () => [...suggestions].sort((a, b) => b.popularity - a.popularity),
-    []
+    () => [...config.suggestions].sort((a, b) => b.popularity - a.popularity),
+    [config.suggestions]
   )
 
   const trendingStyles = useMemo(
     () =>
-      [...new Set(sortedSuggestions.filter((s) => s.popularity >= TRENDING_THRESHOLD).map((s) => s.style))],
-    [sortedSuggestions]
+      [...new Set(sortedSuggestions.filter((s) => s.popularity >= trendingThreshold).map((s) => s.style))],
+    [sortedSuggestions, trendingThreshold]
   )
 
   const toggleLike = (id: string) => {
@@ -87,6 +75,7 @@ export default function Suggestions() {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
+      persistLikes(next)
       return next
     })
   }
@@ -94,7 +83,7 @@ export default function Suggestions() {
   const handleQuizAnswer = (answer: string) => {
     const newAnswers = [...quizAnswers, answer]
     setQuizAnswers(newAnswers)
-    if (quizStep < QUIZ_QUESTIONS.length - 1) {
+    if (quizStep < quizQuestions.length - 1) {
       setQuizStep((s) => s + 1)
     }
   }
@@ -105,7 +94,7 @@ export default function Suggestions() {
     setQuizAnswers([])
   }
 
-  const quizResult = quizAnswers.length === 3 ? getStyleRecommendation(quizAnswers) : null
+  const quizResult = quizAnswers.length === 3 ? getStyleRecommendation(quizAnswers, styleRecommendations) : null
 
   return (
     <div className="min-h-dvh pb-6">
@@ -256,7 +245,7 @@ export default function Suggestions() {
                 {!quizResult ? (
                   <>
                     <div className="flex gap-1 mb-6">
-                      {QUIZ_QUESTIONS.map((_, i) => (
+                      {quizQuestions.map((_, i) => (
                         <div
                           key={i}
                           className="h-1 flex-1 rounded-full"
@@ -267,10 +256,10 @@ export default function Suggestions() {
                       ))}
                     </div>
                     <h3 className="font-serif text-cream text-lg mb-4">
-                      {QUIZ_QUESTIONS[quizStep].question}
+                      {quizQuestions[quizStep].question}
                     </h3>
                     <div className="space-y-2">
-                      {QUIZ_QUESTIONS[quizStep].options.map((opt) => (
+                      {quizQuestions[quizStep].options.map((opt) => (
                         <motion.button
                           key={opt}
                           whileTap={{ scale: 0.98 }}

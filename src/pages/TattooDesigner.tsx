@@ -19,8 +19,11 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { addDoc, collection } from 'firebase/firestore'
+import { db } from '../lib/firebase'
 import PageHeader from '../components/PageHeader'
-import { tattooStyles } from '../data/constants'
+import { useStudioConfig } from '../contexts/StudioConfigContext'
+import { useAuth } from '../contexts/AuthContext'
 
 type SizeOption = 'small' | 'medium' | 'large'
 type ColorMode = 'negro' | 'color'
@@ -87,6 +90,8 @@ function getStyleBorderClass(style: string | null): string {
 
 export default function TattooDesigner() {
   const navigate = useNavigate()
+  const { config } = useStudioConfig()
+  const { user } = useAuth()
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null)
   const [selectedSize, setSelectedSize] = useState<SizeOption>('medium')
   const [selectedElements, setSelectedElements] = useState<DesignElement[]>([])
@@ -172,7 +177,7 @@ export default function TattooDesigner() {
         <div>
           <p className="text-subtle text-xs uppercase tracking-wider mb-2 font-sans">Estilo</p>
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-            {tattooStyles.map((style) => (
+            {config.tattoo_styles.map((style) => (
               <button
                 key={style}
                 onClick={() => setSelectedStyle(style)}
@@ -397,9 +402,24 @@ export default function TattooDesigner() {
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.98 }}
-            onClick={() => {
+            onClick={async () => {
               setShowShared(true)
-              setTimeout(() => { setShowShared(false); navigate('/chat') }, 1500)
+              const design = {
+                style: selectedStyle,
+                size: selectedSize,
+                elements: selectedElements.map((e) => e.name),
+                colorMode,
+                colors: selectedColors,
+                notes,
+                client_id: user?.uid ?? null,
+                created_at: new Date().toISOString(),
+              }
+              try {
+                const ref = await addDoc(collection(db, 'design_shares'), design)
+                setTimeout(() => { setShowShared(false); navigate(`/chat?design=${ref.id}`) }, 1500)
+              } catch {
+                setTimeout(() => { setShowShared(false); navigate('/chat') }, 1500)
+              }
             }}
             className="flex-1 py-3.5 rounded-xl border border-gold text-gold font-serif font-medium text-sm hover:bg-gold/10 transition-colors"
           >

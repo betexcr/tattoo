@@ -5,19 +5,28 @@ import { join } from 'path'
 
 const projectId = process.env.FIREBASE_PROJECT_ID || 'tattoo-aa948'
 
-let accessToken = process.env.FIREBASE_TOKEN
-if (!accessToken) {
+async function getAccessToken() {
   const configPath = join(homedir(), '.config', 'configstore', 'firebase-tools.json')
   const config = JSON.parse(readFileSync(configPath, 'utf-8'))
-  accessToken = config.tokens?.access_token
+  const refreshToken = config.tokens?.refresh_token
+  if (!refreshToken) throw new Error('No refresh token found. Run `firebase login` first.')
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: '563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com',
+      client_secret: 'j9iVZfS8kkCEFUPaAeJV0sAi',
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+    }),
+  })
+  const data = await res.json()
+  return data.access_token
 }
 
-if (!accessToken) {
-  console.error('No access token found. Run `firebase login` first.')
-  process.exit(1)
-}
+let accessToken = await getAccessToken()
 
-const BASE = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/default/documents`
+const BASE = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents`
 
 function toFirestoreValue(val) {
   if (val === null || val === undefined) return { nullValue: null }

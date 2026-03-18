@@ -10,8 +10,9 @@ import {
   CheckCheck,
   AlertTriangle,
 } from 'lucide-react'
-import { bodyParts, tattooStyles } from '../data/constants'
+import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { useAppointments } from '../hooks/useAppointments'
+import { useNotifications } from '../hooks/useNotifications'
 import type { Appointment } from '../types'
 
 const WEEKDAY_LABELS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
@@ -74,7 +75,9 @@ const itemVariants = {
 }
 
 export default function Appointments() {
+  const { config } = useStudioConfig()
   const { appointments, create, updateStatus: hookUpdateStatus } = useAppointments()
+  const { create: createNotification } = useNotifications()
   const [viewMode, setViewMode] = useState<ViewMode>('calendar')
   const [calendarView, setCalendarView] = useState({ year: 2026, month: 2 })
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
@@ -194,6 +197,17 @@ export default function Appointments() {
     await hookUpdateStatus(id, status)
     setRejectConfirmId(null)
     setCancelConfirmId(null)
+    const apt = appointments.find(a => a.id === id)
+    if (apt?.client_id) {
+      const statusLabels: Record<string, string> = { confirmed: 'confirmada', rejected: 'rechazada', completed: 'completada' }
+      createNotification({
+        user_id: apt.client_id,
+        title: `Cita ${statusLabels[status] ?? status}`,
+        body: `Tu cita del ${apt.date} a las ${apt.time} ha sido ${statusLabels[status] ?? status}.`,
+        type: 'appointment',
+        link: '/agenda',
+      })
+    }
   }
 
   const handleSave = async () => {
@@ -699,7 +713,7 @@ export default function Appointments() {
                     className="w-full px-4 py-3 rounded-xl bg-ink border border-white/5 text-cream focus:outline-none focus:border-gold/50"
                   >
                     <option value="">Seleccionar</option>
-                    {bodyParts.map((part) => (
+                    {config.body_parts.map((part) => (
                       <option key={part} value={part}>
                         {part}
                       </option>
@@ -714,7 +728,7 @@ export default function Appointments() {
                     className="w-full px-4 py-3 rounded-xl bg-ink border border-white/5 text-cream focus:outline-none focus:border-gold/50"
                   >
                     <option value="">Seleccionar</option>
-                    {tattooStyles.map((style) => (
+                    {config.tattoo_styles.map((style) => (
                       <option key={style} value={style}>
                         {style}
                       </option>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Pencil,
@@ -8,9 +8,11 @@ import {
   ChevronDown,
   Eye,
   EyeOff,
+  Upload,
 } from 'lucide-react'
-import { tattooStyles } from '../data/constants'
+import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { usePortfolio } from '../hooks/usePortfolio'
+import { useImageUpload } from '../hooks/useImageUpload'
 import type { PortfolioItem } from '../types'
 
 const containerVariants = {
@@ -27,6 +29,7 @@ const itemVariants = {
 }
 
 export default function PortfolioManager() {
+  const { config } = useStudioConfig()
   const { items: portfolio, create, update, remove } = usePortfolio(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null)
@@ -37,6 +40,16 @@ export default function PortfolioManager() {
     image_url: '',
   })
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const { upload, uploading } = useImageUpload()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const path = `portfolio/${Date.now()}-${file.name}`
+    const { url } = await upload(file, path)
+    if (url) setFormData(f => ({ ...f, image_url: url }))
+  }
 
   const totalItems = portfolio.length
   const styleBreakdown = portfolio.reduce<Record<string, number>>((acc, item) => {
@@ -59,7 +72,7 @@ export default function PortfolioManager() {
     setSelectedItem(null)
     setFormData({
       title: '',
-      style: tattooStyles[0] ?? '',
+      style: config.tattoo_styles[0] ?? '',
       description: '',
       image_url: '',
     })
@@ -288,7 +301,7 @@ export default function PortfolioManager() {
                     }
                     className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream focus:outline-none focus:border-gold/50"
                   >
-                    {tattooStyles.map((s) => (
+                    {config.tattoo_styles.map((s) => (
                       <option key={s} value={s}>
                         {s}
                       </option>
@@ -313,18 +326,31 @@ export default function PortfolioManager() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">
-                    URL de imagen
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.image_url}
-                    onChange={(e) =>
-                      setFormData((f) => ({ ...f, image_url: e.target.value }))
-                    }
-                    className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle focus:outline-none focus:border-gold/50"
-                    placeholder="https://..."
-                  />
+                  <label className="block text-xs text-subtle mb-1.5">Imagen</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={formData.image_url}
+                      onChange={(e) =>
+                        setFormData((f) => ({ ...f, image_url: e.target.value }))
+                      }
+                      className="flex-1 px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle focus:outline-none focus:border-gold/50"
+                      placeholder="URL o sube un archivo"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="px-4 py-3 rounded-xl bg-gold/10 text-gold text-sm font-medium hover:bg-gold/20 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      <Upload size={14} />
+                      {uploading ? 'Subiendo...' : 'Subir'}
+                    </button>
+                    <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
+                  </div>
+                  {formData.image_url && (
+                    <img src={formData.image_url} alt="preview" className="mt-2 w-20 h-20 rounded-lg object-cover border border-white/10" />
+                  )}
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button

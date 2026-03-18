@@ -1,6 +1,9 @@
+import { useMemo } from 'react'
 import PageHeader from '../components/PageHeader'
 import { motion } from 'framer-motion'
 import { Instagram, Video, LayoutGrid } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import { useStudioConfig } from '../contexts/StudioConfigContext'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -15,27 +18,27 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 }
 
-const stats = [
-  { value: '8+', label: 'Años' },
-  { value: '2000+', label: 'Tatuajes' },
-  { value: '500+', label: 'Diseños' },
-]
-
-const specialties = ['Fine Line', 'Dotwork', 'Botanical', 'Geometric', 'Watercolor', 'Mandala']
-
-const certifications = [
-  'Curso Avanzado de Higiene y Bioseguridad',
-  'Masterclass en Fine Line - Barcelona 2023',
-  'Workshop de Color Theory - México 2024',
-]
-
-const socialLinks = [
-  { label: 'Instagram', icon: Instagram, href: 'https://instagram.com/inkandsoul.art' },
-  { label: 'TikTok', icon: Video, href: 'https://tiktok.com/@inkandsoul.art' },
-  { label: 'Behance', icon: LayoutGrid, href: 'https://behance.net/inkandsoul' },
-]
-
 export default function About() {
+  const { config } = useStudioConfig()
+
+  const socialLinks = useMemo(() => {
+    const links: { label: string; icon: LucideIcon; href: string }[] = []
+    if (config.social_links.instagram) {
+      links.push({ label: 'Instagram', icon: Instagram, href: config.social_links.instagram })
+    }
+    if (config.social_links.tiktok) {
+      links.push({ label: 'TikTok', icon: Video, href: config.social_links.tiktok })
+    }
+    if (config.social_links.website) {
+      links.push({ label: 'Web', icon: LayoutGrid, href: config.social_links.website })
+    }
+    return links
+  }, [config.social_links])
+
+  const stats = config.about_content.stats
+  const specialties = config.about_content.specialties
+  const certifications = config.about_content.certifications
+
   return (
     <div className="min-h-dvh bg-ink">
       <PageHeader title="La Artista" subtitle="Mi historia" />
@@ -50,8 +53,8 @@ export default function About() {
         >
           <motion.div variants={itemVariants} className="absolute inset-0">
             <img
-              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&h=800&fit=crop"
-              alt="Valentina Reyes"
+              src={config.about_content.hero_image}
+              alt={config.artist_name}
               className="w-full h-full object-cover"
             />
             <div
@@ -64,13 +67,13 @@ export default function About() {
               variants={itemVariants}
               className="font-serif text-3xl text-gold mb-1"
             >
-              Valentina Reyes
+              {config.artist_name}
             </motion.h2>
             <motion.p
               variants={itemVariants}
               className="text-cream-dark text-sm tracking-wide"
             >
-              Tattoo Artist & Visual Creator
+              {config.about_content.artist_title}
             </motion.p>
           </div>
         </motion.section>
@@ -87,11 +90,7 @@ export default function About() {
             variants={itemVariants}
             className="text-cream text-[15px] leading-relaxed"
           >
-            Con más de 8 años de experiencia en el mundo del tatuaje, mi pasión es
-            transformar ideas en arte que perdura. Especializada en fine line,
-            dotwork y diseños botánicos, cada pieza que creo es única y personal.
-            Mi estudio es un espacio seguro donde el arte y la expresión se
-            encuentran.
+            {config.about_content.bio}
           </motion.p>
         </motion.section>
 
@@ -173,29 +172,33 @@ export default function About() {
         </motion.section>
 
         {/* Social links */}
-        <motion.section
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-50px' }}
-          variants={containerVariants}
-          className="px-5 py-8"
-        >
-          <motion.div
-            variants={itemVariants}
-            className="flex justify-center gap-6"
+        {socialLinks.length > 0 && (
+          <motion.section
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            variants={containerVariants}
+            className="px-5 py-8"
           >
-            {socialLinks.map(({ label, icon: Icon, href }) => (
-              <a
-                key={label}
-                href={href}
-                className="w-12 h-12 rounded-full bg-ink-medium border border-gold/20 flex items-center justify-center text-gold hover:bg-gold/10 hover:border-gold/40 transition-colors"
-                aria-label={label}
-              >
-                <Icon size={20} strokeWidth={1.5} />
-              </a>
-            ))}
-          </motion.div>
-        </motion.section>
+            <motion.div
+              variants={itemVariants}
+              className="flex justify-center gap-6"
+            >
+              {socialLinks.map(({ label, icon: Icon, href }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-12 h-12 rounded-full bg-ink-medium border border-gold/20 flex items-center justify-center text-gold hover:bg-gold/10 hover:border-gold/40 transition-colors"
+                  aria-label={label}
+                >
+                  <Icon size={20} strokeWidth={1.5} />
+                </a>
+              ))}
+            </motion.div>
+          </motion.section>
+        )}
       </div>
     </div>
   )

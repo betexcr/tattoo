@@ -13,9 +13,12 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
-import { tattooStyles, bodyParts } from '../data/constants'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { storage } from '../lib/firebase'
+import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { useAppointments } from '../hooks/useAppointments'
 import { useAuth } from '../contexts/AuthContext'
+import { useNotifications } from '../hooks/useNotifications'
 
 const STEPS = [
   { id: 'style', title: 'Estilo', subtitle: 'Elige tu estilo de tatuaje' },
@@ -58,8 +61,10 @@ const slideVariants = {
 
 export default function BookAppointment() {
   const navigate = useNavigate()
+  const { config } = useStudioConfig()
   const { create, getOccupiedSlots } = useAppointments()
   const { user } = useAuth()
+  const { create: createNotification } = useNotifications(user?.uid)
   const occupiedSlots = getOccupiedSlots()
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState(1)
@@ -96,9 +101,12 @@ export default function BookAppointment() {
     }
   }
 
+  const [bookingError, setBookingError] = useState('')
+
   const goNext = async () => {
     if (step === STEPS.length - 1) {
-      await create({
+      setBookingError('')
+      const result = await create({
         client_id: user?.uid ?? null,
         client_name: contact.name,
         date: selectedDate,
@@ -114,6 +122,17 @@ export default function BookAppointment() {
         size: selectedSize,
         notes: contact.notes,
       } as any)
+      if (result?.error) {
+        setBookingError('No se pudo reservar la cita. Inténtalo de nuevo.')
+        return
+      }
+      createNotification({
+        user_id: user?.uid ?? '',
+        title: 'Cita reservada',
+        body: `Tu cita para ${selectedStyle} el ${selectedDate} a las ${selectedTime} ha sido registrada.`,
+        type: 'appointment',
+        link: '/agenda',
+      })
       setBooked(true)
       return
     }
@@ -135,10 +154,22 @@ export default function BookAppointment() {
     input.type = 'file'
     input.accept = 'image/*'
     input.multiple = true
-    input.onchange = () => {
+    input.onchange = async () => {
       if (!input.files) return
-      const urls = Array.from(input.files).map((file) => URL.createObjectURL(file))
-      setReferenceImages((prev) => [...prev, ...urls])
+      const files = Array.from(input.files)
+      const uploaded: string[] = []
+      for (const file of files) {
+        try {
+          const path = `booking-refs/${Date.now()}-${file.name}`
+          const storageRef = ref(storage, path)
+          await uploadBytes(storageRef, file)
+          const url = await getDownloadURL(storageRef)
+          uploaded.push(url)
+        } catch {
+          uploaded.push(URL.createObjectURL(file))
+        }
+      }
+      setReferenceImages(prev => [...prev, ...uploaded])
     }
     input.click()
   }
@@ -358,7 +389,7 @@ export default function BookAppointment() {
             {/* Step 0: Style */}
             {step === 0 && (
               <div className="grid grid-cols-2 gap-2.5">
-                {tattooStyles.map((style) => (
+                {config.tattoo_styles.map((style) => (
                   <button
                     key={style}
                     onClick={() => setSelectedStyle(style)}
@@ -420,7 +451,7 @@ export default function BookAppointment() {
             {/* Step 2: Body part */}
             {step === 2 && (
               <div className="grid grid-cols-3 gap-2.5">
-                {bodyParts.map((part) => (
+                {config.body_parts.map((part) => (
                   <button
                     key={part}
                     onClick={() => setSelectedBodyPart(part)}
@@ -706,6 +737,9 @@ export default function BookAppointment() {
 
       {/* Bottom action bar */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-ink/95 backdrop-blur-lg border-t border-white/5 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        {bookingError && (
+          <p className="text-rose text-sm text-center mb-2">{bookingError}</p>
+        )}
         <div className="flex gap-3">
           {step > 0 && (
             <button

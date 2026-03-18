@@ -134,6 +134,84 @@ export interface ContactSubmission {
   created_at: string
 }
 
+export interface Suggestion {
+  id: string
+  title: string
+  description: string
+  style: string
+  popularity: number
+}
+
+export interface Review {
+  name: string
+  text: string
+  rating: number
+  style: string
+}
+
+export interface AboutStat {
+  value: string
+  label: string
+}
+
+export interface QuickReply {
+  label: string
+  key: string
+}
+
+export interface QuizQuestion {
+  id: string
+  question: string
+  options: string[]
+}
+
+export interface StyleRecommendation {
+  style: string
+  description: string
+}
+
+export interface ChatConfig {
+  artist_name: string
+  artist_initials: string
+  welcome_message: string
+  quick_replies: QuickReply[]
+  canned_responses: string[]
+  fallback_response: string
+  response_time_text: string
+}
+
+export interface HomeContent {
+  subtitle: string
+  tagline: string
+  reviews: Review[]
+}
+
+export interface AboutContent {
+  hero_image: string
+  artist_title: string
+  bio: string
+  stats: AboutStat[]
+  specialties: string[]
+  certifications: string[]
+}
+
+export interface QuizConfig {
+  questions: QuizQuestion[]
+  style_recommendations: Record<string, StyleRecommendation>
+  trending_threshold: number
+}
+
+export interface AppNotification {
+  id: string
+  user_id: string
+  type: 'appointment' | 'message' | 'order' | 'general'
+  title: string
+  body: string
+  read: boolean
+  created_at: string
+  link?: string
+}
+
 export interface StudioSettings {
   id: string
   studio_name: string
@@ -146,5 +224,13 @@ export interface StudioSettings {
   prices: Record<string, unknown>
   social_links: Record<string, unknown>
   notifications: Record<string, unknown>
+  tattoo_styles: string[]
+  body_parts: string[]
+  suggestions: Suggestion[]
+  chatbot_responses: Record<string, string>
+  chat_config: ChatConfig
+  home_content: HomeContent
+  about_content: AboutContent
+  quiz_config: QuizConfig
   updated_at: string
 }

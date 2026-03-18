@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import PageHeader from '../components/PageHeader'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Phone, Mail, MapPin, Clock, Instagram, Video, LayoutGrid, CheckCircle } from 'lucide-react'
-import { bodyParts, tattooStyles } from '../data/constants'
+import type { LucideIcon } from 'lucide-react'
+import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { useContactForm } from '../hooks/useContactForm'
 
 const containerVariants = {
@@ -18,36 +19,32 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 }
 
-const contactInfo = [
-  {
-    icon: Phone,
-    label: 'Teléfono',
-    value: '+34 612 345 678',
-  },
-  {
-    icon: Mail,
-    label: 'Email',
-    value: 'hola@inkandsoul.art',
-  },
-  {
-    icon: MapPin,
-    label: 'Ubicación',
-    value: 'Calle del Arte 42, Madrid',
-  },
-  {
-    icon: Clock,
-    label: 'Horario',
-    value: 'Lun-Vie 10:00-19:00, Sáb 10:00-15:00',
-  },
-]
-
-const socialLinks = [
-  { label: 'Instagram', icon: Instagram, href: 'https://instagram.com/inkandsoul.art' },
-  { label: 'TikTok', icon: Video, href: 'https://tiktok.com/@inkandsoul.art' },
-  { label: 'Behance', icon: LayoutGrid, href: 'https://behance.net/inkandsoul' },
-]
+function formatScheduleDisplay(schedule: Record<string, unknown>): string {
+  if (!schedule || Object.keys(schedule).length === 0) {
+    return 'Consultar horario'
+  }
+  const parts: string[] = []
+  const dayMap: Record<string, string> = {
+    monday: 'Lun', tuesday: 'Mar', wednesday: 'Mié', thursday: 'Jue',
+    friday: 'Vie', saturday: 'Sáb', sunday: 'Dom',
+  }
+  for (const [k, v] of Object.entries(schedule)) {
+    const day = dayMap[k.toLowerCase()] ?? k
+    if (v && typeof v === 'object' && v !== null) {
+      const obj = v as { open?: boolean; start?: string; end?: string }
+      if (obj.open === false) continue
+      if (obj.start && obj.end) {
+        parts.push(`${day} ${obj.start}–${obj.end}`)
+      }
+    } else if (typeof v === 'string' && v) {
+      parts.push(`${day} ${v}`)
+    }
+  }
+  return parts.length > 0 ? parts.join(', ') : 'Consultar horario'
+}
 
 export default function Contact() {
+  const { config } = useStudioConfig()
   const { submit } = useContactForm()
   const [formData, setFormData] = useState({
     name: '',
@@ -58,6 +55,30 @@ export default function Contact() {
     bodyPart: '',
   })
   const [submitted, setSubmitted] = useState(false)
+
+  const contactInfo = useMemo(
+    () => [
+      { icon: Phone as LucideIcon, label: 'Teléfono', value: config.phone },
+      { icon: Mail as LucideIcon, label: 'Email', value: config.email },
+      { icon: MapPin as LucideIcon, label: 'Ubicación', value: config.address },
+      { icon: Clock as LucideIcon, label: 'Horario', value: formatScheduleDisplay(config.schedule) },
+    ],
+    [config.phone, config.email, config.address, config.schedule]
+  )
+
+  const socialLinks = useMemo(() => {
+    const links: { label: string; icon: LucideIcon; href: string }[] = []
+    if (config.social_links.instagram) {
+      links.push({ label: 'Instagram', icon: Instagram, href: config.social_links.instagram })
+    }
+    if (config.social_links.tiktok) {
+      links.push({ label: 'TikTok', icon: Video, href: config.social_links.tiktok })
+    }
+    if (config.social_links.website) {
+      links.push({ label: 'Web', icon: LayoutGrid, href: config.social_links.website })
+    }
+    return links
+  }, [config.social_links])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -199,7 +220,7 @@ export default function Contact() {
               }}
             >
               <option value="">Selecciona un estilo</option>
-              {tattooStyles.map((style) => (
+              {config.tattoo_styles.map((style) => (
                 <option key={style} value={style}>
                   {style}
                 </option>
@@ -225,7 +246,7 @@ export default function Contact() {
               }}
             >
               <option value="">Selecciona una zona</option>
-              {bodyParts.map((part) => (
+              {config.body_parts.map((part) => (
                 <option key={part} value={part}>
                   {part}
                 </option>
@@ -260,29 +281,33 @@ export default function Contact() {
         </motion.form>
 
         {/* Social links */}
-        <motion.section
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-50px' }}
-          variants={containerVariants}
-          className="pt-10"
-        >
-          <motion.div
-            variants={itemVariants}
-            className="flex justify-center gap-4"
+        {socialLinks.length > 0 && (
+          <motion.section
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            variants={containerVariants}
+            className="pt-10"
           >
-            {socialLinks.map(({ label, icon: Icon, href }) => (
-              <a
-                key={label}
-                href={href}
-                className="w-11 h-11 rounded-full bg-ink-medium border border-white/5 flex items-center justify-center text-gold hover:bg-gold/10 hover:border-gold/30 transition-colors"
-                aria-label={label}
-              >
-                <Icon size={18} strokeWidth={1.5} />
-              </a>
-            ))}
-          </motion.div>
-        </motion.section>
+            <motion.div
+              variants={itemVariants}
+              className="flex justify-center gap-4"
+            >
+              {socialLinks.map(({ label, icon: Icon, href }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-11 h-11 rounded-full bg-ink-medium border border-white/5 flex items-center justify-center text-gold hover:bg-gold/10 hover:border-gold/30 transition-colors"
+                  aria-label={label}
+                >
+                  <Icon size={18} strokeWidth={1.5} />
+                </a>
+              ))}
+            </motion.div>
+          </motion.section>
+        )}
       </div>
     </div>
   )

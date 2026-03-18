@@ -1,37 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, Bot, Check, CheckCheck } from 'lucide-react'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '../lib/firebase'
 import PageHeader from '../components/PageHeader'
-import { chatbotResponses } from '../data/constants'
+import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { useChat } from '../hooks/useChat'
 import { useAuth } from '../contexts/AuthContext'
 import type { ChatMessage } from '../types'
-
-const QUICK_REPLIES: { label: string; key: keyof typeof chatbotResponses }[] = [
-  { label: 'Precios', key: 'precio' },
-  { label: 'Cuidados', key: 'cuidados' },
-  { label: 'Depósito', key: 'deposito' },
-  { label: 'Duración', key: 'duracion' },
-  { label: 'Dolor', key: 'dolor' },
-  { label: 'Horario', key: 'horario' },
-  { label: 'Estilos', key: 'estilos' },
-  { label: 'Cancelación', key: 'cancelar' },
-  { label: 'Preparación', key: 'preparacion' },
-]
-
-const ARTIST_NAME = 'Valentina Reyes'
-const ARTIST_INITIALS = 'VR'
-
-const ARTIST_RESPONSES = [
-  '¡Gracias por tu mensaje! Lo reviso y te contesto en un momento 😊',
-  'Qué buena idea! Me encantaría trabajar en eso. ¿Tienes alguna referencia visual?',
-  'Perfecto, lo anoto. ¿Hay algo más que quieras comentarme?',
-  '¡Me encanta! Podemos hablar de los detalles cuando vengas al estudio.',
-  'Claro que sí, sin problema. ¿Quieres que te reserve un hueco esta semana?',
-  '¡Genial! Te preparo un boceto y te lo enseño antes de la cita.',
-  'Buena elección de zona. El resultado va a quedar increíble ahí.',
-  'Recuerda hidratar bien la zona los días previos a tu cita 🙌',
-]
 
 interface ArtistDisplayMessage {
   id: string
@@ -40,16 +17,6 @@ interface ArtistDisplayMessage {
   timestamp: string
   read: boolean
 }
-
-const INITIAL_MESSAGES: ArtistDisplayMessage[] = [
-  {
-    id: 'welcome-1',
-    from: 'artist',
-    text: '¡Hola! Bienvenido/a a INK & SOUL. Soy Valentina, ¿en qué puedo ayudarte? 😊',
-    timestamp: new Date(Date.now() - 86400000).toISOString(),
-    read: true,
-  },
-]
 
 function dbToDisplay(msg: ChatMessage): ArtistDisplayMessage {
   return {
@@ -76,7 +43,7 @@ function formatRelativeTime(iso: string): string {
   return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 }
 
-function findChatbotMatch(text: string): string | null {
+function findChatbotMatch(text: string, chatbotResponses: Record<string, string>): string | null {
   const normalized = text
     .toLowerCase()
     .normalize('NFD')
@@ -89,9 +56,6 @@ function findChatbotMatch(text: string): string | null {
   return null
 }
 
-const FALLBACK_BOT_RESPONSE =
-  'No tengo una respuesta específica para eso. ¿Te gustaría hablar directamente con la artista? Usa la pestaña "Artista" para enviarle un mensaje.'
-
 interface ChatbotMessage {
   id: string
   from: 'user' | 'bot'
@@ -100,7 +64,9 @@ interface ChatbotMessage {
 }
 
 export default function Chat() {
+  const { config } = useStudioConfig()
   const { user } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const clientId = user?.uid
   const {
     messages: dbMessages,
@@ -110,7 +76,6 @@ export default function Chat() {
     unsubscribe,
   } = useChat(clientId)
   const [activeTab, setActiveTab] = useState<'artist' | 'assistant'>('artist')
-  const [messages, setMessages] = useState<ArtistDisplayMessage[]>(INITIAL_MESSAGES)
   const [chatbotMessages, setChatbotMessages] = useState<ChatbotMessage[]>([])
   const [inputText, setInputText] = useState('')
   const [isTyping, setIsTyping] = useState(false)
@@ -118,6 +83,20 @@ export default function Chat() {
   const artistScrollRef = useRef<HTMLDivElement>(null)
   const botScrollRef = useRef<HTMLDivElement>(null)
   const responseIndexRef = useRef(0)
+
+  const artistFirstName = config.chat_config.artist_name.split(' ')[0] || config.chat_config.artist_name
+
+  const initialMessages: ArtistDisplayMessage[] = [
+    {
+      id: 'welcome-1',
+      from: 'artist',
+      text: config.chat_config.welcome_message,
+      timestamp: new Date(Date.now() - 86400000).toISOString(),
+      read: true,
+    },
+  ]
+
+  const [messages, setMessages] = useState<ArtistDisplayMessage[]>(initialMessages)
 
   useEffect(() => {
     if (activeTab === 'artist' && clientId) {
@@ -134,6 +113,33 @@ export default function Chat() {
   useEffect(() => {
     botScrollRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chatbotMessages])
+
+  useEffect(() => {
+    const designId = searchParams.get('design')
+    if (!designId) return
+    setSearchParams({}, { replace: true })
+    setActiveTab('artist')
+    ;(async () => {
+      try {
+        const snap = await getDoc(doc(db, 'design_shares', designId))
+        if (!snap.exists()) return
+        const d = snap.data()
+        const parts: string[] = []
+        if (d.style) parts.push(`Estilo: ${d.style}`)
+        if (d.size) parts.push(`Tamaño: ${d.size}`)
+        if (d.elements?.length) parts.push(`Elementos: ${d.elements.join(', ')}`)
+        if (d.colorMode) parts.push(`Color: ${d.colorMode === 'negro' ? 'Negro' : 'Color'}`)
+        if (d.notes) parts.push(`Notas: ${d.notes}`)
+        const text = `🎨 Mi diseño de tatuaje:\n${parts.join('\n')}`
+        if (user) {
+          await send(text, 'client')
+        } else {
+          const msg = { id: `design-${Date.now()}`, from: 'user' as const, text, timestamp: new Date().toISOString(), read: false }
+          setMessages((prev) => [...prev, msg])
+        }
+      } catch { /* design not found, ignore */ }
+    })()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSendToArtist = async () => {
     if (!inputText.trim()) return
@@ -159,10 +165,11 @@ export default function Chat() {
       }, 1500)
 
       setArtistTyping(true)
+      const cannedResponses = config.chat_config.canned_responses
       const delay = 2000 + Math.random() * 2000
       setTimeout(() => {
         setArtistTyping(false)
-        const replyText = ARTIST_RESPONSES[responseIndexRef.current % ARTIST_RESPONSES.length]
+        const replyText = cannedResponses[responseIndexRef.current % cannedResponses.length]
         responseIndexRef.current += 1
         const reply: ArtistDisplayMessage = {
           id: `ar-${Date.now()}`,
@@ -187,8 +194,8 @@ export default function Chat() {
     setInputText('')
     setIsTyping(true)
 
-    const key = responseKey ?? findChatbotMatch(question)
-    const responseText = key ? chatbotResponses[key] : FALLBACK_BOT_RESPONSE
+    const key = responseKey ?? findChatbotMatch(question, config.chatbot_responses)
+    const responseText = key ? config.chatbot_responses[key] : config.chat_config.fallback_response
 
     setTimeout(() => {
       setIsTyping(false)
@@ -205,6 +212,8 @@ export default function Chat() {
   const handleQuickReply = (label: string, key: string) => {
     handleSendChatbotMessage(label, key)
   }
+
+  const displayMessages = user ? dbMessages.map(dbToDisplay) : messages.length > 0 ? messages : initialMessages
 
   return (
     <div className="min-h-dvh bg-ink flex flex-col">
@@ -224,7 +233,7 @@ export default function Chat() {
             <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold ${
               activeTab === 'artist' ? 'bg-ink/20 text-ink' : 'bg-gold/20 text-gold'
             }`}>
-              {ARTIST_INITIALS}
+              {config.chat_config.artist_initials}
             </div>
             Artista
           </button>
@@ -248,13 +257,13 @@ export default function Chat() {
           {/* Artist info bar */}
           <div className="px-4 py-2.5 border-b border-white/5 flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center shrink-0">
-              <span className="text-ink text-xs font-bold">{ARTIST_INITIALS}</span>
+              <span className="text-ink text-xs font-bold">{config.chat_config.artist_initials}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-cream text-sm font-medium">{ARTIST_NAME}</p>
+              <p className="text-cream text-sm font-medium">{config.chat_config.artist_name}</p>
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                <span className="text-[10px] text-subtle">Normalmente responde en menos de 1h</span>
+                <span className="text-[10px] text-subtle">{config.chat_config.response_time_text}</span>
               </div>
             </div>
           </div>
@@ -262,7 +271,7 @@ export default function Chat() {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
             <AnimatePresence initial={false}>
-              {(user ? dbMessages.map(dbToDisplay) : messages).map((msg) => (
+              {displayMessages.map((msg) => (
                 <motion.div
                   key={msg.id}
                   initial={{ opacity: 0, y: 12, scale: 0.96 }}
@@ -272,7 +281,7 @@ export default function Chat() {
                 >
                   <div className={`max-w-[85%] flex flex-col ${msg.from === 'user' ? 'items-end' : 'items-start'}`}>
                     {msg.from === 'artist' && (
-                      <span className="text-[10px] text-gold/60 mb-1 ml-1">Valentina</span>
+                      <span className="text-[10px] text-gold/60 mb-1 ml-1">{artistFirstName}</span>
                     )}
                     <div
                       className={`px-4 py-2.5 rounded-2xl ${
@@ -304,7 +313,7 @@ export default function Chat() {
                 className="flex justify-start"
               >
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-gold/60">Valentina</span>
+                  <span className="text-[10px] text-gold/60">{artistFirstName}</span>
                 </div>
               </motion.div>
             )}
@@ -337,7 +346,7 @@ export default function Chat() {
                     handleSendToArtist()
                   }
                 }}
-                placeholder="Escribe un mensaje a Valentina..."
+                placeholder={`Escribe un mensaje a ${artistFirstName}...`}
                 className="flex-1 px-4 py-3 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle/60 focus:outline-none focus:border-gold/50"
               />
               <button
@@ -362,14 +371,14 @@ export default function Chat() {
               <div className="flex items-start gap-2">
                 <Bot size={16} className="text-gold shrink-0 mt-0.5" />
                 <p className="text-cream text-sm leading-relaxed">
-                  ¡Hola! Soy el asistente virtual de INK & SOUL. Puedo ayudarte
+                  ¡Hola! Soy el asistente virtual de {config.studio_name}. Puedo ayudarte
                   con preguntas frecuentes. Elige un tema o escríbeme:
                 </p>
               </div>
             </motion.div>
 
             <div className="flex flex-wrap gap-2 mb-6">
-              {QUICK_REPLIES.map(({ label, key }) => (
+              {config.chat_config.quick_replies.map(({ label, key }) => (
                 <motion.button
                   key={key}
                   whileTap={{ scale: 0.96 }}

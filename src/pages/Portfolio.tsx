@@ -1,12 +1,12 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Search } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
-import { tattooStyles } from '../data/constants'
+import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { usePortfolio } from '../hooks/usePortfolio'
 import type { PortfolioItem } from '../types'
 
 const FILTER_STYLES = ['Fine Line', 'Blackwork', 'Geometric', 'Dotwork', 'Watercolor', 'Mandala', 'Neo Traditional']
-const STYLE_FILTERS = ['Todos', ...tattooStyles.filter((s) => FILTER_STYLES.includes(s))]
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -22,14 +22,25 @@ const cardVariants = {
 }
 
 export default function Portfolio() {
+  const { config } = useStudioConfig()
   const { items: portfolioItems, loading } = usePortfolio()
   const [selectedStyle, setSelectedStyle] = useState('Todos')
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
 
-  const filteredItems =
-    selectedStyle === 'Todos'
-      ? portfolioItems
-      : portfolioItems.filter((item) => item.style === selectedStyle)
+  const styleFilters = useMemo(
+    () => ['Todos', ...config.tattoo_styles.filter((s) => FILTER_STYLES.includes(s))],
+    [config.tattoo_styles]
+  )
+
+  const filteredItems = useMemo(() => {
+    let items = selectedStyle === 'Todos' ? portfolioItems : portfolioItems.filter(item => item.style === selectedStyle)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      items = items.filter(item => item.title.toLowerCase().includes(q) || item.description.toLowerCase().includes(q) || item.style.toLowerCase().includes(q))
+    }
+    return items
+  }, [portfolioItems, selectedStyle, searchQuery])
 
   if (loading) {
     return (
@@ -43,10 +54,24 @@ export default function Portfolio() {
     <div className="min-h-dvh pb-6">
       <PageHeader title="Portfolio" subtitle="Mi trabajo" />
 
+      {/* Search */}
+      <div className="px-5 pt-4 pb-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-subtle" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Buscar diseños..."
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle text-sm focus:outline-none focus:border-gold/40 transition-colors"
+          />
+        </div>
+      </div>
+
       {/* Filter chips */}
-      <div className="px-5 py-4 overflow-x-auto -mx-5">
+      <div className="px-5 py-2 overflow-x-auto -mx-5">
         <div className="flex gap-2 min-w-max pr-5">
-          {STYLE_FILTERS.map((style) => (
+          {styleFilters.map((style) => (
             <button
               key={style}
               onClick={() => setSelectedStyle(style)}

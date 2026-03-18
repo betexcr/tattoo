@@ -13,7 +13,9 @@ import {
   BarChart3,
   Settings,
 } from 'lucide-react'
+import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { useAppointments } from '../hooks/useAppointments'
+import { useOrders } from '../hooks/useOrders'
 import { useChatConversations } from '../hooks/useChat'
 
 const TODAY = new Date().toISOString().slice(0, 10)
@@ -44,9 +46,6 @@ function getInitials(name: string): string {
     .toUpperCase()
 }
 
-// Mock revenue for last 7 days (L M X J V S D)
-const MOCK_DAILY_REVENUE = [80, 120, 0, 0, 0, 60, 0]
-
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -61,8 +60,13 @@ const itemVariants = {
 }
 
 export default function Dashboard() {
+  const { config } = useStudioConfig()
   const { appointments: localAppointments, updateStatus } = useAppointments()
+  const { orders } = useOrders()
   const { conversations: chatConvs } = useChatConversations()
+
+  const artistFirstName = config.artist_name.split(' ')[0] || config.artist_name
+  const artistInitials = config.chat_config.artist_initials || getInitials(config.artist_name)
 
   const pendingAppointments = useMemo(
     () => localAppointments.filter((a) => a.status === 'pending'),
@@ -97,16 +101,42 @@ export default function Dashboard() {
     const now = new Date()
     const currentMonth = now.getMonth()
     const currentYear = now.getFullYear()
-    return localAppointments
+    const apptRevenue = localAppointments
       .filter((a) => {
         if (a.status !== 'confirmed' && a.status !== 'completed') return false
         const d = new Date(a.date + 'T12:00:00')
         return d.getMonth() === currentMonth && d.getFullYear() === currentYear
       })
       .reduce((sum, a) => sum + a.deposit, 0)
+    const orderRevenue = orders
+      .filter((o) => {
+        if (o.status === 'pending') return false
+        const d = new Date(o.created_at)
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear
+      })
+      .reduce((sum, o) => sum + o.total, 0)
+    return apptRevenue + orderRevenue
+  }, [localAppointments, orders])
+
+  const dailyRevenue = useMemo(() => {
+    const result: number[] = []
+    const now = new Date()
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now)
+      d.setDate(d.getDate() - i)
+      const dateStr = d.toISOString().slice(0, 10)
+      const dayTotal = localAppointments
+        .filter((a) => {
+          if (a.status !== 'confirmed' && a.status !== 'completed') return false
+          return a.date === dateStr
+        })
+        .reduce((sum, a) => sum + a.deposit, 0)
+      result.push(dayTotal)
+    }
+    return result
   }, [localAppointments])
 
-  const maxRevenue = Math.max(...MOCK_DAILY_REVENUE, 1)
+  const maxRevenue = Math.max(...dailyRevenue, 1)
 
   const handleConfirm = (id: string) => {
     updateStatus(id, 'confirmed')
@@ -126,11 +156,11 @@ export default function Dashboard() {
       {/* 1. Greeting header */}
       <motion.header variants={itemVariants} className="flex items-center gap-4">
         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center shrink-0">
-          <span className="text-ink font-serif font-bold text-sm">VR</span>
+          <span className="text-ink font-serif font-bold text-sm">{artistInitials}</span>
         </div>
         <div>
           <h1 className="font-serif text-xl text-cream">
-            {getGreeting()}, Valentina
+            {getGreeting()}, {artistFirstName}
           </h1>
           <p className="text-subtle text-sm capitalize">
             {formatDateSpanish(TODAY)}
@@ -355,7 +385,7 @@ export default function Dashboard() {
         <h2 className="font-serif text-lg text-cream mb-3">Ingresos (7 días)</h2>
         <div className="rounded-xl bg-ink-light border border-white/5 p-4">
           <div className="flex items-end justify-between gap-2 h-20">
-            {MOCK_DAILY_REVENUE.map((val, i) => (
+            {dailyRevenue.map((val, i) => (
               <div
                 key={i}
                 className="flex-1 flex flex-col justify-end items-center h-full"

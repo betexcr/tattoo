@@ -5,9 +5,9 @@ import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function Login() {
-  const { signIn, signUp } = useAuth()
+  const { signIn, signUp, resetPassword } = useAuth()
   const navigate = useNavigate()
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
@@ -22,6 +22,16 @@ export default function Login() {
     setSuccess('')
     setLoading(true)
 
+    if (mode === 'reset') {
+      const { error: err } = await resetPassword(email)
+      if (err) {
+        setError(err)
+      } else {
+        setSuccess('Te hemos enviado un email para restablecer tu contraseña.')
+      }
+      setLoading(false)
+      return
+    }
     if (mode === 'login') {
       const { error: err } = await signIn(email, password)
       if (err) {
@@ -58,12 +68,14 @@ export default function Login() {
         </Link>
 
         <h1 className="font-serif text-3xl text-cream mb-2">
-          {mode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta'}
+          {mode === 'login' ? 'Iniciar Sesión' : mode === 'signup' ? 'Crear Cuenta' : 'Recuperar Contraseña'}
         </h1>
         <p className="text-cream/50 mb-8 text-sm">
           {mode === 'login'
             ? 'Accede a tu cuenta de Ink & Soul'
-            : 'Únete para reservar citas y más'}
+            : mode === 'signup'
+              ? 'Únete para reservar citas y más'
+              : 'Ingresa tu email y te enviaremos un enlace'}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -92,25 +104,27 @@ export default function Login() {
             />
           </div>
 
-          <div className="relative">
-            <label className="text-cream/60 text-xs block mb-1">Contraseña</label>
-            <input
-              type={showPw ? 'text' : 'password'}
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              minLength={6}
-              className="w-full bg-ink-light border border-gold/20 rounded-xl px-4 py-3 pr-12 text-cream focus:border-gold/60 outline-none transition-colors"
-              placeholder="Mínimo 6 caracteres"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPw(!showPw)}
-              className="absolute right-3 top-8 text-cream/40 hover:text-cream/70"
-            >
-              {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
+          {mode !== 'reset' && (
+            <div className="relative">
+              <label className="text-cream/60 text-xs block mb-1">Contraseña</label>
+              <input
+                type={showPw ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                minLength={6}
+                className="w-full bg-ink-light border border-gold/20 rounded-xl px-4 py-3 pr-12 text-cream focus:border-gold/60 outline-none transition-colors"
+                placeholder="Mínimo 6 caracteres"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw(!showPw)}
+                className="absolute right-3 top-8 text-cream/40 hover:text-cream/70"
+              >
+                {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          )}
 
           <AnimatePresence mode="wait">
             {error && (
@@ -140,19 +154,34 @@ export default function Login() {
             disabled={loading}
             className="w-full bg-gold text-ink font-semibold py-3 rounded-xl hover:bg-gold/90 transition-colors disabled:opacity-50"
           >
-            {loading ? 'Cargando...' : mode === 'login' ? 'Entrar' : 'Crear cuenta'}
+            {loading ? 'Cargando...' : mode === 'login' ? 'Entrar' : mode === 'signup' ? 'Crear cuenta' : 'Enviar enlace'}
           </button>
         </form>
 
-        <p className="text-cream/40 text-sm text-center mt-6">
-          {mode === 'login' ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}{' '}
-          <button
-            onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); setSuccess('') }}
-            className="text-gold hover:underline"
-          >
-            {mode === 'login' ? 'Regístrate' : 'Inicia sesión'}
-          </button>
-        </p>
+        <div className="text-cream/40 text-sm text-center mt-6 space-y-2">
+          {mode === 'login' && (
+            <>
+              <p>
+                ¿No tienes cuenta?{' '}
+                <button onClick={() => { setMode('signup'); setError(''); setSuccess('') }} className="text-gold hover:underline">Regístrate</button>
+              </p>
+              <p>
+                <button onClick={() => { setMode('reset'); setError(''); setSuccess('') }} className="text-gold/70 hover:text-gold hover:underline">¿Olvidaste tu contraseña?</button>
+              </p>
+            </>
+          )}
+          {mode === 'signup' && (
+            <p>
+              ¿Ya tienes cuenta?{' '}
+              <button onClick={() => { setMode('login'); setError(''); setSuccess('') }} className="text-gold hover:underline">Inicia sesión</button>
+            </p>
+          )}
+          {mode === 'reset' && (
+            <p>
+              <button onClick={() => { setMode('login'); setError(''); setSuccess('') }} className="text-gold hover:underline">Volver al inicio de sesión</button>
+            </p>
+          )}
+        </div>
       </motion.div>
     </div>
   )

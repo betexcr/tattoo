@@ -9,6 +9,7 @@ import StudioSettings from './studio/StudioSettings'
 import Appointments from './studio/Appointments'
 import Clients from './studio/Clients'
 import Messages from './studio/Messages'
+import Orders from './studio/Orders'
 import Home from './pages/Home'
 import Portfolio from './pages/Portfolio'
 import Agenda from './pages/Agenda'
@@ -22,6 +23,7 @@ import Suggestions from './pages/Suggestions'
 import Courses from './pages/Courses'
 import BookAppointment from './pages/BookAppointment'
 import Chat from './pages/Chat'
+import MyAccount from './pages/MyAccount'
 import Login from './pages/Login'
 
 export default function App() {
@@ -40,6 +42,7 @@ export default function App() {
         <Route path="/visualizer" element={<BodyVisualizer />} />
         <Route path="/suggestions" element={<Suggestions />} />
         <Route path="/courses" element={<Courses />} />
+        <Route path="/account" element={<MyAccount />} />
       </Route>
       <Route path="/book" element={<BookAppointment />} />
       <Route path="/login" element={<Login />} />
@@ -49,6 +52,7 @@ export default function App() {
           <Route path="/studio/appointments" element={<Appointments />} />
           <Route path="/studio/clients" element={<Clients />} />
           <Route path="/studio/messages" element={<Messages />} />
+          <Route path="/studio/orders" element={<Orders />} />
           <Route path="/studio/portfolio" element={<PortfolioManager />} />
           <Route path="/studio/analytics" element={<Analytics />} />
           <Route path="/studio/settings" element={<StudioSettings />} />
