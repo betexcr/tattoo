@@ -83,6 +83,10 @@ export default function Chat() {
   const artistScrollRef = useRef<HTMLDivElement>(null)
   const botScrollRef = useRef<HTMLDivElement>(null)
   const responseIndexRef = useRef(0)
+  const userRef = useRef(user)
+  userRef.current = user
+  const sendRef = useRef(send)
+  sendRef.current = send
 
   const artistFirstName = config.chat_config.artist_name.split(' ')[0] || config.chat_config.artist_name
 
@@ -104,7 +108,7 @@ export default function Chat() {
       markRead()
       return () => unsubscribe()
     }
-  }, [activeTab, clientId, subscribe, unsubscribe, markRead])
+  }, [activeTab, clientId, subscribe, unsubscribe, markRead]) // all stable via useCallback
 
   useEffect(() => {
     artistScrollRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -114,9 +118,12 @@ export default function Chat() {
     botScrollRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chatbotMessages])
 
+  const designProcessedRef = useRef(false)
   useEffect(() => {
+    if (designProcessedRef.current) return
     const designId = searchParams.get('design')
     if (!designId) return
+    designProcessedRef.current = true
     setSearchParams({}, { replace: true })
     setActiveTab('artist')
     ;(async () => {
@@ -131,15 +138,15 @@ export default function Chat() {
         if (d.colorMode) parts.push(`Color: ${d.colorMode === 'negro' ? 'Negro' : 'Color'}`)
         if (d.notes) parts.push(`Notas: ${d.notes}`)
         const text = `🎨 Mi diseño de tatuaje:\n${parts.join('\n')}`
-        if (user) {
-          await send(text, 'client')
+        if (userRef.current) {
+          await sendRef.current(text, 'client')
         } else {
           const msg = { id: `design-${Date.now()}`, from: 'user' as const, text, timestamp: new Date().toISOString(), read: false }
           setMessages((prev) => [...prev, msg])
         }
       } catch { /* design not found, ignore */ }
     })()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchParams, setSearchParams, setActiveTab])
 
   const handleSendToArtist = async () => {
     if (!inputText.trim()) return

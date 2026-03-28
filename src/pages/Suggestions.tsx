@@ -47,12 +47,12 @@ export default function Suggestions() {
         const data = snap.data()
         if (Array.isArray(data.liked_ids)) setLikedIds(new Set(data.liked_ids))
       }
-    }).catch(() => {})
+    }).catch(() => { /* Non-critical: liked state is cosmetic */ })
   }, [user])
 
   const persistLikes = useCallback((ids: Set<string>) => {
     if (!user) return
-    setDoc(doc(db, 'user_likes', user.uid), { user_id: user.uid, liked_ids: [...ids] }, { merge: true }).catch(() => {})
+    setDoc(doc(db, 'user_likes', user.uid), { user_id: user.uid, liked_ids: [...ids] }, { merge: true }).catch(() => { /* Non-critical: liked state is cosmetic */ })
   }, [user])
 
   const quizQuestions = config.quiz_config.questions
@@ -155,6 +155,8 @@ export default function Suggestions() {
                   </div>
                   <button
                     onClick={() => toggleLike(suggestion.id)}
+                    aria-label="Me gusta"
+                    aria-pressed={likedIds.has(suggestion.id)}
                     className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors"
                     style={{
                       backgroundColor: likedIds.has(suggestion.id) ? 'var(--color-rose)' : 'rgba(255,255,255,0.05)',

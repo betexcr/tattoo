@@ -11,6 +11,8 @@ export function useChat(clientId?: string) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const unsubRef = useRef<Unsubscribe | null>(null)
+  const messagesRef = useRef(messages)
+  messagesRef.current = messages
 
   const fetchMessages = useCallback(async () => {
     if (!clientId) { setLoading(false); return }
@@ -33,6 +35,7 @@ export function useChat(clientId?: string) {
 
   const subscribe = useCallback(() => {
     if (!clientId) return
+    if (unsubRef.current) unsubRef.current()
     const q = query(
       collection(db, 'chat_messages'),
       where('client_id', '==', clientId),
@@ -53,7 +56,7 @@ export function useChat(clientId?: string) {
     }
   }, [])
 
-  const send = async (text: string, senderRole: 'client' | 'artist') => {
+  const send = useCallback(async (text: string, senderRole: 'client' | 'artist') => {
     if (!clientId) return { error: 'No client ID' }
     try {
       await addDoc(collection(db, 'chat_messages'), {
@@ -67,11 +70,11 @@ export function useChat(clientId?: string) {
     } catch (e: unknown) {
       return { error: (e as Error).message }
     }
-  }
+  }, [clientId])
 
-  const markRead = async () => {
+  const markRead = useCallback(async () => {
     if (!clientId) return
-    const unreadMsgs = messages.filter(m => !m.read)
+    const unreadMsgs = messagesRef.current.filter(m => !m.read)
     if (unreadMsgs.length === 0) return
     try {
       const batch = writeBatch(db)
@@ -83,7 +86,7 @@ export function useChat(clientId?: string) {
     } catch (e: unknown) {
       setError((e as Error).message)
     }
-  }
+  }, [clientId])
 
   return { messages, loading, error, send, markRead, subscribe, unsubscribe, refetch: fetchMessages }
 }

@@ -24,7 +24,8 @@ export default function PageHeader({ title, subtitle, showBack = true, action }:
           {showBack && (
             <button
               onClick={() => navigate(-1)}
-              className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
+              aria-label="Volver"
+              className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
             >
               <ArrowLeft size={16} />
             </button>

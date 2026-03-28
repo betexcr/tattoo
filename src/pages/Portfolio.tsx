@@ -114,6 +114,8 @@ export default function Portfolio() {
               <img
                 src={item.image_url}
                 alt={item.title}
+                loading="lazy"
+                decoding="async"
                 className="w-full aspect-[4/5] object-cover transition-transform duration-300 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent opacity-80" />
@@ -150,6 +152,10 @@ export default function Portfolio() {
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Detalle de la obra"
+              onKeyDown={(e) => { if (e.key === 'Escape') setSelectedItem(null) }}
               className="w-full max-w-md bg-ink-light rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
             >
               <div className="relative">

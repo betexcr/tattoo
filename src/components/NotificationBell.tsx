@@ -37,7 +37,8 @@ export default function NotificationBell() {
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="relative w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
+        aria-label="Notificaciones"
+        className="relative w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
       >
         <Bell size={18} />
         {unreadCount > 0 && (
@@ -74,15 +75,17 @@ export default function NotificationBell() {
                   {unreadCount > 0 && (
                     <button
                       onClick={markAllRead}
-                      className="p-1.5 rounded-lg text-subtle hover:text-gold hover:bg-gold/10 transition-colors"
+                      className="w-10 h-10 rounded-lg text-subtle hover:text-gold hover:bg-gold/10 transition-colors flex items-center justify-center"
                       title="Marcar todo como leído"
+                      aria-label="Marcar todas como leídas"
                     >
                       <CheckCheck size={14} />
                     </button>
                   )}
                   <button
                     onClick={() => setOpen(false)}
-                    className="p-1.5 rounded-lg text-subtle hover:text-cream hover:bg-white/5 transition-colors"
+                    aria-label="Cerrar notificaciones"
+                    className="w-10 h-10 rounded-lg text-subtle hover:text-cream hover:bg-white/5 transition-colors flex items-center justify-center"
                   >
                     <X size={14} />
                   </button>

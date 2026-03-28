@@ -39,7 +39,7 @@ service cloud.firestore {
     match /courses/{courseId} {
       allow read: if true;
       allow create, delete: if isArtist();
-      allow update: if isSignedIn();
+      allow update: if isArtist();
     }
 
     // Studio settings: public read, artists update
@@ -51,7 +51,7 @@ service cloud.firestore {
     // Appointments: authenticated can create, clients see own, artists see all
     match /appointments/{apptId} {
       allow read: if isArtist() || (isSignedIn() && resource.data.client_id == request.auth.uid);
-      allow create: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.client_id == request.auth.uid;
       allow update, delete: if isArtist();
     }
 
@@ -78,8 +78,8 @@ service cloud.firestore {
     // Chat messages: clients see own + send, artists see all + send + update
     match /chat_messages/{msgId} {
       allow read: if isArtist() || (isSignedIn() && resource.data.client_id == request.auth.uid);
-      allow create: if isSignedIn();
-      allow update: if isArtist();
+      allow create: if isSignedIn() && (request.resource.data.client_id == request.auth.uid || isArtist());
+      allow update: if isArtist() || (isSignedIn() && resource.data.client_id == request.auth.uid);
     }
 
     // Reminders: artists only
@@ -96,7 +96,7 @@ service cloud.firestore {
     // Notifications: users read/update own, artists can create for any user
     match /notifications/{notifId} {
       allow read: if isSignedIn() && resource.data.user_id == request.auth.uid;
-      allow create: if isSignedIn();
+      allow create: if isSignedIn() && (request.resource.data.user_id == request.auth.uid || isArtist());
       allow update: if isSignedIn() && resource.data.user_id == request.auth.uid;
     }
 
@@ -126,7 +126,7 @@ service cloud.firestore {
     // User likes: users read/write own
     match /user_likes/{likeId} {
       allow read, write: if isSignedIn() && resource.data.user_id == request.auth.uid;
-      allow create: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.user_id == request.auth.uid;
     }
   }
 }

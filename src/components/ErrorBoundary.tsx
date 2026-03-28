@@ -29,10 +29,10 @@ export default class ErrorBoundary extends Component<Props, State> {
             </div>
             <h1 className="font-serif text-xl text-cream">Algo salió mal</h1>
             <p className="text-cream-dark text-sm leading-relaxed">
-              Ha ocurrido un error inesperado. Intenta recargar la página.
+              Ha ocurrido un error inesperado. Por favor, recarga la página.
             </p>
-            {this.state.error && (
-              <p className="text-xs text-subtle bg-ink-light rounded-lg p-3 text-left break-all">
+            {import.meta.env.DEV && this.state.error?.message && (
+              <p className="text-subtle text-xs mt-2 font-mono bg-ink-light rounded-lg p-3 text-left break-all">
                 {this.state.error.message}
               </p>
             )}

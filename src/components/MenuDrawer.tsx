@@ -49,6 +49,10 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menú"
+            onKeyDown={(e) => { if (e.key === 'Escape') onClose() }}
             className="fixed bottom-0 left-0 right-0 z-50 bg-ink-light rounded-t-3xl max-h-[85dvh] overflow-y-auto"
           >
             <div className="flex items-center justify-between p-5 border-b border-white/5">

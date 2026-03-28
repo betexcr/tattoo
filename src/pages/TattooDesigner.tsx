@@ -23,7 +23,7 @@ import { addDoc, collection } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import PageHeader from '../components/PageHeader'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
-import { useAuth } from '../contexts/AuthContext'
+import { useRequireAuth } from '../hooks/useRequireAuth'
 
 type SizeOption = 'small' | 'medium' | 'large'
 type ColorMode = 'negro' | 'color'
@@ -91,7 +91,7 @@ function getStyleBorderClass(style: string | null): string {
 export default function TattooDesigner() {
   const navigate = useNavigate()
   const { config } = useStudioConfig()
-  const { user } = useAuth()
+  const { user, requireAuth } = useRequireAuth()
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null)
   const [selectedSize, setSelectedSize] = useState<SizeOption>('medium')
   const [selectedElements, setSelectedElements] = useState<DesignElement[]>([])
@@ -385,6 +385,7 @@ export default function TattooDesigner() {
           <motion.button
             whileTap={{ scale: 0.98 }}
             onClick={async () => {
+              if (!requireAuth('/designer')) return
               const design = {
                 style: selectedStyle,
                 size: selectedSize,
@@ -412,6 +413,7 @@ export default function TattooDesigner() {
           <motion.button
             whileTap={{ scale: 0.98 }}
             onClick={async () => {
+              if (!requireAuth('/designer')) return
               setShowShared(true)
               const design = {
                 style: selectedStyle,

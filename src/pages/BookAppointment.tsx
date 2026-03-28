@@ -17,7 +17,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage } from '../lib/firebase'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { useAppointments } from '../hooks/useAppointments'
-import { useAuth } from '../contexts/AuthContext'
+import { useRequireAuth } from '../hooks/useRequireAuth'
 import { useNotifications } from '../hooks/useNotifications'
 
 const STEPS = [
@@ -63,7 +63,7 @@ export default function BookAppointment() {
   const navigate = useNavigate()
   const { config } = useStudioConfig()
   const { create, getOccupiedSlots } = useAppointments()
-  const { user } = useAuth()
+  const { user, requireAuth } = useRequireAuth()
   const { create: createNotification } = useNotifications(user?.uid)
   const occupiedSlots = getOccupiedSlots()
   const [step, setStep] = useState(0)
@@ -108,6 +108,7 @@ export default function BookAppointment() {
 
   const goNext = async () => {
     if (step === STEPS.length - 1) {
+      if (!requireAuth('/book')) return
       setBookingError('')
       const result = await create({
         client_id: user?.uid ?? null,
@@ -169,7 +170,7 @@ export default function BookAppointment() {
           const url = await getDownloadURL(storageRef)
           uploaded.push(url)
         } catch {
-          uploaded.push(URL.createObjectURL(file))
+          setBookingError(`Error al subir ${file.name}. Inténtalo de nuevo.`)
         }
       }
       setReferenceImages(prev => [...prev, ...uploaded])

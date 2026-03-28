@@ -175,6 +175,8 @@ export default function Home() {
                 <img
                   src={item.image_url}
                   alt={item.title}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent" />
@@ -276,6 +278,8 @@ export default function Home() {
                 <img
                   src={item.image_url}
                   alt={item.title}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent" />
@@ -325,12 +329,14 @@ export default function Home() {
                   <input
                     type="text"
                     placeholder="Tu nombre"
+                    aria-label="Tu nombre"
                     value={reviewForm.name}
                     onChange={e => setReviewForm(f => ({ ...f, name: e.target.value }))}
                     className="w-full px-3 py-2 rounded-lg bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm"
                   />
                   <textarea
                     placeholder="Tu experiencia..."
+                    aria-label="Tu experiencia"
                     value={reviewForm.text}
                     onChange={e => setReviewForm(f => ({ ...f, text: e.target.value }))}
                     rows={2}
@@ -339,7 +345,7 @@ export default function Home() {
                   <div className="flex items-center gap-4">
                     <div className="flex gap-1">
                       {[1, 2, 3, 4, 5].map(n => (
-                        <button key={n} onClick={() => setReviewForm(f => ({ ...f, rating: n }))}>
+                        <button key={n} onClick={() => setReviewForm(f => ({ ...f, rating: n }))} aria-label={`Valorar ${n} estrella${n > 1 ? 's' : ''}`}>
                           <Star size={18} className={n <= reviewForm.rating ? 'text-gold fill-gold' : 'text-subtle'} />
                         </button>
                       ))}
@@ -446,6 +452,8 @@ export default function Home() {
                 <img
                   src={nextCourse.image_url}
                   alt={nextCourse.title}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-40 object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/60 to-transparent" />

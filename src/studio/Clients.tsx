@@ -124,20 +124,21 @@ export default function Clients() {
   const [selectedClient, setSelectedClient] = useState<ClientEntry | null>(null)
   const [clientNotes, setClientNotes] = useState<Record<string, string>>({})
   const [noteSaveTimer, setNoteSaveTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
+  const [noteError, setNoteError] = useState<string | null>(null)
 
   useEffect(() => {
     getDocs(collection(db, 'client_notes')).then(snap => {
       const notes: Record<string, string> = {}
       snap.docs.forEach(d => { notes[d.id] = (d.data().text as string) ?? '' })
       setClientNotes(notes)
-    }).catch(() => {})
+    }).catch((e: unknown) => { setNoteError((e as Error).message) })
   }, [])
 
   const clientNoteKey = selectedClient?.id || selectedClient?.name || ''
   const currentNotes = selectedClient ? (clientNotes[clientNoteKey] ?? '') : ''
   const persistNote = useCallback((key: string, text: string) => {
     if (!key) return
-    setDoc(doc(db, 'client_notes', key), { text, updated_at: new Date().toISOString() }).catch(() => {})
+    setDoc(doc(db, 'client_notes', key), { text, updated_at: new Date().toISOString() }).catch((e: unknown) => { setNoteError((e as Error).message) })
   }, [])
   const setCurrentNotes = (value: string) => {
     if (!selectedClient) return
@@ -281,10 +282,13 @@ export default function Clients() {
               <h2 className="font-serif text-base text-cream mb-2">Notas</h2>
               <textarea
                 value={currentNotes}
-                onChange={(e) => setCurrentNotes(e.target.value)}
+                onChange={(e) => { setNoteError(null); setCurrentNotes(e.target.value) }}
                 placeholder="Notas privadas sobre el cliente..."
                 className="w-full h-24 px-4 py-3 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle text-sm resize-none focus:outline-none focus:border-gold/40 transition-colors"
               />
+              {noteError && (
+                <p className="text-rose text-xs mt-1">Error guardando nota: {noteError}</p>
+              )}
             </section>
 
             <div className="flex gap-3">

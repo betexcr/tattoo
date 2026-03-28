@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import PageHeader from '../components/PageHeader'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { useCourses } from '../hooks/useCourses'
+import { useRequireAuth } from '../hooks/useRequireAuth'
 import type { Course } from '../types'
 
 const LEVEL_STYLES: Record<Course['level'], string> = {
@@ -44,6 +45,7 @@ const INITIAL_FORM = { name: '', email: '', phone: '' }
 
 export default function Courses() {
   const { courses, reservedIds, reserve, loading, error } = useCourses()
+  const { requireAuth } = useRequireAuth()
   const [reservingCourse, setReservingCourse] = useState<Course | null>(null)
   const [reservationForm, setReservationForm] = useState(INITIAL_FORM)
   const [showSuccess, setShowSuccess] = useState(false)
@@ -60,6 +62,7 @@ export default function Courses() {
   }, [showSuccess])
 
   const handleConfirmReserva = async () => {
+    if (!requireAuth('/courses')) return
     if (!reservingCourse) return
     setReserveError(null)
     const { error: err } = await reserve(
@@ -138,6 +141,8 @@ export default function Courses() {
                 <img
                   src={course.image_url}
                   alt={course.title}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent opacity-70" />
@@ -212,6 +217,10 @@ export default function Courses() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Reservar plaza"
+              onKeyDown={(e) => { if (e.key === 'Escape' && !showSuccess) { setReservingCourse(null); setReservationForm(INITIAL_FORM) } }}
               className="relative w-full rounded-t-3xl bg-ink-light border-t border-white/10 p-6 pb-safe"
               onClick={(e) => e.stopPropagation()}
             >

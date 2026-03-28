@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -9,6 +9,7 @@ export default function Login() {
   const { signIn, signUp, resetPassword } = useAuth()
   const { config } = useStudioConfig()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -39,7 +40,7 @@ export default function Login() {
       if (err) {
         setError(err)
       } else {
-        navigate('/')
+        navigate(searchParams.get('returnTo') || '/')
       }
     } else {
       if (!fullName.trim()) {
@@ -51,7 +52,7 @@ export default function Login() {
       if (err) {
         setError(err)
       } else {
-        navigate('/')
+        navigate(searchParams.get('returnTo') || '/')
       }
     }
     setLoading(false)

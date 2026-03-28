@@ -6,7 +6,7 @@ import { db } from '../lib/firebase'
 import PageHeader from '../components/PageHeader'
 import { useShop } from '../hooks/useShop'
 import { useOrders } from '../hooks/useOrders'
-import { useAuth } from '../contexts/AuthContext'
+import { useRequireAuth } from '../hooks/useRequireAuth'
 import type { ShopItem } from '../types'
 
 type Category = ShopItem['category'] | ''
@@ -50,7 +50,7 @@ const cardVariants = {
 export default function Shop() {
   const { items: shopItems, loading } = useShop()
   const { create: createOrder } = useOrders()
-  const { user } = useAuth()
+  const { user, requireAuth } = useRequireAuth()
   const [categoryFilter, setCategoryFilter] = useState<Category>('')
   const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null)
   const [cart, setCart] = useState<CartLine[]>([])
@@ -113,6 +113,7 @@ export default function Shop() {
 
   const handleNotifyStock = async () => {
     if (!selectedItem || !notifyEmail.trim()) return
+    if (!user) { requireAuth('/shop'); return }
     try {
       await addDoc(collection(db, 'stock_notifications'), {
         item_id: selectedItem.id,
@@ -126,6 +127,7 @@ export default function Shop() {
   }
 
   const handleCheckoutSubmit = async () => {
+    if (!requireAuth('/shop')) return
     setCheckoutError(null)
     const { error } = await createOrder({
       client_name: checkoutForm.name,
@@ -178,7 +180,8 @@ export default function Shop() {
           <div className="relative">
             <button
               onClick={() => setShowCart((s) => !s)}
-              className="w-9 h-9 rounded-full bg-ink-medium flex items-center justify-center text-cream hover:bg-ink-medium/80 transition-colors"
+              aria-label="Carrito"
+              className="w-11 h-11 rounded-full bg-ink-medium flex items-center justify-center text-cream hover:bg-ink-medium/80 transition-colors"
             >
               <ShoppingCart size={18} />
             </button>
@@ -274,6 +277,8 @@ export default function Shop() {
               <img
                 src={item.image_url}
                 alt={item.title}
+                loading="lazy"
+                decoding="async"
                 className="w-full aspect-[4/5] object-cover transition-transform duration-500 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent" />
@@ -336,6 +341,10 @@ export default function Shop() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Carrito de compras"
+              onKeyDown={(e) => { if (e.key === 'Escape') closeCartDrawer() }}
               className="fixed bottom-0 left-0 right-0 z-50 max-h-[90dvh] bg-ink-light rounded-t-3xl overflow-hidden border-t border-white/10 shadow-2xl flex flex-col"
             >
               <div className="flex justify-center pt-3 pb-1">
@@ -359,6 +368,7 @@ export default function Shop() {
                     <input
                       type="text"
                       placeholder="Nombre"
+                      aria-label="Nombre"
                       value={checkoutForm.name}
                       onChange={(e) => setCheckoutForm((f) => ({ ...f, name: e.target.value }))}
                       className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm"
@@ -366,6 +376,7 @@ export default function Shop() {
                     <input
                       type="email"
                       placeholder="Email"
+                      aria-label="Email"
                       value={checkoutForm.email}
                       onChange={(e) => setCheckoutForm((f) => ({ ...f, email: e.target.value }))}
                       className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm"
@@ -373,6 +384,7 @@ export default function Shop() {
                     <input
                       type="tel"
                       placeholder="Teléfono"
+                      aria-label="Teléfono"
                       value={checkoutForm.phone}
                       onChange={(e) => setCheckoutForm((f) => ({ ...f, phone: e.target.value }))}
                       className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm"
@@ -380,6 +392,7 @@ export default function Shop() {
                     <input
                       type="text"
                       placeholder="Dirección"
+                      aria-label="Dirección"
                       value={checkoutForm.address}
                       onChange={(e) => setCheckoutForm((f) => ({ ...f, address: e.target.value }))}
                       className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm"
@@ -415,6 +428,8 @@ export default function Shop() {
                           <img
                             src={line.item.image_url}
                             alt={line.item.title}
+                            loading="lazy"
+                            decoding="async"
                             className="w-14 h-14 rounded-lg object-cover shrink-0"
                           />
                           <div className="flex-1 min-w-0">
@@ -428,6 +443,7 @@ export default function Shop() {
                           </div>
                           <button
                             onClick={() => removeFromCart(i)}
+                            aria-label="Eliminar del carrito"
                             className="p-2 rounded-lg text-subtle hover:text-rose hover:bg-rose/10 transition-colors shrink-0"
                           >
                             <Trash2 size={16} />
@@ -470,6 +486,10 @@ export default function Shop() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Detalle del producto"
+              onKeyDown={(e) => { if (e.key === 'Escape') { setSelectedItem(null); setSelectedSize(''); setSelectedColor('') } }}
               className="fixed bottom-0 left-0 right-0 z-50 max-h-[90dvh] bg-ink-light rounded-t-3xl overflow-hidden border-t border-white/10 shadow-2xl flex flex-col"
             >
               {/* Close handle */}
@@ -492,7 +512,7 @@ export default function Shop() {
                   </div>
                   <button
                     onClick={() => { setSelectedItem(null); setSelectedSize(''); setSelectedColor('') }}
-                    className="absolute top-3 right-3 w-8 h-8 rounded-full bg-ink/70 backdrop-blur-sm flex items-center justify-center text-cream"
+                    className="absolute top-3 right-3 w-10 h-10 rounded-full bg-ink/70 backdrop-blur-sm flex items-center justify-center text-cream"
                   >
                     <X size={16} />
                   </button>

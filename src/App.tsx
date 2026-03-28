@@ -1,33 +1,44 @@
-import { Routes, Route } from 'react-router-dom'
+import { lazy, Suspense, useEffect } from 'react'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import Layout from './components/Layout'
 import RequireArtist from './components/RequireArtist'
 import StudioLayout from './studio/StudioLayout'
-import Dashboard from './studio/Dashboard'
-import PortfolioManager from './studio/PortfolioManager'
-import Analytics from './studio/Analytics'
-import StudioSettings from './studio/StudioSettings'
-import Appointments from './studio/Appointments'
-import Clients from './studio/Clients'
-import Messages from './studio/Messages'
-import Orders from './studio/Orders'
-import Home from './pages/Home'
-import Portfolio from './pages/Portfolio'
-import Agenda from './pages/Agenda'
-import Reminders from './pages/Reminders'
-import About from './pages/About'
-import Contact from './pages/Contact'
-import Shop from './pages/Shop'
-import TattooDesigner from './pages/TattooDesigner'
-import BodyVisualizer from './pages/BodyVisualizer'
-import Suggestions from './pages/Suggestions'
-import Courses from './pages/Courses'
-import BookAppointment from './pages/BookAppointment'
-import Chat from './pages/Chat'
-import MyAccount from './pages/MyAccount'
-import Login from './pages/Login'
+
+const Dashboard = lazy(() => import('./studio/Dashboard'))
+const PortfolioManager = lazy(() => import('./studio/PortfolioManager'))
+const Analytics = lazy(() => import('./studio/Analytics'))
+const StudioSettings = lazy(() => import('./studio/StudioSettings'))
+const Appointments = lazy(() => import('./studio/Appointments'))
+const Clients = lazy(() => import('./studio/Clients'))
+const Messages = lazy(() => import('./studio/Messages'))
+const Orders = lazy(() => import('./studio/Orders'))
+const Home = lazy(() => import('./pages/Home'))
+const Portfolio = lazy(() => import('./pages/Portfolio'))
+const Agenda = lazy(() => import('./pages/Agenda'))
+const Reminders = lazy(() => import('./pages/Reminders'))
+const About = lazy(() => import('./pages/About'))
+const Contact = lazy(() => import('./pages/Contact'))
+const Shop = lazy(() => import('./pages/Shop'))
+const TattooDesigner = lazy(() => import('./pages/TattooDesigner'))
+const BodyVisualizer = lazy(() => import('./pages/BodyVisualizer'))
+const Suggestions = lazy(() => import('./pages/Suggestions'))
+const Courses = lazy(() => import('./pages/Courses'))
+const BookAppointment = lazy(() => import('./pages/BookAppointment'))
+const Chat = lazy(() => import('./pages/Chat'))
+const MyAccount = lazy(() => import('./pages/MyAccount'))
+const Login = lazy(() => import('./pages/Login'))
+
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
+}
 
 export default function App() {
   return (
+    <>
+    <ScrollToTop />
+    <Suspense fallback={<div className="min-h-dvh bg-ink flex items-center justify-center"><div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" /></div>}>
     <Routes>
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
@@ -59,5 +70,7 @@ export default function App() {
         </Route>
       </Route>
     </Routes>
+    </Suspense>
+    </>
   )
 }

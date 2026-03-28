@@ -35,8 +35,14 @@ export function useOrders(clientId?: string | null) {
       const snap = await getDocs(q)
       const orderList = snap.docs.map(d => ({ id: d.id, ...d.data() }) as Order)
 
-      const itemSnap = await getDocs(collection(db, 'order_items'))
-      const allItems = itemSnap.docs.map(d => ({ id: d.id, ...d.data() }) as OrderItem)
+      const orderIds = orderList.map(o => o.id)
+      const allItems: OrderItem[] = []
+      for (let i = 0; i < orderIds.length; i += 30) {
+        const batch = orderIds.slice(i, i + 30)
+        const itemQ = query(collection(db, 'order_items'), where('order_id', 'in', batch))
+        const itemSnap = await getDocs(itemQ)
+        allItems.push(...itemSnap.docs.map(d => ({ id: d.id, ...d.data() }) as OrderItem))
+      }
       const itemsByOrder = new Map<string, OrderItem[]>()
       for (const item of allItems) {
         const list = itemsByOrder.get(item.order_id) ?? []

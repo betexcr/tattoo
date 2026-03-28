@@ -114,7 +114,8 @@ export default function Messages() {
             <header className="flex items-center gap-3 px-4 py-3 border-b border-white/5 bg-ink-light/95 shrink-0">
               <button
                 onClick={() => setActiveClientId(null)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-subtle hover:text-cream transition-colors"
+                aria-label="Volver a conversaciones"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-subtle hover:text-cream transition-colors"
               >
                 <ArrowLeft size={20} />
               </button>

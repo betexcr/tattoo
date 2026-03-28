@@ -14,7 +14,7 @@ interface BottomNavProps {
 
 export default function BottomNav({ onMenuToggle }: BottomNavProps) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-ink-light/95 backdrop-blur-lg border-t border-white/5">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-ink-light/95 backdrop-blur-lg border-t border-white/5 pb-[env(safe-area-inset-bottom)]">
       <div className="flex items-center justify-around max-w-lg mx-auto h-16 px-2">
         {navItems.map(({ to, icon: Icon, label }) => (
           <NavLink
