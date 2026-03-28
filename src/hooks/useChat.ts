@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
-  collection, query, where, orderBy, getDocs, addDoc, updateDoc, doc,
-  onSnapshot, type Unsubscribe,
+  collection, query, where, orderBy, getDocs, addDoc, doc,
+  onSnapshot, type Unsubscribe, writeBatch,
 } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import type { ChatMessage, ChatConversation } from '../types'
@@ -40,6 +40,8 @@ export function useChat(clientId?: string) {
     )
     const unsub = onSnapshot(q, (snap) => {
       setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() }) as ChatMessage))
+    }, (e) => {
+      setError(e.message)
     })
     unsubRef.current = unsub
   }, [clientId])
@@ -70,10 +72,17 @@ export function useChat(clientId?: string) {
   const markRead = async () => {
     if (!clientId) return
     const unreadMsgs = messages.filter(m => !m.read)
-    for (const m of unreadMsgs) {
-      await updateDoc(doc(db, 'chat_messages', m.id), { read: true })
+    if (unreadMsgs.length === 0) return
+    try {
+      const batch = writeBatch(db)
+      for (const m of unreadMsgs) {
+        batch.update(doc(db, 'chat_messages', m.id), { read: true })
+      }
+      await batch.commit()
+      setMessages(prev => prev.map(m => ({ ...m, read: true })))
+    } catch (e: unknown) {
+      setError((e as Error).message)
     }
-    setMessages(prev => prev.map(m => ({ ...m, read: true })))
   }
 
   return { messages, loading, error, send, markRead, subscribe, unsubscribe, refetch: fetchMessages }
@@ -82,6 +91,7 @@ export function useChat(clientId?: string) {
 export function useChatConversations() {
   const [conversations, setConversations] = useState<ChatConversation[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const fetch = useCallback(async () => {
     setLoading(true)
@@ -123,7 +133,9 @@ export function useChatConversations() {
       }
 
       setConversations([...convMap.values()])
-    } catch {
+      setError(null)
+    } catch (e: unknown) {
+      setError((e as Error).message)
       setConversations([])
     }
     setLoading(false)
@@ -131,5 +143,5 @@ export function useChatConversations() {
 
   useEffect(() => { fetch() }, [fetch])
 
-  return { conversations, loading, refetch: fetch }
+  return { conversations, loading, error, refetch: fetch }
 }

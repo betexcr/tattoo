@@ -65,12 +65,14 @@ const defaultConfig: StudioConfig = {
 interface StudioConfigContextValue {
   config: StudioConfig
   loading: boolean
+  error: string | null
   refetch: () => Promise<void>
 }
 
 const StudioConfigContext = createContext<StudioConfigContextValue>({
   config: defaultConfig,
   loading: true,
+  error: null,
   refetch: async () => {},
 })
 
@@ -112,6 +114,7 @@ const SETTINGS_DOC = doc(db, 'studio_settings', 'main')
 export function StudioConfigProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<StudioConfig>(defaultConfig)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchConfig = useCallback(async () => {
     try {
@@ -119,8 +122,9 @@ export function StudioConfigProvider({ children }: { children: ReactNode }) {
       if (snap.exists()) {
         setConfig(mergeConfig({ id: snap.id, ...snap.data() } as StudioSettings))
       }
-    } catch {
-      // Fall back to defaults on error
+      setError(null)
+    } catch (e: unknown) {
+      setError((e as Error).message)
     }
     setLoading(false)
   }, [])
@@ -128,7 +132,7 @@ export function StudioConfigProvider({ children }: { children: ReactNode }) {
   useEffect(() => { fetchConfig() }, [fetchConfig])
 
   return (
-    <StudioConfigContext.Provider value={{ config, loading, refetch: fetchConfig }}>
+    <StudioConfigContext.Provider value={{ config, loading, error, refetch: fetchConfig }}>
       {children}
     </StudioConfigContext.Provider>
   )

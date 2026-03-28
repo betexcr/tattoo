@@ -36,7 +36,9 @@ function getInitials(name: string): string {
 }
 
 function formatDateSpanish(dateStr: string): string {
+  if (!dateStr) return 'Sin visitas'
   const date = new Date(dateStr + 'T12:00:00')
+  if (isNaN(date.getTime())) return '—'
   return date.toLocaleDateString('es-ES', {
     day: 'numeric',
     month: 'short',
@@ -131,16 +133,18 @@ export default function Clients() {
     }).catch(() => {})
   }, [])
 
-  const currentNotes = selectedClient ? (clientNotes[selectedClient.name] ?? '') : ''
-  const persistNote = useCallback((name: string, text: string) => {
-    setDoc(doc(db, 'client_notes', name), { text, updated_at: new Date().toISOString() }).catch(() => {})
+  const clientNoteKey = selectedClient?.id || selectedClient?.name || ''
+  const currentNotes = selectedClient ? (clientNotes[clientNoteKey] ?? '') : ''
+  const persistNote = useCallback((key: string, text: string) => {
+    if (!key) return
+    setDoc(doc(db, 'client_notes', key), { text, updated_at: new Date().toISOString() }).catch(() => {})
   }, [])
   const setCurrentNotes = (value: string) => {
     if (!selectedClient) return
-    setClientNotes(prev => ({ ...prev, [selectedClient.name]: value }))
+    const key = selectedClient.id || selectedClient.name
+    setClientNotes(prev => ({ ...prev, [key]: value }))
     if (noteSaveTimer) clearTimeout(noteSaveTimer)
-    const name = selectedClient.name
-    setNoteSaveTimer(setTimeout(() => persistNote(name, value), 800))
+    setNoteSaveTimer(setTimeout(() => persistNote(key, value), 800))
   }
 
   const clientList = useMemo(() => buildClientList(appointments, registeredClients), [appointments, registeredClients])

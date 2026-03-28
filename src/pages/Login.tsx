@@ -3,9 +3,11 @@ import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useStudioConfig } from '../contexts/StudioConfigContext'
 
 export default function Login() {
   const { signIn, signUp, resetPassword } = useAuth()
+  const { config } = useStudioConfig()
   const navigate = useNavigate()
   const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login')
   const [email, setEmail] = useState('')
@@ -72,7 +74,7 @@ export default function Login() {
         </h1>
         <p className="text-cream/50 mb-8 text-sm">
           {mode === 'login'
-            ? 'Accede a tu cuenta de Ink & Soul'
+            ? `Accede a tu cuenta de ${config.studio_name}`
             : mode === 'signup'
               ? 'Únete para reservar citas y más'
               : 'Ingresa tu email y te enviaremos un enlace'}

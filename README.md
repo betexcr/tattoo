@@ -79,7 +79,7 @@ npm run dev
 src/
   lib/firebase.ts            Firebase client (app, auth, db)
   types/index.ts             TypeScript interfaces
-  data/constants.ts          Static reference data (styles, body parts, etc.)
+  data/defaults.ts           Static reference data (styles, body parts, etc.)
   contexts/AuthContext.tsx    Auth state provider (Firebase Auth + Firestore profiles)
   hooks/                     Data hooks (useAppointments, useChat, etc.)
   pages/                     Client-facing pages

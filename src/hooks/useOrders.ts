@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
-  collection, query, orderBy, getDocs, addDoc, updateDoc, doc, where,
+  collection, query, orderBy, getDocs, updateDoc, doc, where, writeBatch,
 } from 'firebase/firestore'
 import { db, auth } from '../lib/firebase'
 import type { Order, OrderItem } from '../types'
@@ -60,8 +60,10 @@ export function useOrders(clientId?: string | null) {
   const create = async (input: CreateOrderInput): Promise<{ error: string | null; data?: Order }> => {
     try {
       const user = auth.currentUser
+      const batch = writeBatch(db)
 
-      const orderRef = await addDoc(collection(db, 'orders'), {
+      const orderRef = doc(collection(db, 'orders'))
+      const orderData = {
         client_id: user?.uid ?? null,
         client_name: input.client_name,
         client_email: input.client_email,
@@ -70,28 +72,18 @@ export function useOrders(clientId?: string | null) {
         total: input.total,
         status: 'pending',
         created_at: new Date().toISOString(),
-      })
+      }
+      batch.set(orderRef, orderData)
 
       for (const item of input.items) {
-        await addDoc(collection(db, 'order_items'), {
-          order_id: orderRef.id,
-          ...item,
-        })
+        const itemRef = doc(collection(db, 'order_items'))
+        batch.set(itemRef, { order_id: orderRef.id, ...item })
       }
 
-      const newOrder = {
-        id: orderRef.id,
-        client_id: user?.uid ?? null,
-        client_name: input.client_name,
-        client_email: input.client_email,
-        client_phone: input.client_phone ?? '',
-        client_address: input.client_address ?? '',
-        total: input.total,
-        status: 'pending',
-        created_at: new Date().toISOString(),
-      } as Order
-      setOrders(prev => [newOrder, ...prev])
+      await batch.commit()
 
+      const newOrder = { id: orderRef.id, ...orderData } as Order
+      setOrders(prev => [newOrder, ...prev])
       return { error: null, data: newOrder }
     } catch (e: unknown) {
       return { error: (e as Error).message }

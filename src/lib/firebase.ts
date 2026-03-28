@@ -13,7 +13,7 @@ const firebaseConfig = {
 }
 
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-  console.warn(
+  throw new Error(
     'Missing Firebase env vars. Copy .env.local.example to .env.local and fill in your Firebase project config.'
   )
 }

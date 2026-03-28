@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
@@ -24,9 +25,17 @@ const cardVariants = {
 export default function Portfolio() {
   const { config } = useStudioConfig()
   const { items: portfolioItems, loading } = usePortfolio()
+  const [searchParams] = useSearchParams()
+  const styleFromUrl = searchParams.get('style')
   const [selectedStyle, setSelectedStyle] = useState('Todos')
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+
+  useEffect(() => {
+    if (styleFromUrl && config.tattoo_styles.includes(styleFromUrl)) {
+      setSelectedStyle(styleFromUrl)
+    }
+  }, [styleFromUrl, config.tattoo_styles])
 
   const styleFilters = useMemo(
     () => ['Todos', ...config.tattoo_styles.filter((s) => FILTER_STYLES.includes(s))],
@@ -118,6 +127,12 @@ export default function Portfolio() {
           </motion.article>
         ))}
       </motion.div>
+
+      {filteredItems.length === 0 && !loading && (
+        <div className="flex flex-col items-center justify-center py-16 px-5">
+          <p className="text-subtle text-sm">No se encontraron resultados</p>
+        </div>
+      )}
 
       {/* Detail modal */}
       <AnimatePresence>

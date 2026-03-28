@@ -62,6 +62,7 @@ export default function Shop() {
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'form' | 'success'>('cart')
   const [checkoutForm, setCheckoutForm] = useState({ name: '', email: '', phone: '', address: '' })
   const [shopSearch, setShopSearch] = useState('')
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -121,10 +122,11 @@ export default function Shop() {
       })
       setNotifiedItems(prev => new Set(prev).add(selectedItem.id))
       setNotifyEmail('')
-    } catch { /* fail silently */ }
+    } catch { setNotifyEmail('') }
   }
 
   const handleCheckoutSubmit = async () => {
+    setCheckoutError(null)
     const { error } = await createOrder({
       client_name: checkoutForm.name,
       client_email: checkoutForm.email,
@@ -139,11 +141,13 @@ export default function Shop() {
         price: c.item.price,
       })),
     })
-    if (!error) {
-      setCheckoutStep('success')
-      setCart([])
-      setCheckoutForm({ name: '', email: '', phone: '', address: '' })
+    if (error) {
+      setCheckoutError(error)
+      return
     }
+    setCheckoutStep('success')
+    setCart([])
+    setCheckoutForm({ name: '', email: '', phone: '', address: '' })
   }
 
   const closeCartDrawer = () => {
@@ -290,8 +294,8 @@ export default function Shop() {
               )}
 
               {/* Sizes hint */}
-              {item.sizes && (
-                <div className="absolute top-2.5 right-2.5">
+              {item.in_stock && item.sizes && (
+                <div className="absolute top-10 right-2.5">
                   <span className="px-1.5 py-0.5 rounded-md bg-ink/70 backdrop-blur-sm text-[9px] text-cream-dark">
                     {item.sizes.length} tallas
                   </span>
@@ -380,6 +384,7 @@ export default function Shop() {
                       onChange={(e) => setCheckoutForm((f) => ({ ...f, address: e.target.value }))}
                       className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm"
                     />
+                    {checkoutError && <p className="text-rose text-sm text-center mb-2">{checkoutError}</p>}
                     <div className="flex gap-2 pt-2">
                       <button
                         onClick={() => setCheckoutStep('cart')}

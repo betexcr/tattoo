@@ -64,6 +64,7 @@ export default function Home() {
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [reviewForm, setReviewForm] = useState({ name: '', text: '', rating: 5, style: '' })
   const [reviewSubmitted, setReviewSubmitted] = useState(false)
+  const [reviewError, setReviewError] = useState<string | null>(null)
 
   const topSuggestions = useMemo(
     () => [...config.suggestions].sort((a, b) => b.popularity - a.popularity).slice(0, 3),
@@ -82,11 +83,14 @@ export default function Home() {
   const handleReviewSubmit = async () => {
     if (!reviewForm.text.trim() || !reviewForm.name.trim()) return
     const { error } = await createReview(reviewForm)
-    if (!error) {
-      setReviewSubmitted(true)
-      setReviewForm({ name: '', text: '', rating: 5, style: '' })
-      setTimeout(() => { setShowReviewForm(false); setReviewSubmitted(false) }, 2000)
+    if (error) {
+      setReviewError(error)
+      return
     }
+    setReviewError(null)
+    setReviewSubmitted(true)
+    setReviewForm({ name: '', text: '', rating: 5, style: '' })
+    setTimeout(() => { setShowReviewForm(false); setReviewSubmitted(false) }, 2000)
   }
 
   return (
@@ -353,6 +357,7 @@ export default function Home() {
                     <button onClick={() => setShowReviewForm(false)} className="flex-1 py-2 rounded-lg border border-white/10 text-subtle text-sm">Cancelar</button>
                     <button onClick={handleReviewSubmit} className="flex-1 py-2 rounded-lg bg-gold text-ink text-sm font-medium">Enviar</button>
                   </div>
+                  {reviewError && <p className="text-rose text-xs mt-2">{reviewError}</p>}
                 </div>
               )}
             </motion.div>

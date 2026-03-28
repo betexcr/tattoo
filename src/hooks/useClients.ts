@@ -6,6 +6,7 @@ import type { Profile } from '../types'
 export function useClients() {
   const [clients, setClients] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const fetch = useCallback(async () => {
     setLoading(true)
@@ -13,13 +14,14 @@ export function useClients() {
       const q = query(collection(db, 'profiles'), where('role', '==', 'client'))
       const snap = await getDocs(q)
       setClients(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Profile))
-    } catch {
-      setClients([])
+      setError(null)
+    } catch (e: unknown) {
+      setError((e as Error).message)
     }
     setLoading(false)
   }, [])
 
   useEffect(() => { fetch() }, [fetch])
 
-  return { clients, loading, refetch: fetch }
+  return { clients, loading, error, refetch: fetch }
 }

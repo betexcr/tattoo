@@ -173,7 +173,7 @@ export default function Dashboard() {
         <div className="rounded-xl bg-ink-light border border-white/5 p-4 relative overflow-hidden">
           <Calendar className="absolute top-3 right-3 w-5 h-5 text-gold/60" />
           <p className="text-2xl font-serif font-semibold text-cream">
-            {localAppointments.filter((a) => a.date === TODAY).length}
+            {todayAppointments.length}
           </p>
           <p className="text-xs text-subtle mt-0.5">Citas Hoy</p>
           <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gold/40" />

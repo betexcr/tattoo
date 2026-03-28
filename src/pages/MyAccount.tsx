@@ -31,6 +31,7 @@ export default function MyAccount() {
   const [tab, setTab] = useState<Tab>('profile')
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({ full_name: '', phone: '' })
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   if (loading) return <div className="min-h-dvh bg-ink flex items-center justify-center"><div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" /></div>
   if (!user) return <Navigate to="/login" replace />
@@ -41,9 +42,14 @@ export default function MyAccount() {
   }
 
   const saveEdit = async () => {
-    await setDoc(doc(db, 'profiles', user.uid), { full_name: form.full_name, phone: form.phone }, { merge: true })
-    await refreshProfile()
-    setEditing(false)
+    try {
+      await setDoc(doc(db, 'profiles', user.uid), { full_name: form.full_name, phone: form.phone }, { merge: true })
+      await refreshProfile()
+      setSaveError(null)
+      setEditing(false)
+    } catch (e) {
+      setSaveError((e as Error).message)
+    }
   }
 
   const tabs: { key: Tab; label: string; icon: typeof User }[] = [
@@ -98,6 +104,7 @@ export default function MyAccount() {
                     onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl bg-ink-light border border-white/10 text-cream text-sm"
                   />
+                  {saveError && <p className="text-rose text-sm text-center mb-2">{saveError}</p>}
                   <div className="flex gap-2">
                     <button onClick={() => setEditing(false)} className="flex-1 py-2.5 rounded-xl border border-white/10 text-subtle text-sm">Cancelar</button>
                     <button onClick={saveEdit} className="flex-1 py-2.5 rounded-xl bg-gold text-ink text-sm font-medium flex items-center justify-center gap-1.5"><Check size={14} /> Guardar</button>
@@ -162,7 +169,7 @@ export default function MyAccount() {
                   <div key={order.id} className="p-4 rounded-xl bg-ink-light border border-white/5">
                     <div className="flex items-start justify-between gap-3 mb-1">
                       <p className="text-cream text-sm font-medium">€{order.total}</p>
-                      <span className="text-[10px] px-2 py-1 rounded-full bg-gold/20 text-gold">{statusLabel[order.status]}</span>
+                      <span className="text-[10px] px-2 py-1 rounded-full bg-gold/20 text-gold">{statusLabel[order.status] ?? order.status}</span>
                     </div>
                     <p className="text-xs text-subtle">{formatDate(order.created_at)}</p>
                     {order.items && order.items.length > 0 && (

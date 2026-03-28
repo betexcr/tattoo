@@ -142,11 +142,17 @@ export interface Suggestion {
   popularity: number
 }
 
-export interface Review {
+export interface ReviewDisplay {
   name: string
   text: string
   rating: number
   style: string
+}
+
+export interface Review extends ReviewDisplay {
+  id: string
+  client_id: string | null
+  created_at: string
 }
 
 export interface AboutStat {
@@ -183,7 +189,7 @@ export interface ChatConfig {
 export interface HomeContent {
   subtitle: string
   tagline: string
-  reviews: Review[]
+  reviews: ReviewDisplay[]
 }
 
 export interface AboutContent {
@@ -212,6 +218,17 @@ export interface AppNotification {
   link?: string
 }
 
+export interface ScheduleDay {
+  open: boolean
+  start?: string
+  end?: string
+}
+
+export interface PriceRange {
+  min: number
+  max: number
+}
+
 export interface StudioSettings {
   id: string
   studio_name: string
@@ -220,10 +237,11 @@ export interface StudioSettings {
   phone: string
   email: string
   address: string
-  schedule: Record<string, unknown>
-  prices: Record<string, unknown>
-  social_links: Record<string, unknown>
-  notifications: Record<string, unknown>
+  logo_url?: string
+  schedule: Record<string, ScheduleDay | string>
+  prices: Record<string, PriceRange | number>
+  social_links: Record<string, string>
+  notifications: Record<string, boolean>
   tattoo_styles: string[]
   body_parts: string[]
   suggestions: Suggestion[]
@@ -232,5 +250,65 @@ export interface StudioSettings {
   home_content: HomeContent
   about_content: AboutContent
   quiz_config: QuizConfig
+  weekday_slots?: string[]
+  saturday_slots?: string[]
+  monthly_target?: number
+  designer_elements?: DesignerElement[]
+  color_palette?: ColorOption[]
+  shop_categories?: ShopCategoryConfig[]
   updated_at: string
+}
+
+export interface DesignerElement {
+  id: string
+  name: string
+  category: string
+}
+
+export interface ColorOption {
+  id: string
+  hex: string
+  label: string
+}
+
+export interface ShopCategoryConfig {
+  value: string
+  label: string
+  description: string
+  colorClass: string
+}
+
+export interface StockNotification {
+  id: string
+  item_id: string
+  email: string
+  user_id: string | null
+  created_at: string
+}
+
+export interface DesignShare {
+  id: string
+  style: string | null
+  size: string
+  elements: string[]
+  colorMode: string
+  colors: string[]
+  notes: string
+  client_id: string | null
+  status?: 'draft' | 'shared'
+  created_at: string
+}
+
+export interface ClientNote {
+  id: string
+  client_id: string
+  text: string
+  created_at: string
+}
+
+export interface UserLike {
+  id: string
+  user_id: string
+  suggestion_id: string
+  created_at: string
 }

@@ -84,7 +84,10 @@ export default function BookAppointment() {
     return formatDateKey(t.getFullYear(), t.getMonth(), t.getDate())
   }, [])
 
-  const [calendarView, setCalendarView] = useState({ year: 2026, month: 2 })
+  const [calendarView, setCalendarView] = useState(() => {
+    const now = new Date()
+    return { year: now.getFullYear(), month: now.getMonth() }
+  })
 
   const currentStep = STEPS[step]
 
@@ -121,7 +124,7 @@ export default function BookAppointment() {
         reference_images: referenceImages,
         size: selectedSize,
         notes: contact.notes,
-      } as any)
+      })
       if (result?.error) {
         setBookingError('No se pudo reservar la cita. Inténtalo de nuevo.')
         return

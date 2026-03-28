@@ -1,6 +1,6 @@
 import type {
   Suggestion,
-  Review,
+  ReviewDisplay,
   AboutStat,
   QuickReply,
   QuizQuestion,
@@ -79,7 +79,7 @@ export const defaultChatConfig: ChatConfig = {
   response_time_text: 'Normalmente responde en menos de 1h',
 }
 
-export const defaultReviews: Review[] = [
+export const defaultReviews: ReviewDisplay[] = [
   { name: 'Lucía M.', text: 'Un trabajo increíble. Valentina captó exactamente lo que quería. Totalmente recomendable.', rating: 5, style: 'Fine Line' },
   { name: 'Andrés P.', text: 'El estudio es precioso y la atención impecable. Mi tatuaje sanó perfecto.', rating: 5, style: 'Geometric' },
   { name: 'Carmen R.', text: 'Ya llevo 3 tatuajes con ella. Cada vez supera mis expectativas. Artista de verdad.', rating: 5, style: 'Dotwork' },

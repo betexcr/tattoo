@@ -13,12 +13,12 @@ import type { Profile } from '../types'
 
 interface AuthState {
   user: User | null
-  session: unknown
   profile: Profile | null
   isArtist: boolean
   loading: boolean
+  error: string | null
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
-  signUp: (email: string, password: string, fullName: string, role?: string) => Promise<{ error: string | null }>
+  signUp: (email: string, password: string, fullName: string, role?: Profile['role']) => Promise<{ error: string | null }>
   resetPassword: (email: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
@@ -30,11 +30,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchProfile = useCallback(async (uid: string) => {
-    const snap = await getDoc(doc(db, 'profiles', uid))
-    if (snap.exists()) {
-      setProfile({ id: snap.id, ...snap.data() } as Profile)
+    try {
+      const snap = await getDoc(doc(db, 'profiles', uid))
+      if (snap.exists()) {
+        setProfile({ id: snap.id, ...snap.data() } as Profile)
+      }
+      setError(null)
+    } catch (e: unknown) {
+      setError((e as Error).message)
     }
   }, [])
 
@@ -64,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signUp = async (email: string, password: string, fullName: string, role = 'client') => {
+  const signUp = async (email: string, password: string, fullName: string, role: Profile['role'] = 'client') => {
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, password)
       await setDoc(doc(db, 'profiles', cred.user.uid), {
@@ -90,15 +96,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const handleSignOut = async () => {
-    await firebaseSignOut(auth)
-    setProfile(null)
+    try {
+      await firebaseSignOut(auth)
+      setProfile(null)
+      setError(null)
+    } catch (e: unknown) {
+      setError((e as Error).message)
+    }
   }
 
   const isArtist = profile?.role === 'artist'
 
   return (
     <AuthContext.Provider
-      value={{ user, session: null, profile, isArtist, loading, signIn, signUp, resetPassword, signOut: handleSignOut, refreshProfile }}
+      value={{ user, profile, isArtist, loading, error, signIn, signUp, resetPassword, signOut: handleSignOut, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>

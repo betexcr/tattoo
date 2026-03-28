@@ -15,9 +15,8 @@ import {
 } from 'lucide-react'
 import { useStudioSettings } from '../hooks/useStudioSettings'
 import type {
-  StudioSettings,
   Suggestion,
-  Review,
+  ReviewDisplay,
   AboutStat,
   QuickReply,
   QuizQuestion,
@@ -151,7 +150,7 @@ export default function StudioSettings() {
   // Contenido state
   const [homeSubtitle, setHomeSubtitle] = useState(defaultHomeContent.subtitle)
   const [homeTagline, setHomeTagline] = useState(defaultHomeContent.tagline)
-  const [reviews, setReviews] = useState<Review[]>(defaultHomeContent.reviews)
+  const [reviews, setReviews] = useState<ReviewDisplay[]>(defaultHomeContent.reviews)
   const [aboutHeroImage, setAboutHeroImage] = useState(defaultAboutContent.hero_image)
   const [aboutArtistTitle, setAboutArtistTitle] = useState(defaultAboutContent.artist_title)
   const [aboutBio, setAboutBio] = useState(defaultAboutContent.bio)
@@ -264,8 +263,8 @@ export default function StudioSettings() {
       phone,
       email,
       address,
-      schedule: schedule as Record<string, unknown>,
-      prices: prices as Record<string, unknown>,
+      schedule: schedule as Record<string, DaySchedule | string>,
+      prices: prices as Record<string, PriceRange | number>,
       social_links: { instagram, tiktok, website },
     })
     if (!error) showSuccess('perfil')
@@ -461,7 +460,7 @@ export default function StudioSettings() {
     ])
   }
 
-  const updateReview = (idx: number, updates: Partial<Review>) => {
+  const updateReview = (idx: number, updates: Partial<ReviewDisplay>) => {
     setReviews((s) =>
       s.map((r, i) => (i === idx ? { ...r, ...updates } : r))
     )

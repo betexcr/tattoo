@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import PageHeader from '../components/PageHeader'
+import LoadingSpinner from '../components/LoadingSpinner'
 import { useCourses } from '../hooks/useCourses'
 import type { Course } from '../types'
 
@@ -42,10 +43,11 @@ const cardVariants = {
 const INITIAL_FORM = { name: '', email: '', phone: '' }
 
 export default function Courses() {
-  const { courses, reservedIds, reserve } = useCourses()
+  const { courses, reservedIds, reserve, loading, error } = useCourses()
   const [reservingCourse, setReservingCourse] = useState<Course | null>(null)
   const [reservationForm, setReservationForm] = useState(INITIAL_FORM)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [reserveError, setReserveError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!showSuccess) return
@@ -59,15 +61,40 @@ export default function Courses() {
 
   const handleConfirmReserva = async () => {
     if (!reservingCourse) return
-    const { error } = await reserve(
+    setReserveError(null)
+    const { error: err } = await reserve(
       reservingCourse.id,
       reservationForm.name,
       reservationForm.email,
       reservationForm.phone
     )
-    if (!error) {
-      setShowSuccess(true)
+    if (err) {
+      setReserveError(err)
+      return
     }
+    setShowSuccess(true)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-dvh pb-6">
+        <PageHeader title="Cursos y Talleres" subtitle="Aprende con nosotros" />
+        <div className="flex items-center justify-center py-20">
+          <LoadingSpinner />
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-dvh pb-6">
+        <PageHeader title="Cursos y Talleres" subtitle="Aprende con nosotros" />
+        <div className="flex flex-col items-center justify-center py-20 px-5">
+          <p className="text-red-400 text-sm text-center">{error}</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -92,6 +119,12 @@ export default function Courses() {
           exclusivos, diseñados tanto para principiantes como para artistas
           experimentados.
         </motion.p>
+
+        {courses.length === 0 && !loading && (
+          <div className="flex flex-col items-center justify-center py-16">
+            <p className="text-subtle text-sm">No hay cursos disponibles en este momento</p>
+          </div>
+        )}
 
         {/* Course cards */}
         <div className="space-y-5">
@@ -224,6 +257,7 @@ export default function Courses() {
                       className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm focus:outline-none focus:border-gold/50"
                       required
                     />
+                    {reserveError && <p className="text-rose text-sm text-center">{reserveError}</p>}
                     <button
                       type="submit"
                       className="w-full py-3.5 rounded-full bg-gold text-ink font-medium text-sm hover:bg-gold-light active:scale-[0.98] transition-all"

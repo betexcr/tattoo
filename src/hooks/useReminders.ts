@@ -39,12 +39,13 @@ export function useReminders() {
 
   const toggleComplete = async (id: string) => {
     const r = reminders.find(r => r.id === id)
-    if (!r) return
+    if (!r) return { error: 'Not found' }
     try {
       await updateDoc(doc(db, 'reminders', id), { completed: !r.completed })
       setReminders(prev => prev.map(r => r.id === id ? { ...r, completed: !r.completed } : r))
-    } catch {
-      // silent fail
+      return { error: null }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
     }
   }
 
@@ -52,8 +53,9 @@ export function useReminders() {
     try {
       await deleteDoc(doc(db, 'reminders', id))
       setReminders(prev => prev.filter(r => r.id !== id))
-    } catch {
-      // silent fail
+      return { error: null }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
     }
   }
 

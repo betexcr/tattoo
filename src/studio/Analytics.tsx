@@ -19,9 +19,11 @@ const itemVariants = {
 }
 
 export default function Analytics() {
-  const { appointments } = useAppointments()
-  const { orders } = useOrders()
+  const { appointments, loading: loadingAppts } = useAppointments()
+  const { orders, loading: loadingOrders } = useOrders()
   const { config } = useStudioConfig()
+
+  const loading = loadingAppts || loadingOrders
 
   const MONTHLY_TARGET = (config.prices as Record<string, number>).monthly_target ?? 2000
 
@@ -119,6 +121,14 @@ export default function Analytics() {
       maxDensity,
     }
   }, [appointments, orders])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <motion.div

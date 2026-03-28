@@ -192,7 +192,7 @@ export default function Suggestions() {
                 </div>
 
                 <Link
-                  to="/portfolio"
+                  to={`/portfolio?style=${encodeURIComponent(suggestion.style)}`}
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-gold/50 text-gold text-sm font-medium hover:bg-gold/10 transition-colors"
                 >
                   Ver Diseños
@@ -283,7 +283,7 @@ export default function Suggestions() {
                       <p className="text-cream-dark text-sm mt-1">{quizResult.description}</p>
                     </div>
                     <Link
-                      to="/portfolio"
+                      to={`/portfolio?style=${encodeURIComponent(quizResult.style)}`}
                       onClick={handleCloseQuiz}
                       className="block w-full py-3 rounded-lg bg-gold text-ink font-medium text-sm hover:bg-gold-light transition-colors"
                     >

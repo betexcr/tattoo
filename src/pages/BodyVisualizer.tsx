@@ -452,7 +452,7 @@ function BodySVGBack({
 }
 
 export default function BodyVisualizer() {
-  const { items: portfolioItems } = usePortfolio()
+  const { items: portfolioItems, loading } = usePortfolio()
   const [selectedZone, setSelectedZone] = useState<BodyZone | null>(null)
   const [selectedView, setSelectedView] = useState<ViewMode>('front')
   const [selectedDesign, setSelectedDesign] = useState<PortfolioItem | null>(null)
@@ -462,6 +462,14 @@ export default function BodyVisualizer() {
 
   const handleZoneClick = (zone: BodyZone) => {
     setSelectedZone((prev) => (prev === zone ? null : zone))
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-dvh bg-ink flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+      </div>
+    )
   }
 
   return (

@@ -33,6 +33,7 @@ export default function Orders() {
   const { create: createNotification } = useNotifications()
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [updateError, setUpdateError] = useState<string | null>(null)
 
   const filtered = useMemo(
     () => statusFilter ? orders.filter(o => o.status === statusFilter) : orders,
@@ -127,19 +128,29 @@ export default function Orders() {
                             ))}
                           </div>
                         )}
+                        {updateError && expandedId === order.id && (
+                          <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                            {updateError}
+                          </p>
+                        )}
                         {cfg.next && (
                           <button
                             onClick={async () => {
-                              await hookUpdateStatus(order.id, cfg.next!)
-                              if (order.client_id) {
-                                const nextCfg = STATUS_CONFIG[cfg.next!]
-                                createNotification({
-                                  user_id: order.client_id,
-                                  title: 'Pedido actualizado',
-                                  body: `Tu pedido ha sido marcado como "${nextCfg.label}".`,
-                                  type: 'order',
-                                  link: '/account',
-                                })
+                              try {
+                                setUpdateError(null)
+                                await hookUpdateStatus(order.id, cfg.next!)
+                                if (order.client_id) {
+                                  const nextCfg = STATUS_CONFIG[cfg.next!]
+                                  createNotification({
+                                    user_id: order.client_id,
+                                    title: 'Pedido actualizado',
+                                    body: `Tu pedido ha sido marcado como "${nextCfg.label}".`,
+                                    type: 'order',
+                                    link: '/account',
+                                  })
+                                }
+                              } catch {
+                                setUpdateError('Error al actualizar el estado del pedido')
                               }
                             }}
                             className="w-full py-2.5 rounded-xl bg-gold/10 text-gold text-sm font-medium hover:bg-gold/20 transition-colors"

@@ -30,7 +30,7 @@ const itemVariants = {
 
 export default function PortfolioManager() {
   const { config } = useStudioConfig()
-  const { items: portfolio, create, update, remove } = usePortfolio(false)
+  const { items: portfolio, loading, error, create, update, remove } = usePortfolio(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null)
   const [formData, setFormData] = useState<Partial<PortfolioItem>>({
@@ -120,6 +120,22 @@ export default function PortfolioManager() {
 
   const togglePublished = async (item: PortfolioItem) => {
     await update(item.id, { published: !item.published })
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <p className="text-red-400 text-sm">{error}</p>
+      </div>
+    )
   }
 
   return (

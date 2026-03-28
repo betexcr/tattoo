@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
-  collection, query, orderBy, where, getDocs, addDoc, updateDoc, doc,
+  collection, query, orderBy, where, getDocs, doc, runTransaction,
 } from 'firebase/firestore'
 import { db, auth } from '../lib/firebase'
 import type { Course } from '../types'
@@ -38,24 +38,26 @@ export function useCourses() {
   const reserve = async (courseId: string, name: string, email: string, phone: string) => {
     try {
       const user = auth.currentUser
+      await runTransaction(db, async (transaction) => {
+        const courseRef = doc(db, 'courses', courseId)
+        const courseSnap = await transaction.get(courseRef)
+        if (!courseSnap.exists()) throw new Error('Curso no encontrado')
+        const currentSpots = courseSnap.data().spots as number
+        if (currentSpots <= 0) throw new Error('No quedan plazas disponibles')
 
-      await addDoc(collection(db, 'course_reservations'), {
-        course_id: courseId,
-        client_id: user?.uid ?? null,
-        name,
-        email,
-        phone,
-        created_at: new Date().toISOString(),
+        const resRef = doc(collection(db, 'course_reservations'))
+        transaction.set(resRef, {
+          course_id: courseId,
+          client_id: user?.uid ?? null,
+          name,
+          email,
+          phone,
+          created_at: new Date().toISOString(),
+        })
+        transaction.update(courseRef, { spots: currentSpots - 1 })
       })
-
-      const course = courses.find(c => c.id === courseId)
-      if (course && course.spots > 0) {
-        await updateDoc(doc(db, 'courses', courseId), { spots: course.spots - 1 })
-        setCourses(prev => prev.map(c => c.id === courseId ? { ...c, spots: c.spots - 1 } : c))
-      }
-
+      setCourses(prev => prev.map(c => c.id === courseId ? { ...c, spots: c.spots - 1 } : c))
       setReservedIds(prev => new Set(prev).add(courseId))
-
       return { error: null }
     } catch (e: unknown) {
       return { error: (e as Error).message }

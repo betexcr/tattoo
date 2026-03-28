@@ -55,6 +55,7 @@ export default function Contact() {
     bodyPart: '',
   })
   const [submitted, setSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const contactInfo = useMemo(
     () => [
@@ -82,7 +83,7 @@ export default function Contact() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    await submit({
+    const { error } = await submit({
       name: formData.name,
       email: formData.email,
       phone: formData.phone,
@@ -90,6 +91,11 @@ export default function Contact() {
       tattoo_style: formData.tattooStyle,
       body_part: formData.bodyPart,
     })
+    if (error) {
+      setSubmitError(error)
+      return
+    }
+    setSubmitError(null)
     setSubmitted(true)
     setFormData({ name: '', email: '', phone: '', message: '', tattooStyle: '', bodyPart: '' })
     setTimeout(() => setSubmitted(false), 4000)
@@ -145,6 +151,12 @@ export default function Contact() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {submitError && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center gap-3">
+            <p className="text-red-400 text-sm">{submitError}</p>
+          </motion.div>
+        )}
 
         {/* Contact form */}
         <motion.form

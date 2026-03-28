@@ -214,6 +214,9 @@ export default function Messages() {
             )}
 
             <div className="space-y-2">
+              {sortedConversations.length === 0 && (
+                <p className="text-subtle text-sm py-8 text-center">No hay conversaciones</p>
+              )}
               {sortedConversations.map((conv) => (
                 <motion.button
                   key={conv.client_id}

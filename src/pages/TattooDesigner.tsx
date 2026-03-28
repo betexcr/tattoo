@@ -100,6 +100,7 @@ export default function TattooDesigner() {
   const [notes, setNotes] = useState('')
   const [showSaved, setShowSaved] = useState(false)
   const [showShared, setShowShared] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const addElement = (el: DesignElement) => {
     if (selectedElements.some((e) => e.id === el.id)) return
@@ -377,12 +378,13 @@ export default function TattooDesigner() {
             </motion.div>
           )}
         </AnimatePresence>
+        {saveError && <p className="text-rose text-sm text-center">{saveError}</p>}
 
         {/* Action buttons */}
         <div className="flex gap-3 pt-4">
           <motion.button
             whileTap={{ scale: 0.98 }}
-            onClick={() => {
+            onClick={async () => {
               const design = {
                 style: selectedStyle,
                 size: selectedSize,
@@ -390,11 +392,18 @@ export default function TattooDesigner() {
                 colorMode,
                 colors: selectedColors,
                 notes,
-                savedAt: new Date().toISOString(),
+                client_id: user?.uid ?? null,
+                status: 'draft',
+                created_at: new Date().toISOString(),
               }
-              try { localStorage.setItem('saved-design', JSON.stringify(design)) } catch { /* */ }
-              setShowSaved(true)
-              setTimeout(() => setShowSaved(false), 3000)
+              try {
+                await addDoc(collection(db, 'design_shares'), design)
+                setShowSaved(true)
+                setSaveError(null)
+                setTimeout(() => setShowSaved(false), 3000)
+              } catch (e: unknown) {
+                setSaveError((e as Error).message)
+              }
             }}
             className="flex-1 py-3.5 rounded-xl bg-gold text-ink font-serif font-medium text-sm"
           >
@@ -417,8 +426,9 @@ export default function TattooDesigner() {
               try {
                 const ref = await addDoc(collection(db, 'design_shares'), design)
                 setTimeout(() => { setShowShared(false); navigate(`/chat?design=${ref.id}`) }, 1500)
-              } catch {
-                setTimeout(() => { setShowShared(false); navigate('/chat') }, 1500)
+              } catch (e: unknown) {
+                setShowShared(false)
+                setSaveError((e as Error).message)
               }
             }}
             className="flex-1 py-3.5 rounded-xl border border-gold text-gold font-serif font-medium text-sm hover:bg-gold/10 transition-colors"

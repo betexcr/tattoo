@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import { useState } from 'react'
+import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard,
@@ -33,6 +34,8 @@ const moreItems = [
 export default function StudioLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const location = useLocation()
+  const { config } = useStudioConfig()
+  const initials = config.studio_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 
   const pageTitle = () => {
     const path = location.pathname
@@ -54,7 +57,7 @@ export default function StudioLayout() {
         <div className="flex items-center justify-between px-4 h-12">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center">
-              <span className="text-ink text-xs font-bold">IS</span>
+              <span className="text-ink text-xs font-bold">{initials}</span>
             </div>
             <div>
               <p className="text-cream text-sm font-medium leading-none">{pageTitle()}</p>

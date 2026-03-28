@@ -3,24 +3,20 @@ import { collection, query, orderBy, getDocs, addDoc } from 'firebase/firestore'
 import { db, auth } from '../lib/firebase'
 import type { Review } from '../types'
 
-interface StoredReview extends Review {
-  id: string
-  client_id: string | null
-  created_at: string
-}
-
 export function useReviews() {
-  const [reviews, setReviews] = useState<StoredReview[]>([])
+  const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const fetch = useCallback(async () => {
     setLoading(true)
     try {
       const q = query(collection(db, 'reviews'), orderBy('created_at', 'desc'))
       const snap = await getDocs(q)
-      setReviews(snap.docs.map(d => ({ id: d.id, ...d.data() }) as StoredReview))
-    } catch {
-      setReviews([])
+      setReviews(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Review))
+      setError(null)
+    } catch (e: unknown) {
+      setError((e as Error).message)
     }
     setLoading(false)
   }, [])
@@ -36,12 +32,12 @@ export function useReviews() {
         created_at: new Date().toISOString(),
       }
       const ref = await addDoc(collection(db, 'reviews'), data)
-      setReviews(prev => [{ id: ref.id, ...data } as StoredReview, ...prev])
+      setReviews(prev => [{ id: ref.id, ...data } as Review, ...prev])
       return { error: null }
     } catch (e: unknown) {
       return { error: (e as Error).message }
     }
   }
 
-  return { reviews, loading, refetch: fetch, create }
+  return { reviews, loading, error, refetch: fetch, create }
 }
