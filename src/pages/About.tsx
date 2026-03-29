@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Instagram, Video, LayoutGrid } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
+import { safeHref } from '../utils/safeHref'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -55,6 +56,8 @@ export default function About() {
             <img
               src={config.about_content.hero_image}
               alt={config.artist_name}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover"
             />
             <div
@@ -187,7 +190,7 @@ export default function About() {
               {socialLinks.map(({ label, icon: Icon, href }) => (
                 <a
                   key={label}
-                  href={href}
+                  href={safeHref(href)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-12 h-12 rounded-full bg-ink-medium border border-gold/20 flex items-center justify-center text-gold hover:bg-gold/10 hover:border-gold/40 transition-colors"

@@ -18,6 +18,7 @@ import { storage } from '../lib/firebase'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { useAppointments } from '../hooks/useAppointments'
 import { useRequireAuth } from '../hooks/useRequireAuth'
+import { mapFirestoreError } from '../utils/mapFirestoreError'
 import { useNotifications } from '../hooks/useNotifications'
 
 const STEPS = [
@@ -31,7 +32,7 @@ const STEPS = [
 ]
 
 const sizes = [
-  { id: 'tiny', label: 'Tiny', desc: '2-5 cm', icon: '·', estimate: '30-60 min', price: '€50-80' },
+  { id: 'tiny', label: 'Diminuto', desc: '2-5 cm', icon: '·', estimate: '30-60 min', price: '€50-80' },
   { id: 'small', label: 'Pequeño', desc: '5-10 cm', icon: '●', estimate: '1-2 horas', price: '€80-150' },
   { id: 'medium', label: 'Mediano', desc: '10-20 cm', icon: '⬤', estimate: '2-4 horas', price: '€150-300' },
   { id: 'large', label: 'Grande', desc: '20-35 cm', icon: '⬤', estimate: '4-6 horas', price: '€300-500' },
@@ -105,40 +106,50 @@ export default function BookAppointment() {
   }
 
   const [bookingError, setBookingError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   const goNext = async () => {
     if (step === STEPS.length - 1) {
-      if (!requireAuth('/book')) return
+      if (!requireAuth('/book') || submitting) return
       setBookingError('')
-      const result = await create({
-        client_id: user?.uid ?? null,
-        client_name: contact.name,
-        date: selectedDate,
-        time: selectedTime,
-        description,
-        body_part: selectedBodyPart,
-        style: selectedStyle,
-        status: 'pending',
-        deposit: 0,
-        phone: contact.phone,
-        email: contact.email,
-        reference_images: referenceImages,
-        size: selectedSize,
-        notes: contact.notes,
-      })
-      if (result?.error) {
-        setBookingError('No se pudo reservar la cita. Inténtalo de nuevo.')
+      setSubmitting(true)
+      try {
+        const result = await create({
+          client_id: user?.uid ?? null,
+          client_name: contact.name,
+          date: selectedDate,
+          time: selectedTime,
+          description,
+          body_part: selectedBodyPart,
+          style: selectedStyle,
+          status: 'pending',
+          deposit: 0,
+          phone: contact.phone,
+          email: contact.email,
+          reference_images: referenceImages,
+          size: selectedSize,
+          notes: contact.notes,
+        })
+        if (result?.error) {
+          setBookingError('No se pudo reservar la cita. Inténtalo de nuevo.')
+          return
+        }
+        try {
+          await createNotification({
+            user_id: user?.uid ?? '',
+            title: 'Cita reservada',
+            body: `Tu cita para ${selectedStyle} el ${selectedDate} a las ${selectedTime} ha sido registrada.`,
+            type: 'appointment',
+            link: '/agenda',
+          })
+        } catch { /* notification is best-effort */ }
+        setBooked(true)
         return
+      } catch (e: unknown) {
+        setBookingError(mapFirestoreError(e))
+      } finally {
+        setSubmitting(false)
       }
-      createNotification({
-        user_id: user?.uid ?? '',
-        title: 'Cita reservada',
-        body: `Tu cita para ${selectedStyle} el ${selectedDate} a las ${selectedTime} ha sido registrada.`,
-        type: 'appointment',
-        link: '/agenda',
-      })
-      setBooked(true)
-      return
     }
     setDirection(1)
     setStep((s) => Math.min(s + 1, STEPS.length - 1))
@@ -327,12 +338,14 @@ export default function BookAppointment() {
           className="mt-8 space-y-3 w-full max-w-xs"
         >
           <button
+            type="button"
             onClick={() => navigate('/')}
             className="w-full py-3.5 rounded-xl bg-gold text-ink font-medium hover:bg-gold-light transition-colors"
           >
             Volver al inicio
           </button>
           <button
+            type="button"
             onClick={() => navigate('/reminders')}
             className="w-full py-3.5 rounded-xl border border-gold/30 text-gold font-medium hover:bg-gold/5 transition-colors"
           >
@@ -346,23 +359,27 @@ export default function BookAppointment() {
   return (
     <div className="min-h-dvh bg-ink flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-ink/90 backdrop-blur-lg border-b border-white/5">
+      <header className="sticky top-0 z-40 bg-ink/90 backdrop-blur-lg border-b border-white/5 pt-[env(safe-area-inset-top,0px)]">
         <div className="flex items-center justify-between px-5 h-14">
           <button
+            type="button"
             onClick={goBack}
-            className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
+            aria-label="Paso anterior"
+            className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
           >
-            <ArrowLeft size={16} />
+            <ArrowLeft size={18} />
           </button>
           <div className="text-center">
             <p className="text-cream text-sm font-medium">{currentStep.title}</p>
             <p className="text-subtle text-[10px]">Paso {step + 1} de {STEPS.length}</p>
           </div>
           <button
+            type="button"
             onClick={() => navigate(-1)}
-            className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
+            aria-label="Cerrar reserva"
+            className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
           >
-            <X size={16} />
+            <X size={18} />
           </button>
         </div>
         {/* Progress bar */}
@@ -395,8 +412,10 @@ export default function BookAppointment() {
               <div className="grid grid-cols-2 gap-2.5">
                 {config.tattoo_styles.map((style) => (
                   <button
+                    type="button"
                     key={style}
                     onClick={() => setSelectedStyle(style)}
+                    aria-pressed={selectedStyle === style}
                     className={`p-4 rounded-xl border text-left transition-all ${
                       selectedStyle === style
                         ? 'border-gold bg-gold/10 text-gold'
@@ -413,11 +432,12 @@ export default function BookAppointment() {
             {step === 1 && (
               <div className="space-y-5">
                 <div>
-                  <label className="block text-xs text-subtle mb-2">Describe tu idea de tatuaje</label>
+                  <label htmlFor="book-description" className="block text-xs text-subtle mb-2">Describe tu idea de tatuaje</label>
                   <textarea
+                    id="book-description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Ej: Quiero una rosa pequeña con hojas delicadas en estilo fine line, con un toque de geometría en los pétalos..."
+                    placeholder="Ej: Quiero una rosa pequeña con hojas delicadas en estilo línea fina, con un toque de geometría en los pétalos..."
                     rows={5}
                     className="w-full px-4 py-3 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle/50 focus:outline-none focus:border-gold/50 resize-none text-sm leading-relaxed"
                   />
@@ -430,10 +450,12 @@ export default function BookAppointment() {
                   <label className="block text-xs text-subtle mb-2">Imágenes de referencia (opcional)</label>
                   <div className="flex gap-3 flex-wrap">
                     {referenceImages.map((img, i) => (
-                      <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border border-white/10">
-                        <img src={img} alt="" className="w-full h-full object-cover" />
+                      <div key={img} className="relative w-20 h-20 rounded-xl overflow-hidden border border-white/10">
+                        <img src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                         <button
+                          type="button"
                           onClick={() => setReferenceImages((prev) => prev.filter((_, idx) => idx !== i))}
+                          aria-label="Eliminar imagen de referencia"
                           className="absolute top-1 right-1 w-5 h-5 rounded-full bg-ink/80 flex items-center justify-center"
                         >
                           <X size={10} className="text-cream" />
@@ -441,6 +463,7 @@ export default function BookAppointment() {
                       </div>
                     ))}
                     <button
+                      type="button"
                       onClick={handleImageUpload}
                       className="w-20 h-20 rounded-xl border border-dashed border-white/10 flex flex-col items-center justify-center gap-1 text-subtle hover:text-cream hover:border-gold/30 transition-colors"
                     >
@@ -457,8 +480,10 @@ export default function BookAppointment() {
               <div className="grid grid-cols-3 gap-2.5">
                 {config.body_parts.map((part) => (
                   <button
+                    type="button"
                     key={part}
                     onClick={() => setSelectedBodyPart(part)}
+                    aria-pressed={selectedBodyPart === part}
                     className={`p-3 rounded-xl border text-center transition-all ${
                       selectedBodyPart === part
                         ? 'border-gold bg-gold/10 text-gold'
@@ -476,8 +501,10 @@ export default function BookAppointment() {
               <div className="space-y-3">
                 {sizes.map((size) => (
                   <button
+                    type="button"
                     key={size.id}
                     onClick={() => setSelectedSize(size.id)}
+                    aria-pressed={selectedSize === size.id}
                     className={`w-full p-4 rounded-xl border text-left transition-all ${
                       selectedSize === size.id
                         ? 'border-gold bg-gold/10'
@@ -511,11 +538,13 @@ export default function BookAppointment() {
                   {/* Calendar header with month navigation */}
                   <div className="flex items-center justify-between mb-3">
                     <button
+                      type="button"
                       onClick={() => setCalendarView((v) => ({
                         ...v,
                         month: v.month === 0 ? 11 : v.month - 1,
                         year: v.month === 0 ? v.year - 1 : v.year,
                       }))}
+                      aria-label="Mes anterior"
                       className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
                     >
                       <ChevronLeft size={16} />
@@ -524,11 +553,13 @@ export default function BookAppointment() {
                       {monthNames[calendarView.month]} {calendarView.year}
                     </span>
                     <button
+                      type="button"
                       onClick={() => setCalendarView((v) => ({
                         ...v,
                         month: v.month === 11 ? 0 : v.month + 1,
                         year: v.month === 11 ? v.year + 1 : v.year,
                       }))}
+                      aria-label="Mes siguiente"
                       className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
                     >
                       <ChevronRight size={16} />
@@ -629,8 +660,9 @@ export default function BookAppointment() {
             {step === 5 && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">Nombre completo *</label>
+                  <label htmlFor="book-name" className="block text-xs text-subtle mb-1.5">Nombre completo *</label>
                   <input
+                    id="book-name"
                     type="text"
                     value={contact.name}
                     onChange={(e) => setContact((c) => ({ ...c, name: e.target.value }))}
@@ -639,8 +671,9 @@ export default function BookAppointment() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">WhatsApp / Teléfono *</label>
+                  <label htmlFor="book-phone" className="block text-xs text-subtle mb-1.5">WhatsApp / Teléfono *</label>
                   <input
+                    id="book-phone"
                     type="tel"
                     value={contact.phone}
                     onChange={(e) => setContact((c) => ({ ...c, phone: e.target.value }))}
@@ -649,8 +682,9 @@ export default function BookAppointment() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">Email (opcional)</label>
+                  <label htmlFor="book-email" className="block text-xs text-subtle mb-1.5">Correo electrónico (opcional)</label>
                   <input
+                    id="book-email"
                     type="email"
                     value={contact.email}
                     onChange={(e) => setContact((c) => ({ ...c, email: e.target.value }))}
@@ -659,8 +693,9 @@ export default function BookAppointment() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">Notas adicionales</label>
+                  <label htmlFor="book-notes" className="block text-xs text-subtle mb-1.5">Notas adicionales</label>
                   <textarea
+                    id="book-notes"
                     value={contact.notes}
                     onChange={(e) => setContact((c) => ({ ...c, notes: e.target.value }))}
                     placeholder="Alergias, preferencias, preguntas..."
@@ -747,17 +782,20 @@ export default function BookAppointment() {
         <div className="flex gap-3">
           {step > 0 && (
             <button
+              type="button"
               onClick={goBack}
+              aria-label="Paso anterior"
               className="px-5 py-3.5 rounded-xl border border-white/10 text-cream text-sm font-medium hover:bg-white/5 transition-colors"
             >
               <ArrowLeft size={16} />
             </button>
           )}
           <button
+            type="button"
             onClick={goNext}
-            disabled={!canProceed()}
+            disabled={!canProceed() || submitting}
             className={`flex-1 py-3.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all ${
-              canProceed()
+              canProceed() && !submitting
                 ? 'bg-gold text-ink hover:bg-gold-light'
                 : 'bg-ink-medium text-subtle cursor-not-allowed'
             }`}
@@ -765,7 +803,7 @@ export default function BookAppointment() {
             {step === STEPS.length - 1 ? (
               <>
                 <Check size={16} />
-                Confirmar Reserva
+                {submitting ? 'Reservando...' : 'Confirmar Reserva'}
               </>
             ) : (
               <>

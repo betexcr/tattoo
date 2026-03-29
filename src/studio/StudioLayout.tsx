@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -17,7 +18,7 @@ import {
 } from 'lucide-react'
 
 const navItems = [
-  { to: '/studio', icon: LayoutDashboard, label: 'Dashboard', end: true },
+  { to: '/studio', icon: LayoutDashboard, label: 'Panel', end: true },
   { to: '/studio/appointments', icon: CalendarDays, label: 'Citas' },
   { to: '/studio/clients', icon: Users, label: 'Clientes' },
   { to: '/studio/messages', icon: MessageCircle, label: 'Mensajes' },
@@ -25,7 +26,7 @@ const navItems = [
 
 const moreItems = [
   { to: '/studio/orders', icon: Package, label: 'Pedidos', desc: 'Gestionar pedidos' },
-  { to: '/studio/portfolio', icon: Image, label: 'Portfolio', desc: 'Gestionar trabajos' },
+  { to: '/studio/portfolio', icon: Image, label: 'Portafolio', desc: 'Gestionar trabajos' },
   { to: '/studio/analytics', icon: BarChart3, label: 'Analíticas', desc: 'Métricas del negocio' },
   { to: '/studio/settings', icon: Settings, label: 'Configuración', desc: 'Ajustes del estudio' },
   { to: '/', icon: ExternalLink, label: 'Ver sitio público', desc: 'Vista del cliente' },
@@ -33,27 +34,31 @@ const moreItems = [
 
 export default function StudioLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const drawerRef = useRef<HTMLDivElement>(null)
+  const closeDrawer = useCallback(() => setDrawerOpen(false), [])
+  useFocusTrap(drawerRef, drawerOpen, closeDrawer)
   const location = useLocation()
   const { config } = useStudioConfig()
   const initials = config.studio_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 
   const pageTitle = () => {
     const path = location.pathname
-    if (path === '/studio') return 'Dashboard'
+    if (path === '/studio') return 'Panel'
     if (path.includes('appointments')) return 'Citas'
     if (path.includes('clients')) return 'Clientes'
     if (path.includes('messages')) return 'Mensajes'
     if (path.includes('orders')) return 'Pedidos'
-    if (path.includes('portfolio')) return 'Portfolio'
+    if (path.includes('portfolio')) return 'Portafolio'
     if (path.includes('analytics')) return 'Analíticas'
     if (path.includes('settings')) return 'Configuración'
-    return 'Studio'
+    return 'Estudio'
   }
 
   return (
     <div className="flex flex-col min-h-dvh bg-ink">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-gold focus:text-ink focus:rounded-lg focus:text-sm focus:font-medium">Saltar al contenido</a>
       {/* Top bar */}
-      <header className="sticky top-0 z-40 bg-ink-light/95 backdrop-blur-lg border-b border-white/5">
+      <header className="sticky top-0 z-40 bg-ink-light/95 backdrop-blur-lg border-b border-white/5 pt-[env(safe-area-inset-top,0px)]">
         <div className="flex items-center justify-between px-4 h-12">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center">
@@ -61,19 +66,22 @@ export default function StudioLayout() {
             </div>
             <div>
               <p className="text-cream text-sm font-medium leading-none">{pageTitle()}</p>
-              <p className="text-subtle text-[9px] tracking-widest uppercase">Studio</p>
+              <p className="text-subtle text-[9px] tracking-widest uppercase">Estudio</p>
             </div>
           </div>
           <button
+            type="button"
+            aria-label="Abrir menú"
+            aria-expanded={drawerOpen}
             onClick={() => setDrawerOpen(true)}
-            className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
+            className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
           >
-            <Menu size={16} />
+            <Menu size={18} />
           </button>
         </div>
       </header>
 
-      <main className="flex-1 pb-20 overflow-y-auto">
+      <main id="main-content" className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] overflow-y-auto">
         <Outlet />
       </main>
 
@@ -98,6 +106,9 @@ export default function StudioLayout() {
             </NavLink>
           ))}
           <button
+            type="button"
+            aria-label="Más opciones"
+            aria-expanded={drawerOpen}
             onClick={() => setDrawerOpen(true)}
             className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-subtle hover:text-cream-dark transition-all duration-300"
           >
@@ -119,6 +130,10 @@ export default function StudioLayout() {
               onClick={() => setDrawerOpen(false)}
             />
             <motion.div
+              ref={drawerRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Menú del estudio"
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
@@ -126,15 +141,17 @@ export default function StudioLayout() {
               className="fixed bottom-0 left-0 right-0 z-50 bg-ink-light rounded-t-3xl"
             >
               <div className="flex items-center justify-between p-5 border-b border-white/5">
-                <h2 className="font-serif text-lg text-cream">Studio</h2>
+                <h2 className="font-serif text-lg text-cream">Estudio</h2>
                 <button
+                  type="button"
+                  aria-label="Cerrar menú"
                   onClick={() => setDrawerOpen(false)}
-                  className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
+                  className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
                 >
                   <X size={18} />
                 </button>
               </div>
-              <div className="p-4 pb-8 space-y-1">
+              <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-1">
                 {moreItems.map(({ to, icon: Icon, label, desc }) => (
                   <NavLink
                     key={to}

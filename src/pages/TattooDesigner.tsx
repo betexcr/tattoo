@@ -1,92 +1,15 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-  Rose,
-  Flower2,
-  Sun,
-  Bird,
-  Fish,
-  Cat,
-  Triangle,
-  Circle,
-  Diamond,
-  Moon,
-  Star,
-  Heart,
-  X,
-  CheckCircle,
-  Share2,
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { X, CheckCircle, Share2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { addDoc, collection } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import { mapFirestoreError } from '../utils/mapFirestoreError'
 import PageHeader from '../components/PageHeader'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { useRequireAuth } from '../hooks/useRequireAuth'
-
-type SizeOption = 'small' | 'medium' | 'large'
-type ColorMode = 'negro' | 'color'
-
-interface DesignElement {
-  id: string
-  name: string
-  icon: LucideIcon
-  category: string
-}
-
-const designElements: DesignElement[] = [
-  { id: 'rose', name: 'Rosa', icon: Rose, category: 'Flores' },
-  { id: 'lotus', name: 'Loto', icon: Flower2, category: 'Flores' },
-  { id: 'sunflower', name: 'Girasol', icon: Sun, category: 'Flores' },
-  { id: 'bird', name: 'Pájaro', icon: Bird, category: 'Animales' },
-  { id: 'fish', name: 'Pez', icon: Fish, category: 'Animales' },
-  { id: 'cat', name: 'Gato', icon: Cat, category: 'Animales' },
-  { id: 'triangle', name: 'Triángulo', icon: Triangle, category: 'Geometría' },
-  { id: 'circle', name: 'Círculo', icon: Circle, category: 'Geometría' },
-  { id: 'diamond', name: 'Diamante', icon: Diamond, category: 'Geometría' },
-  { id: 'moon', name: 'Luna', icon: Moon, category: 'Símbolos' },
-  { id: 'star', name: 'Estrella', icon: Star, category: 'Símbolos' },
-  { id: 'heart', name: 'Corazón', icon: Heart, category: 'Símbolos' },
-]
-
-const colorPalette = [
-  { id: 'black', hex: '#0a0a0a', label: 'Negro' },
-  { id: 'gold', hex: '#c9956b', label: 'Oro' },
-  { id: 'rose', hex: '#e8a0bf', label: 'Rosa' },
-  { id: 'blue', hex: '#5b8def', label: 'Azul' },
-  { id: 'green', hex: '#5bc98a', label: 'Verde' },
-  { id: 'red', hex: '#e85b5b', label: 'Rojo' },
-]
-
-const sizeConfig = {
-  small: { label: 'Pequeño', size: 24 },
-  medium: { label: 'Mediano', size: 36 },
-  large: { label: 'Grande', size: 48 },
-}
-
-function getStyleBorderClass(style: string | null): string {
-  if (!style) return 'border-cream-dark/30'
-  const styleMap: Record<string, string> = {
-    'Fine Line': 'border-cream-dark/50 border-2',
-    Blackwork: 'border-ink border-4',
-    Traditional: 'border-gold border-2',
-    'Neo Traditional': 'border-gold border-2 border-double',
-    Japanese: 'border-ink border-2',
-    Geometric: 'border-gold/60 border-2',
-    Dotwork: 'border-cream-dark/40 border-2 border-dashed',
-    Watercolor: 'border-rose/40 border-2',
-    Realism: 'border-cream-dark/60 border-2',
-    Tribal: 'border-gold-dark border-2',
-    Lettering: 'border-cream-dark/50 border-2',
-    Mandala: 'border-gold/50 border-2',
-    Minimalist: 'border-cream-dark/30 border',
-    Ornamental: 'border-gold border-2',
-    Sketch: 'border-cream-dark/50 border-2 border-dashed',
-    Surrealism: 'border-rose/30 border-2',
-  }
-  return styleMap[style] ?? 'border-cream-dark/30'
-}
+import { designElements, colorPalette, sizeConfig, type SizeOption, type ColorMode, type DesignElement } from './designer/designerConstants'
+import DesignCanvas from './designer/DesignCanvas'
 
 export default function TattooDesigner() {
   const navigate = useNavigate()
@@ -101,6 +24,10 @@ export default function TattooDesigner() {
   const [showSaved, setShowSaved] = useState(false)
   const [showShared, setShowShared] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [actionLoading, setActionLoading] = useState(false)
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
+  const trackTimer = useCallback((id: ReturnType<typeof setTimeout>) => { timersRef.current.push(id) }, [])
+  useEffect(() => () => { timersRef.current.forEach(clearTimeout) }, [])
 
   const addElement = (el: DesignElement) => {
     if (selectedElements.some((e) => e.id === el.id)) return
@@ -120,59 +47,19 @@ export default function TattooDesigner() {
     )
   }
 
-  const canvasSize = sizeConfig[selectedSize].size
-
   return (
     <div className="min-h-dvh bg-ink pb-24">
-      <PageHeader title="Tattoo Designer" subtitle="Diseña tu tatuaje" />
+      <PageHeader title="Diseñador de Tatuajes" subtitle="Diseña tu tatuaje" />
 
       <div className="px-5 py-6 space-y-6">
         {/* Canvas */}
-        <motion.div
-          layout
-          className={`aspect-square max-w-sm mx-auto rounded-2xl bg-cream overflow-hidden ${getStyleBorderClass(selectedStyle)} transition-colors duration-300`}
-        >
-          <div className="w-full h-full relative flex items-center justify-center p-8">
-            {selectedElements.length === 0 ? (
-              <p className="text-subtle text-sm font-sans">Selecciona elementos para tu diseño</p>
-            ) : (
-              <div
-                className="flex flex-wrap items-center justify-center gap-3"
-                style={{ gap: canvasSize * 0.3 }}
-              >
-                <AnimatePresence mode="popLayout">
-                  {selectedElements.map((el, i) => {
-                    const Icon = el.icon
-                    const colorHex =
-                      colorMode === 'negro'
-                        ? '#0a0a0a'
-                        : colorPalette.find((c) => c.id === selectedColors[i % selectedColors.length])
-                            ?.hex ?? '#0a0a0a'
-                    return (
-                      <motion.div
-                        key={el.id}
-                        layoutId={`canvas-${el.id}`}
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                        className="flex-shrink-0"
-                        style={{ width: canvasSize, height: canvasSize }}
-                      >
-                        <Icon
-                          size={canvasSize * 0.7}
-                          strokeWidth={1.5}
-                          className="mx-auto"
-                          style={{ color: colorHex }}
-                        />
-                      </motion.div>
-                    )
-                  })}
-                </AnimatePresence>
-              </div>
-            )}
-          </div>
-        </motion.div>
+        <DesignCanvas
+          selectedElements={selectedElements}
+          selectedStyle={selectedStyle}
+          colorMode={colorMode}
+          selectedColors={selectedColors}
+          selectedSize={selectedSize}
+        />
 
         {/* Style selector */}
         <div>
@@ -180,8 +67,10 @@ export default function TattooDesigner() {
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {config.tattoo_styles.map((style) => (
               <button
+                type="button"
                 key={style}
                 onClick={() => setSelectedStyle(style)}
+                aria-pressed={selectedStyle === style}
                 className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-sans transition-all ${
                   selectedStyle === style
                     ? 'bg-gold text-ink'
@@ -200,8 +89,10 @@ export default function TattooDesigner() {
           <div className="flex gap-3">
             {(Object.keys(sizeConfig) as SizeOption[]).map((size) => (
               <button
+                type="button"
                 key={size}
                 onClick={() => setSelectedSize(size)}
+                aria-pressed={selectedSize === size}
                 className={`flex-1 flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
                   selectedSize === size
                     ? 'bg-gold/20 border-gold text-gold'
@@ -232,6 +123,7 @@ export default function TattooDesigner() {
               const isSelected = selectedElements.some((e) => e.id === el.id)
               return (
                 <button
+                  type="button"
                   key={el.id}
                   onClick={() => addElement(el)}
                   disabled={isSelected}
@@ -267,6 +159,7 @@ export default function TattooDesigner() {
                   const Icon = el.icon
                   return (
                     <motion.button
+                      type="button"
                       key={el.id}
                       layoutId={`chip-${el.id}`}
                       initial={{ opacity: 0, scale: 0.8 }}
@@ -295,10 +188,12 @@ export default function TattooDesigner() {
           </p>
           <div className="flex gap-2 mb-3">
             <button
+              type="button"
               onClick={() => {
                 setColorMode('negro')
                 setSelectedColors(['black'])
               }}
+              aria-pressed={colorMode === 'negro'}
               className={`flex-1 py-2.5 rounded-xl text-sm font-sans transition-all ${
                 colorMode === 'negro'
                   ? 'bg-ink-medium border-gold text-gold border'
@@ -308,7 +203,9 @@ export default function TattooDesigner() {
               Negro
             </button>
             <button
+              type="button"
               onClick={() => setColorMode('color')}
+              aria-pressed={colorMode === 'color'}
               className={`flex-1 py-2.5 rounded-xl text-sm font-sans transition-all ${
                 colorMode === 'color'
                   ? 'bg-ink-medium border-gold text-gold border'
@@ -326,6 +223,7 @@ export default function TattooDesigner() {
             >
               {colorPalette.map((c) => (
                 <button
+                  type="button"
                   key={c.id}
                   onClick={() => toggleColor(c.id)}
                   className={`w-10 h-10 rounded-full border-2 transition-all ${
@@ -335,6 +233,8 @@ export default function TattooDesigner() {
                   }`}
                   style={{ backgroundColor: c.hex }}
                   title={c.label}
+                  aria-label={c.label}
+                  aria-pressed={selectedColors.includes(c.id)}
                 />
               ))}
             </motion.div>
@@ -348,6 +248,7 @@ export default function TattooDesigner() {
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Describe tu idea..."
+            aria-label="Notas sobre el diseño"
             rows={3}
             className="w-full px-4 py-3 rounded-xl bg-ink-medium border border-white/5 text-cream placeholder:text-subtle/60 focus:outline-none focus:border-gold/40 resize-none font-sans text-sm"
           />
@@ -383,9 +284,12 @@ export default function TattooDesigner() {
         {/* Action buttons */}
         <div className="flex gap-3 pt-4">
           <motion.button
+            type="button"
             whileTap={{ scale: 0.98 }}
+            disabled={actionLoading}
             onClick={async () => {
-              if (!requireAuth('/designer')) return
+              if (!requireAuth('/designer') || actionLoading) return
+              setActionLoading(true)
               const design = {
                 style: selectedStyle,
                 size: selectedSize,
@@ -401,19 +305,24 @@ export default function TattooDesigner() {
                 await addDoc(collection(db, 'design_shares'), design)
                 setShowSaved(true)
                 setSaveError(null)
-                setTimeout(() => setShowSaved(false), 3000)
+                trackTimer(setTimeout(() => setShowSaved(false), 3000))
               } catch (e: unknown) {
-                setSaveError((e as Error).message)
+                setSaveError(mapFirestoreError(e))
+              } finally {
+                setActionLoading(false)
               }
             }}
-            className="flex-1 py-3.5 rounded-xl bg-gold text-ink font-serif font-medium text-sm"
+            className="flex-1 py-3.5 rounded-xl bg-gold text-ink font-serif font-medium text-sm disabled:opacity-50"
           >
-            Guardar Diseño
+            {actionLoading ? 'Guardando...' : 'Guardar Diseño'}
           </motion.button>
           <motion.button
+            type="button"
             whileTap={{ scale: 0.98 }}
+            disabled={actionLoading}
             onClick={async () => {
-              if (!requireAuth('/designer')) return
+              if (!requireAuth('/designer') || actionLoading) return
+              setActionLoading(true)
               setShowShared(true)
               const design = {
                 style: selectedStyle,
@@ -423,17 +332,20 @@ export default function TattooDesigner() {
                 colors: selectedColors,
                 notes,
                 client_id: user?.uid ?? null,
+                status: 'shared' as const,
                 created_at: new Date().toISOString(),
               }
               try {
                 const ref = await addDoc(collection(db, 'design_shares'), design)
-                setTimeout(() => { setShowShared(false); navigate(`/chat?design=${ref.id}`) }, 1500)
+                trackTimer(setTimeout(() => { setShowShared(false); navigate(`/chat?design=${ref.id}`) }, 1500))
               } catch (e: unknown) {
                 setShowShared(false)
-                setSaveError((e as Error).message)
+                setSaveError(mapFirestoreError(e))
+              } finally {
+                setActionLoading(false)
               }
             }}
-            className="flex-1 py-3.5 rounded-xl border border-gold text-gold font-serif font-medium text-sm hover:bg-gold/10 transition-colors"
+            className="flex-1 py-3.5 rounded-xl border border-gold text-gold font-serif font-medium text-sm hover:bg-gold/10 transition-colors disabled:opacity-50"
           >
             Compartir con Artista
           </motion.button>

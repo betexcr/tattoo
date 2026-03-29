@@ -1,27 +1,34 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
-  collection, query, orderBy, where, getDocs, addDoc, updateDoc, deleteDoc, doc,
+  collection, query, orderBy, where, getDocs, addDoc, updateDoc, deleteDoc, doc, limit,
 } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import type { PortfolioItem } from '../types'
+import { mapFirestoreError } from '../utils/mapFirestoreError'
 
 export function usePortfolio(publishedOnly = true) {
   const [items, setItems] = useState<PortfolioItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const fetchIdRef = useRef(0)
 
   const fetch = useCallback(async () => {
+    const id = ++fetchIdRef.current
     setLoading(true)
+    setError(null)
     try {
       const q = publishedOnly
-        ? query(collection(db, 'portfolio_items'), where('published', '==', true), orderBy('sort_order', 'asc'))
-        : query(collection(db, 'portfolio_items'), orderBy('sort_order', 'asc'))
+        ? query(collection(db, 'portfolio_items'), where('published', '==', true), orderBy('sort_order', 'asc'), limit(100))
+        : query(collection(db, 'portfolio_items'), orderBy('sort_order', 'asc'), limit(100))
       const snap = await getDocs(q)
+      if (fetchIdRef.current !== id) return
       setItems(snap.docs.map(d => ({ id: d.id, ...d.data() }) as PortfolioItem))
+      setLoading(false)
     } catch (e: unknown) {
-      setError((e as Error).message)
+      if (fetchIdRef.current !== id) return
+      setError(mapFirestoreError(e))
+      setLoading(false)
     }
-    setLoading(false)
   }, [publishedOnly])
 
   useEffect(() => { fetch() }, [fetch])
@@ -35,7 +42,7 @@ export function usePortfolio(publishedOnly = true) {
       setItems(prev => [...prev, { id: ref.id, ...item, created_at: new Date().toISOString() } as PortfolioItem])
       return { error: null }
     } catch (e: unknown) {
-      return { error: (e as Error).message }
+      return { error: mapFirestoreError(e) }
     }
   }
 
@@ -45,7 +52,7 @@ export function usePortfolio(publishedOnly = true) {
       setItems(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i))
       return { error: null }
     } catch (e: unknown) {
-      return { error: (e as Error).message }
+      return { error: mapFirestoreError(e) }
     }
   }
 
@@ -55,7 +62,7 @@ export function usePortfolio(publishedOnly = true) {
       setItems(prev => prev.filter(i => i.id !== id))
       return { error: null }
     } catch (e: unknown) {
-      return { error: (e as Error).message }
+      return { error: mapFirestoreError(e) }
     }
   }
 
@@ -65,7 +72,7 @@ export function usePortfolio(publishedOnly = true) {
       await fetch()
       return { error: null }
     } catch (e: unknown) {
-      return { error: (e as Error).message }
+      return { error: mapFirestoreError(e) }
     }
   }
 

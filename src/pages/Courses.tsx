@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useScrollLock } from '../hooks/useScrollLock'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import PageHeader from '../components/PageHeader'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { useCourses } from '../hooks/useCourses'
@@ -50,6 +52,12 @@ export default function Courses() {
   const [reservationForm, setReservationForm] = useState(INITIAL_FORM)
   const [showSuccess, setShowSuccess] = useState(false)
   const [reserveError, setReserveError] = useState<string | null>(null)
+  const [reserveLoading, setReserveLoading] = useState(false)
+  const sheetRef = useRef<HTMLDivElement>(null)
+  const closeReservation = useCallback(() => { setReservingCourse(null); setReservationForm(INITIAL_FORM) }, [])
+  useScrollLock(!!reservingCourse)
+
+  useFocusTrap(sheetRef, !!reservingCourse, closeReservation)
 
   useEffect(() => {
     if (!showSuccess) return
@@ -62,20 +70,25 @@ export default function Courses() {
   }, [showSuccess])
 
   const handleConfirmReserva = async () => {
-    if (!requireAuth('/courses')) return
+    if (!requireAuth('/courses') || reserveLoading) return
     if (!reservingCourse) return
     setReserveError(null)
-    const { error: err } = await reserve(
-      reservingCourse.id,
-      reservationForm.name,
-      reservationForm.email,
-      reservationForm.phone
-    )
-    if (err) {
-      setReserveError(err)
-      return
+    setReserveLoading(true)
+    try {
+      const { error: err } = await reserve(
+        reservingCourse.id,
+        reservationForm.name,
+        reservationForm.email,
+        reservationForm.phone
+      )
+      if (err) {
+        setReserveError(err)
+        return
+      }
+      setShowSuccess(true)
+    } finally {
+      setReserveLoading(false)
     }
-    setShowSuccess(true)
   }
 
   if (loading) {
@@ -174,6 +187,7 @@ export default function Courses() {
                   </span>
                   {reservedIds.has(course.id) ? (
                     <button
+                      type="button"
                       disabled
                       className="px-6 py-2.5 rounded-full bg-emerald-500/30 text-emerald-400 font-medium text-sm cursor-not-allowed"
                     >
@@ -181,6 +195,7 @@ export default function Courses() {
                     </button>
                   ) : (
                     <button
+                      type="button"
                       onClick={() => setReservingCourse(course)}
                       className="px-6 py-2.5 rounded-full bg-gold text-ink font-medium text-sm hover:bg-gold-light active:scale-[0.98] transition-all"
                     >
@@ -213,6 +228,8 @@ export default function Courses() {
               aria-hidden
             />
             <motion.div
+              ref={sheetRef}
+              tabIndex={-1}
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
@@ -220,8 +237,7 @@ export default function Courses() {
               role="dialog"
               aria-modal="true"
               aria-label="Reservar plaza"
-              onKeyDown={(e) => { if (e.key === 'Escape' && !showSuccess) { setReservingCourse(null); setReservationForm(INITIAL_FORM) } }}
-              className="relative w-full rounded-t-3xl bg-ink-light border-t border-white/10 p-6 pb-safe"
+              className="relative w-full rounded-t-3xl bg-ink-light border-t border-white/10 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] focus:outline-none"
               onClick={(e) => e.stopPropagation()}
             >
               {showSuccess ? (
@@ -245,6 +261,7 @@ export default function Courses() {
                     <input
                       type="text"
                       placeholder="Nombre"
+                      aria-label="Nombre"
                       value={reservationForm.name}
                       onChange={(e) => setReservationForm((f) => ({ ...f, name: e.target.value }))}
                       className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm focus:outline-none focus:border-gold/50"
@@ -252,7 +269,8 @@ export default function Courses() {
                     />
                     <input
                       type="email"
-                      placeholder="Email"
+                      placeholder="Correo electrónico"
+                      aria-label="Correo electrónico"
                       value={reservationForm.email}
                       onChange={(e) => setReservationForm((f) => ({ ...f, email: e.target.value }))}
                       className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm focus:outline-none focus:border-gold/50"
@@ -261,6 +279,7 @@ export default function Courses() {
                     <input
                       type="tel"
                       placeholder="Teléfono"
+                      aria-label="Teléfono"
                       value={reservationForm.phone}
                       onChange={(e) => setReservationForm((f) => ({ ...f, phone: e.target.value }))}
                       className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm focus:outline-none focus:border-gold/50"
@@ -269,9 +288,10 @@ export default function Courses() {
                     {reserveError && <p className="text-rose text-sm text-center">{reserveError}</p>}
                     <button
                       type="submit"
-                      className="w-full py-3.5 rounded-full bg-gold text-ink font-medium text-sm hover:bg-gold-light active:scale-[0.98] transition-all"
+                      disabled={reserveLoading}
+                      className="w-full py-3.5 rounded-full bg-gold text-ink font-medium text-sm hover:bg-gold-light active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Confirmar Reserva
+                      {reserveLoading ? 'Reservando...' : 'Confirmar Reserva'}
                     </button>
                   </form>
                 </>

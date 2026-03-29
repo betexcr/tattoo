@@ -17,13 +17,14 @@ export default function PageHeader({ title, subtitle, showBack = true, action }:
     <motion.header
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="sticky top-0 z-40 bg-ink/90 backdrop-blur-lg border-b border-white/5"
+      className="sticky top-0 z-40 bg-ink/90 backdrop-blur-lg border-b border-white/5 pt-[env(safe-area-inset-top,0px)]"
     >
       <div className="flex items-center justify-between px-5 h-14">
         <div className="flex items-center gap-3">
           {showBack && (
             <button
-              onClick={() => navigate(-1)}
+              type="button"
+              onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')}
               aria-label="Volver"
               className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
             >

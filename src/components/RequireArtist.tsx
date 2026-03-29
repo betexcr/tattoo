@@ -6,14 +6,19 @@ export default function RequireArtist() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-ink flex items-center justify-center">
+      <div className="min-h-dvh bg-ink flex items-center justify-center" role="status">
         <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+        <span className="sr-only">Cargando...</span>
       </div>
     )
   }
 
-  if (!user || !isArtist) {
+  if (!user) {
     return <Navigate to="/login" replace />
+  }
+
+  if (!isArtist) {
+    return <Navigate to="/" replace />
   }
 
   return <Outlet />

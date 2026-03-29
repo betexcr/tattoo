@@ -1,33 +1,28 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useScrollLock } from '../hooks/useScrollLock'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, X, CheckCheck } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotifications } from '../hooks/useNotifications'
-
-function formatRelativeTime(iso: string) {
-  const d = new Date(iso)
-  const diff = Date.now() - d.getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'ahora'
-  if (mins < 60) return `${mins}m`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h`
-  const days = Math.floor(hrs / 24)
-  return `${days}d`
-}
+import { formatRelativeTime } from '../utils/formatRelativeTime'
 
 export default function NotificationBell() {
   const { user } = useAuth()
   const { notifications, unreadCount, markRead, markAllRead } = useNotifications(user?.uid)
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
+  useScrollLock(open)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const closePanel = useCallback(() => setOpen(false), [])
+  useFocusTrap(panelRef, open, closePanel)
 
   if (!user) return null
 
   const handleClick = (n: typeof notifications[0]) => {
     markRead(n.id)
-    if (n.link) {
+    if (n.link && n.link.startsWith('/')) {
       navigate(n.link)
       setOpen(false)
     }
@@ -36,8 +31,10 @@ export default function NotificationBell() {
   return (
     <div className="relative">
       <button
+        type="button"
         onClick={() => setOpen(!open)}
-        aria-label="Notificaciones"
+        aria-label={unreadCount > 0 ? `Notificaciones, ${unreadCount} sin leer` : 'Notificaciones'}
+        aria-expanded={open}
         className="relative w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
       >
         <Bell size={18} />
@@ -63,6 +60,10 @@ export default function NotificationBell() {
               onClick={() => setOpen(false)}
             />
             <motion.div
+              ref={panelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Notificaciones"
               initial={{ opacity: 0, y: -8, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.95 }}
@@ -74,6 +75,7 @@ export default function NotificationBell() {
                 <div className="flex items-center gap-1">
                   {unreadCount > 0 && (
                     <button
+                      type="button"
                       onClick={markAllRead}
                       className="w-10 h-10 rounded-lg text-subtle hover:text-gold hover:bg-gold/10 transition-colors flex items-center justify-center"
                       title="Marcar todo como leído"
@@ -83,6 +85,7 @@ export default function NotificationBell() {
                     </button>
                   )}
                   <button
+                    type="button"
                     onClick={() => setOpen(false)}
                     aria-label="Cerrar notificaciones"
                     className="w-10 h-10 rounded-lg text-subtle hover:text-cream hover:bg-white/5 transition-colors flex items-center justify-center"
@@ -101,6 +104,7 @@ export default function NotificationBell() {
                 ) : (
                   notifications.slice(0, 20).map(n => (
                     <button
+                      type="button"
                       key={n.id}
                       onClick={() => handleClick(n)}
                       className={`w-full text-left px-3 py-2.5 flex gap-3 hover:bg-white/5 transition-colors border-b border-white/[0.03] ${

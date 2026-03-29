@@ -84,15 +84,17 @@ export interface Order {
   client_email: string
   client_phone: string
   client_address: string
-  status: 'pending' | 'confirmed' | 'shipped' | 'delivered'
+  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
   total: number
   created_at: string
+  updated_at?: string
   items?: OrderItem[]
 }
 
 export interface OrderItem {
   id: string
   order_id: string
+  client_id: string | null
   shop_item_id: string
   quantity: number
   size: string
@@ -301,14 +303,12 @@ export interface DesignShare {
 
 export interface ClientNote {
   id: string
-  client_id: string
   text: string
-  created_at: string
+  updated_at: string
 }
 
 export interface UserLike {
   id: string
   user_id: string
-  suggestion_id: string
-  created_at: string
+  liked_ids: string[]
 }

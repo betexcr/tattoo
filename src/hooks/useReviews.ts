@@ -1,24 +1,30 @@
-import { useState, useEffect, useCallback } from 'react'
-import { collection, query, orderBy, getDocs, addDoc } from 'firebase/firestore'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { collection, query, orderBy, limit, getDocs, addDoc } from 'firebase/firestore'
 import { db, auth } from '../lib/firebase'
 import type { Review } from '../types'
+import { mapFirestoreError } from '../utils/mapFirestoreError'
 
 export function useReviews() {
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const fetchIdRef = useRef(0)
 
   const fetch = useCallback(async () => {
+    const id = ++fetchIdRef.current
     setLoading(true)
+    setError(null)
     try {
-      const q = query(collection(db, 'reviews'), orderBy('created_at', 'desc'))
+      const q = query(collection(db, 'reviews'), orderBy('created_at', 'desc'), limit(50))
       const snap = await getDocs(q)
+      if (fetchIdRef.current !== id) return
       setReviews(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Review))
-      setError(null)
+      setLoading(false)
     } catch (e: unknown) {
-      setError((e as Error).message)
+      if (fetchIdRef.current !== id) return
+      setError(mapFirestoreError(e))
+      setLoading(false)
     }
-    setLoading(false)
   }, [])
 
   useEffect(() => { fetch() }, [fetch])
@@ -35,7 +41,7 @@ export function useReviews() {
       setReviews(prev => [{ id: ref.id, ...data } as Review, ...prev])
       return { error: null }
     } catch (e: unknown) {
-      return { error: (e as Error).message }
+      return { error: mapFirestoreError(e) }
     }
   }
 

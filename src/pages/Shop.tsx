@@ -1,4 +1,6 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react'
+import { useScrollLock } from '../hooks/useScrollLock'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ShoppingCart, X, Frame, Shirt, Footprints, Watch, Trash2, Search } from 'lucide-react'
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore'
@@ -47,8 +49,59 @@ const cardVariants = {
   visible: { opacity: 1, y: 0 },
 }
 
+const ShopProductCard = memo(function ShopProductCard({ item, onClick }: { item: ShopItem; onClick: (item: ShopItem) => void }) {
+  return (
+    <motion.article
+      variants={cardVariants}
+      layout
+      role="button"
+      tabIndex={0}
+      onClick={() => onClick(item)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(item) } }}
+      aria-label={`${item.title} — €${item.price}`}
+      className={`cursor-pointer group ${!item.in_stock ? 'opacity-50' : ''}`}
+    >
+      <div className="relative overflow-hidden rounded-2xl border border-white/5 hover:border-gold/20 transition-all">
+        <img
+          src={item.image_url}
+          alt={item.title}
+          loading="lazy"
+          decoding="async"
+          className="w-full aspect-[4/5] object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent" />
+        <div className="absolute top-2.5 left-2.5">
+          <span className={`px-2 py-0.5 rounded-lg text-[9px] font-medium uppercase tracking-wider ${CATEGORY_COLORS[item.category]}`}>
+            {CATEGORY_LABELS[item.category]}
+          </span>
+        </div>
+        {!item.in_stock && (
+          <div className="absolute top-2.5 right-2.5">
+            <span className="px-2 py-0.5 rounded-lg bg-red-500/20 text-red-400 text-[9px] font-medium uppercase tracking-wider">
+              Agotado
+            </span>
+          </div>
+        )}
+        {item.in_stock && item.sizes && (
+          <div className="absolute top-10 right-2.5">
+            <span className="px-1.5 py-0.5 rounded-md bg-ink/70 backdrop-blur-sm text-[9px] text-cream-dark">
+              {item.sizes.length} tallas
+            </span>
+          </div>
+        )}
+        <div className="absolute bottom-0 left-0 right-0 p-3">
+          <h3 className="font-serif text-cream text-sm font-medium line-clamp-2 leading-snug mb-1">
+            {item.title}
+          </h3>
+          <span className="text-gold font-semibold text-base">€{item.price}</span>
+        </div>
+      </div>
+    </motion.article>
+  )
+})
+
 export default function Shop() {
-  const { items: shopItems, loading } = useShop()
+  const { items: shopItems, loading, error: shopError } = useShop()
   const { create: createOrder } = useOrders()
   const { user, requireAuth } = useRequireAuth()
   const [categoryFilter, setCategoryFilter] = useState<Category>('')
@@ -58,18 +111,29 @@ export default function Shop() {
   const [selectedSize, setSelectedSize] = useState<string>('')
   const [selectedColor, setSelectedColor] = useState<string>('')
   const [notifyEmail, setNotifyEmail] = useState('')
+  const [notifyError, setNotifyError] = useState<string | null>(null)
+  const [notifyLoading, setNotifyLoading] = useState(false)
   const [notifiedItems, setNotifiedItems] = useState<Set<string>>(new Set())
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'form' | 'success'>('cart')
   const [checkoutForm, setCheckoutForm] = useState({ name: '', email: '', phone: '', address: '' })
   const [shopSearch, setShopSearch] = useState('')
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const cartPanelRef = useRef<HTMLDivElement>(null)
+  const detailPanelRef = useRef<HTMLDivElement>(null)
+  const closeCart = useCallback(() => { setShowCart(false); setCheckoutStep('cart') }, [])
+  const closeDetail = useCallback(() => { setSelectedItem(null); setSelectedSize(''); setSelectedColor('') }, [])
+  useScrollLock(showCart || selectedItem !== null)
+
+  useFocusTrap(cartPanelRef, showCart, closeCart)
+  useFocusTrap(detailPanelRef, selectedItem !== null, closeDetail)
 
   useEffect(() => {
     if (!user) return
     const q = query(collection(db, 'stock_notifications'), where('user_id', '==', user.uid))
     getDocs(q).then(snap => {
       setNotifiedItems(new Set(snap.docs.map(d => d.data().item_id as string)))
-    }).catch(() => {})
+    }).catch((e) => { console.warn('Error cargando preferencias de stock:', e) })
   }, [user])
 
   const cartCount = cart.reduce((sum, c) => sum + c.qty, 0)
@@ -112,8 +176,10 @@ export default function Shop() {
   }
 
   const handleNotifyStock = async () => {
-    if (!selectedItem || !notifyEmail.trim()) return
+    if (!selectedItem || !notifyEmail.trim() || notifyLoading) return
     if (!user) { requireAuth('/shop'); return }
+    setNotifyError(null)
+    setNotifyLoading(true)
     try {
       await addDoc(collection(db, 'stock_notifications'), {
         item_id: selectedItem.id,
@@ -123,33 +189,46 @@ export default function Shop() {
       })
       setNotifiedItems(prev => new Set(prev).add(selectedItem.id))
       setNotifyEmail('')
-    } catch { setNotifyEmail('') }
+    } catch {
+      setNotifyError('No se pudo registrar la notificación')
+    } finally {
+      setNotifyLoading(false)
+    }
   }
 
   const handleCheckoutSubmit = async () => {
-    if (!requireAuth('/shop')) return
-    setCheckoutError(null)
-    const { error } = await createOrder({
-      client_name: checkoutForm.name,
-      client_email: checkoutForm.email,
-      client_phone: checkoutForm.phone,
-      client_address: checkoutForm.address,
-      total: cart.reduce((sum, c) => sum + c.item.price * c.qty, 0),
-      items: cart.map(c => ({
-        shop_item_id: c.item.id,
-        quantity: c.qty,
-        size: c.size,
-        color: c.color,
-        price: c.item.price,
-      })),
-    })
-    if (error) {
-      setCheckoutError(error)
+    if (!requireAuth('/shop') || checkoutLoading) return
+    if (!checkoutForm.name.trim() || !checkoutForm.email.trim()) {
+      setCheckoutError('Completa todos los campos obligatorios')
       return
     }
-    setCheckoutStep('success')
-    setCart([])
-    setCheckoutForm({ name: '', email: '', phone: '', address: '' })
+    setCheckoutError(null)
+    setCheckoutLoading(true)
+    try {
+      const { error } = await createOrder({
+        client_name: checkoutForm.name,
+        client_email: checkoutForm.email,
+        client_phone: checkoutForm.phone,
+        client_address: checkoutForm.address,
+        total: cart.reduce((sum, c) => sum + c.item.price * c.qty, 0),
+        items: cart.map(c => ({
+          shop_item_id: c.item.id,
+          quantity: c.qty,
+          size: c.size,
+          color: c.color,
+          price: c.item.price,
+        })),
+      })
+      if (error) {
+        setCheckoutError(error)
+        return
+      }
+      setCheckoutStep('success')
+      setCart([])
+      setCheckoutForm({ name: '', email: '', phone: '', address: '' })
+    } finally {
+      setCheckoutLoading(false)
+    }
   }
 
   const closeCartDrawer = () => {
@@ -157,11 +236,11 @@ export default function Shop() {
     setCheckoutStep('cart')
   }
 
-  const openDetail = (item: ShopItem) => {
+  const openDetail = useCallback((item: ShopItem) => {
     setSelectedItem(item)
     setSelectedSize(item.sizes?.[0] ?? '')
     setSelectedColor(item.colors?.[0] ?? '')
-  }
+  }, [])
 
   if (loading) {
     return (
@@ -173,14 +252,19 @@ export default function Shop() {
 
   return (
     <div className="min-h-dvh pb-6">
+      {shopError && (
+        <div className="mx-5 mt-4 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{shopError}</div>
+      )}
       <PageHeader
         title="Tienda"
         subtitle="Arte para llevar"
         action={
           <div className="relative">
             <button
+              type="button"
               onClick={() => setShowCart((s) => !s)}
               aria-label="Carrito"
+              aria-expanded={showCart}
               className="w-11 h-11 rounded-full bg-ink-medium flex items-center justify-center text-cream hover:bg-ink-medium/80 transition-colors"
             >
               <ShoppingCart size={18} />
@@ -207,6 +291,7 @@ export default function Shop() {
             value={shopSearch}
             onChange={e => setShopSearch(e.target.value)}
             placeholder="Buscar productos..."
+            aria-label="Buscar productos"
             className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle text-sm focus:outline-none focus:border-gold/40 transition-colors"
           />
         </div>
@@ -218,7 +303,9 @@ export default function Shop() {
           {CATEGORY_TABS.map(({ label, value, icon: Icon }) => (
             <button
               key={value || 'all'}
+              type="button"
               onClick={() => setCategoryFilter(value)}
+              aria-pressed={categoryFilter === value}
               className={`flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
                 categoryFilter === value
                   ? 'bg-gold text-ink shadow-lg shadow-gold/20'
@@ -266,56 +353,7 @@ export default function Shop() {
         className="grid grid-cols-2 gap-3 px-5"
       >
         {filteredItems.map((item) => (
-          <motion.article
-            key={item.id}
-            variants={cardVariants}
-            layout
-            onClick={() => openDetail(item)}
-            className={`cursor-pointer group ${!item.in_stock ? 'opacity-50' : ''}`}
-          >
-            <div className="relative overflow-hidden rounded-2xl border border-white/5 hover:border-gold/20 transition-all">
-              <img
-                src={item.image_url}
-                alt={item.title}
-                loading="lazy"
-                decoding="async"
-                className="w-full aspect-[4/5] object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent" />
-
-              {/* Category badge */}
-              <div className="absolute top-2.5 left-2.5">
-                <span className={`px-2 py-0.5 rounded-lg text-[9px] font-medium uppercase tracking-wider ${CATEGORY_COLORS[item.category]}`}>
-                  {CATEGORY_LABELS[item.category]}
-                </span>
-              </div>
-
-              {!item.in_stock && (
-                <div className="absolute top-2.5 right-2.5">
-                  <span className="px-2 py-0.5 rounded-lg bg-red-500/20 text-red-400 text-[9px] font-medium uppercase tracking-wider">
-                    Agotado
-                  </span>
-                </div>
-              )}
-
-              {/* Sizes hint */}
-              {item.in_stock && item.sizes && (
-                <div className="absolute top-10 right-2.5">
-                  <span className="px-1.5 py-0.5 rounded-md bg-ink/70 backdrop-blur-sm text-[9px] text-cream-dark">
-                    {item.sizes.length} tallas
-                  </span>
-                </div>
-              )}
-
-              {/* Info */}
-              <div className="absolute bottom-0 left-0 right-0 p-3">
-                <h3 className="font-serif text-cream text-sm font-medium line-clamp-2 leading-snug mb-1">
-                  {item.title}
-                </h3>
-                <span className="text-gold font-semibold text-base">€{item.price}</span>
-              </div>
-            </div>
-          </motion.article>
+          <ShopProductCard key={item.id} item={item} onClick={openDetail} />
         ))}
       </motion.div>
 
@@ -337,6 +375,8 @@ export default function Shop() {
               className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-sm"
             />
             <motion.div
+              ref={cartPanelRef}
+              tabIndex={-1}
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
@@ -344,19 +384,19 @@ export default function Shop() {
               role="dialog"
               aria-modal="true"
               aria-label="Carrito de compras"
-              onKeyDown={(e) => { if (e.key === 'Escape') closeCartDrawer() }}
-              className="fixed bottom-0 left-0 right-0 z-50 max-h-[90dvh] bg-ink-light rounded-t-3xl overflow-hidden border-t border-white/10 shadow-2xl flex flex-col"
+              className="fixed bottom-0 left-0 right-0 z-50 max-h-[90dvh] bg-ink-light rounded-t-3xl overflow-hidden border-t border-white/10 shadow-2xl flex flex-col focus:outline-none"
             >
               <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 rounded-full bg-white/10" />
               </div>
-              <div className="flex-1 overflow-y-auto p-5">
+              <div className="flex-1 overflow-y-auto p-5 pb-[max(2rem,env(safe-area-inset-bottom))]">
                 <h3 className="font-serif text-cream text-lg mb-4">Carrito</h3>
                 {checkoutStep === 'success' ? (
                   <div className="py-8 text-center">
                     <p className="text-gold font-medium mb-2">¡Pedido confirmado!</p>
                     <p className="text-cream-dark text-sm">Te contactaremos pronto.</p>
                     <button
+                      type="button"
                       onClick={closeCartDrawer}
                       className="mt-6 px-6 py-2.5 rounded-xl bg-gold text-ink font-medium text-sm hover:bg-gold-light transition-colors"
                     >
@@ -375,8 +415,8 @@ export default function Shop() {
                     />
                     <input
                       type="email"
-                      placeholder="Email"
-                      aria-label="Email"
+                      placeholder="Correo electrónico"
+                      aria-label="Correo electrónico"
                       value={checkoutForm.email}
                       onChange={(e) => setCheckoutForm((f) => ({ ...f, email: e.target.value }))}
                       className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm"
@@ -400,16 +440,19 @@ export default function Shop() {
                     {checkoutError && <p className="text-rose text-sm text-center mb-2">{checkoutError}</p>}
                     <div className="flex gap-2 pt-2">
                       <button
+                        type="button"
                         onClick={() => setCheckoutStep('cart')}
                         className="flex-1 py-3 rounded-xl border border-white/20 text-cream text-sm font-medium"
                       >
                         Volver
                       </button>
                       <button
+                        type="button"
                         onClick={handleCheckoutSubmit}
-                        className="flex-1 py-3 rounded-xl bg-gold text-ink font-medium text-sm hover:bg-gold-light transition-colors"
+                        disabled={checkoutLoading}
+                        className="flex-1 py-3 rounded-xl bg-gold text-ink font-medium text-sm hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Confirmar Pedido
+                        {checkoutLoading ? 'Procesando...' : 'Confirmar Pedido'}
                       </button>
                     </div>
                   </div>
@@ -442,6 +485,7 @@ export default function Shop() {
                             <p className="text-gold text-sm font-medium mt-1">€{line.item.price} × {line.qty}</p>
                           </div>
                           <button
+                            type="button"
                             onClick={() => removeFromCart(i)}
                             aria-label="Eliminar del carrito"
                             className="p-2 rounded-lg text-subtle hover:text-rose hover:bg-rose/10 transition-colors shrink-0"
@@ -456,6 +500,7 @@ export default function Shop() {
                         Total <span className="text-gold">€{cart.reduce((sum, c) => sum + c.item.price * c.qty, 0)}</span>
                       </p>
                       <button
+                        type="button"
                         onClick={() => setCheckoutStep('form')}
                         className="w-full mt-4 py-3.5 rounded-2xl bg-gold text-ink font-medium text-sm hover:bg-gold-light active:scale-[0.98] shadow-lg shadow-gold/20"
                       >
@@ -482,6 +527,8 @@ export default function Shop() {
               className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-sm"
             />
             <motion.div
+              ref={detailPanelRef}
+              tabIndex={-1}
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
@@ -489,8 +536,7 @@ export default function Shop() {
               role="dialog"
               aria-modal="true"
               aria-label="Detalle del producto"
-              onKeyDown={(e) => { if (e.key === 'Escape') { setSelectedItem(null); setSelectedSize(''); setSelectedColor('') } }}
-              className="fixed bottom-0 left-0 right-0 z-50 max-h-[90dvh] bg-ink-light rounded-t-3xl overflow-hidden border-t border-white/10 shadow-2xl flex flex-col"
+              className="fixed bottom-0 left-0 right-0 z-50 max-h-[90dvh] bg-ink-light rounded-t-3xl overflow-hidden border-t border-white/10 shadow-2xl flex flex-col focus:outline-none"
             >
               {/* Close handle */}
               <div className="flex justify-center pt-3 pb-1">
@@ -503,6 +549,8 @@ export default function Shop() {
                   <img
                     src={selectedItem.image_url}
                     alt={selectedItem.title}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full aspect-square object-cover"
                   />
                   <div className="absolute top-3 left-3">
@@ -511,7 +559,9 @@ export default function Shop() {
                     </span>
                   </div>
                   <button
+                    type="button"
                     onClick={() => { setSelectedItem(null); setSelectedSize(''); setSelectedColor('') }}
+                    aria-label="Cerrar detalle de producto"
                     className="absolute top-3 right-3 w-10 h-10 rounded-full bg-ink/70 backdrop-blur-sm flex items-center justify-center text-cream"
                   >
                     <X size={16} />
@@ -535,8 +585,10 @@ export default function Shop() {
                       <div className="flex flex-wrap gap-2">
                         {selectedItem.sizes.map((size) => (
                           <button
+                            type="button"
                             key={size}
                             onClick={() => setSelectedSize(size)}
+                            aria-pressed={selectedSize === size}
                             className={`min-w-[42px] h-10 px-3 rounded-xl border text-sm font-medium transition-all ${
                               selectedSize === size
                                 ? 'border-gold bg-gold/10 text-gold'
@@ -558,7 +610,10 @@ export default function Shop() {
                         {selectedItem.colors.map((color) => (
                           <button
                             key={color}
+                            type="button"
                             onClick={() => setSelectedColor(color)}
+                            aria-label={color}
+                            aria-pressed={selectedColor === color}
                             className={`px-4 py-2 rounded-xl border text-xs font-medium transition-all ${
                               selectedColor === color
                                 ? 'border-gold bg-gold/10 text-gold'
@@ -578,23 +633,26 @@ export default function Shop() {
                         <p className="text-gold text-xs font-medium">Te avisaremos cuando esté disponible.</p>
                       ) : (
                         <>
-                          <p className="text-red-400 text-xs font-medium">Este producto está agotado. Déjanos tu email y te avisamos cuando vuelva.</p>
+                          <p className="text-red-400 text-xs font-medium">Este producto está agotado. Déjanos tu correo y te avisamos cuando vuelva.</p>
                           <div className="flex gap-2 mt-2">
                             <input
                               type="email"
                               placeholder="tu@email.com"
+                              aria-label="Correo electrónico para notificación de stock"
                               value={notifyEmail}
                               onChange={(e) => setNotifyEmail(e.target.value)}
                               className="flex-1 px-3 py-2 rounded-lg bg-ink border border-white/10 text-cream placeholder:text-subtle text-xs"
                             />
                             <button
+                              type="button"
                               onClick={handleNotifyStock}
-                              disabled={!notifyEmail.trim()}
+                              disabled={!notifyEmail.trim() || notifyLoading}
                               className="px-4 py-2 rounded-lg bg-gold text-ink text-xs font-medium hover:bg-gold-light disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                              Notificarme
+                              {notifyLoading ? 'Enviando...' : 'Notificarme'}
                             </button>
                           </div>
+                          {notifyError && <p className="text-red-400 text-xs mt-1">{notifyError}</p>}
                         </>
                       )}
                     </div>
@@ -603,8 +661,9 @@ export default function Shop() {
               </div>
 
               {/* Action */}
-              <div className="p-5 pt-3 border-t border-white/5">
+              <div className="p-5 pt-3 pb-[max(2rem,env(safe-area-inset-bottom))] border-t border-white/5">
                 <button
+                  type="button"
                   onClick={handleAddToCart}
                   disabled={!selectedItem.in_stock}
                   className={`w-full py-3.5 rounded-2xl font-medium transition-all text-sm ${

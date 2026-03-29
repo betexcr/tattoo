@@ -1,4 +1,4 @@
-import { Component, type ReactNode } from 'react'
+import { Component, type ErrorInfo, type ReactNode } from 'react'
 
 interface Props {
   children: ReactNode
@@ -19,10 +19,14 @@ export default class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error }
   }
 
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('ErrorBoundary caught:', error, errorInfo)
+  }
+
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-dvh bg-ink flex items-center justify-center px-6">
+        <div role="alert" className="min-h-dvh bg-ink flex items-center justify-center px-6">
           <div className="max-w-sm text-center space-y-4">
             <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto">
               <span className="text-2xl">⚠</span>
@@ -37,6 +41,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               </p>
             )}
             <button
+              type="button"
               onClick={() => window.location.reload()}
               className="px-6 py-3 rounded-full bg-gold text-ink text-sm font-medium hover:bg-gold-light transition-colors"
             >

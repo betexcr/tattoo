@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { collection, addDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import { mapFirestoreError } from '../utils/mapFirestoreError'
 
 interface ContactInput {
   name: string
@@ -13,19 +14,23 @@ interface ContactInput {
 
 export function useContactForm() {
   const [loading, setLoading] = useState(false)
+  const loadingRef = useRef(false)
 
   const submit = async (input: ContactInput) => {
+    if (loadingRef.current) return { error: 'Enviando, por favor espera...' }
+    loadingRef.current = true
     setLoading(true)
     try {
       await addDoc(collection(db, 'contact_submissions'), {
         ...input,
         created_at: new Date().toISOString(),
       })
-      setLoading(false)
       return { error: null }
     } catch (e: unknown) {
+      return { error: mapFirestoreError(e) }
+    } finally {
+      loadingRef.current = false
       setLoading(false)
-      return { error: (e as Error).message }
     }
   }
 

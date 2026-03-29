@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { User, Calendar, Package, Pencil, Check } from 'lucide-react'
 import { doc, setDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import { mapFirestoreError } from '../utils/mapFirestoreError'
 import { useAuth } from '../contexts/AuthContext'
 import { useAppointments } from '../hooks/useAppointments'
 import { useOrders } from '../hooks/useOrders'
@@ -26,14 +27,22 @@ type Tab = 'profile' | 'appointments' | 'orders'
 
 export default function MyAccount() {
   const { user, profile, loading, refreshProfile } = useAuth()
-  const { appointments } = useAppointments(user?.uid)
-  const { orders } = useOrders(user?.uid)
+  const { appointments, error: appointmentsError } = useAppointments(user?.uid)
+  const { orders, error: ordersError } = useOrders(user?.uid)
   const [tab, setTab] = useState<Tab>('profile')
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({ full_name: '', phone: '' })
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
 
-  if (loading) return <div className="min-h-dvh bg-ink flex items-center justify-center"><div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" /></div>
+  if (loading) {
+    return (
+      <div className="min-h-dvh bg-ink flex items-center justify-center" role="status">
+        <span className="sr-only">Cargando...</span>
+        <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+      </div>
+    )
+  }
   if (!user) return <Navigate to="/login" replace />
 
   const startEdit = () => {
@@ -42,13 +51,17 @@ export default function MyAccount() {
   }
 
   const saveEdit = async () => {
+    if (saving) return
+    setSaving(true)
     try {
       await setDoc(doc(db, 'profiles', user.uid), { full_name: form.full_name, phone: form.phone }, { merge: true })
       await refreshProfile()
       setSaveError(null)
       setEditing(false)
     } catch (e) {
-      setSaveError((e as Error).message)
+      setSaveError(mapFirestoreError(e))
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -71,6 +84,8 @@ export default function MyAccount() {
             {tabs.map(t => (
               <button
                 key={t.key}
+                type="button"
+                aria-pressed={tab === t.key}
                 onClick={() => setTab(t.key)}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   tab === t.key ? 'bg-gold text-ink' : 'bg-ink-medium text-subtle hover:text-cream-dark'
@@ -95,19 +110,19 @@ export default function MyAccount() {
               {editing ? (
                 <div className="space-y-3">
                   <input
-                    type="text" placeholder="Nombre completo" value={form.full_name}
+                    type="text" placeholder="Nombre completo" aria-label="Nombre completo" value={form.full_name}
                     onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl bg-ink-light border border-white/10 text-cream text-sm"
                   />
                   <input
-                    type="tel" placeholder="Teléfono" value={form.phone}
+                    type="tel" placeholder="Teléfono" aria-label="Teléfono" value={form.phone}
                     onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl bg-ink-light border border-white/10 text-cream text-sm"
                   />
                   {saveError && <p className="text-rose text-sm text-center mb-2">{saveError}</p>}
                   <div className="flex gap-2">
-                    <button onClick={() => setEditing(false)} className="flex-1 py-2.5 rounded-xl border border-white/10 text-subtle text-sm">Cancelar</button>
-                    <button onClick={saveEdit} className="flex-1 py-2.5 rounded-xl bg-gold text-ink text-sm font-medium flex items-center justify-center gap-1.5"><Check size={14} /> Guardar</button>
+                    <button type="button" onClick={() => setEditing(false)} className="flex-1 py-2.5 rounded-xl border border-white/10 text-subtle text-sm">Cancelar</button>
+                    <button type="button" onClick={saveEdit} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-gold text-ink text-sm font-medium flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"><Check size={14} /> {saving ? 'Guardando...' : 'Guardar'}</button>
                   </div>
                 </div>
               ) : (
@@ -117,14 +132,14 @@ export default function MyAccount() {
                     <p className="text-cream text-sm">{profile?.full_name ?? '—'}</p>
                   </div>
                   <div className="p-4 rounded-xl bg-ink-light border border-white/5">
-                    <p className="text-xs text-subtle mb-1">Email</p>
+                    <p className="text-xs text-subtle mb-1">Correo electrónico</p>
                     <p className="text-cream text-sm">{user.email}</p>
                   </div>
                   <div className="p-4 rounded-xl bg-ink-light border border-white/5">
                     <p className="text-xs text-subtle mb-1">Teléfono</p>
                     <p className="text-cream text-sm">{profile?.phone || '—'}</p>
                   </div>
-                  <button onClick={startEdit} className="w-full py-2.5 rounded-xl bg-gold/10 text-gold text-sm font-medium flex items-center justify-center gap-1.5"><Pencil size={14} /> Editar perfil</button>
+                  <button type="button" onClick={startEdit} className="w-full py-2.5 rounded-xl bg-gold/10 text-gold text-sm font-medium flex items-center justify-center gap-1.5"><Pencil size={14} /> Editar perfil</button>
                 </div>
               )}
             </motion.section>
@@ -132,7 +147,10 @@ export default function MyAccount() {
 
           {tab === 'appointments' && (
             <motion.section variants={itemVariants} className="space-y-3">
-              {sortedAppts.length === 0 ? (
+              {appointmentsError && (
+                <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{appointmentsError}</div>
+              )}
+              {sortedAppts.length === 0 && !appointmentsError ? (
                 <div className="p-8 rounded-xl bg-ink-light border border-white/5 text-center">
                   <p className="text-subtle text-sm mb-3">No tienes citas aún</p>
                   <Link to="/book" className="text-gold text-sm font-medium hover:underline">Reservar una cita</Link>
@@ -158,7 +176,10 @@ export default function MyAccount() {
 
           {tab === 'orders' && (
             <motion.section variants={itemVariants} className="space-y-3">
-              {orders.length === 0 ? (
+              {ordersError && (
+                <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{ordersError}</div>
+              )}
+              {orders.length === 0 && !ordersError ? (
                 <div className="p-8 rounded-xl bg-ink-light border border-white/5 text-center">
                   <p className="text-subtle text-sm mb-3">No tienes pedidos aún</p>
                   <Link to="/shop" className="text-gold text-sm font-medium hover:underline">Ir a la tienda</Link>
@@ -169,7 +190,7 @@ export default function MyAccount() {
                   <div key={order.id} className="p-4 rounded-xl bg-ink-light border border-white/5">
                     <div className="flex items-start justify-between gap-3 mb-1">
                       <p className="text-cream text-sm font-medium">€{order.total}</p>
-                      <span className="text-[10px] px-2 py-1 rounded-full bg-gold/20 text-gold">{statusLabel[order.status] ?? order.status}</span>
+                      <span className="text-[10px] px-2 py-1 rounded-full bg-gold/20 text-gold">{statusLabel[order.status] ?? 'Desconocido'}</span>
                     </div>
                     <p className="text-xs text-subtle">{formatDate(order.created_at)}</p>
                     {order.items && order.items.length > 0 && (

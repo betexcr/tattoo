@@ -8,22 +8,25 @@ service cloud.firestore {
     }
 
     function isArtist() {
+      let profilePath = /databases/$(database)/documents/profiles/$(request.auth.uid);
       return isSignedIn() &&
-        get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'artist';
+        exists(profilePath) &&
+        get(profilePath).data.role == 'artist';
     }
 
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Profiles: users read/update own, artists read all
+    // Profiles: users read/update own (cannot change role), artists read all
     match /profiles/{userId} {
       allow read: if isOwner(userId) || isArtist();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.role == 'client'
+        && request.resource.data.keys().hasOnly(['full_name', 'phone', 'role', 'avatar_url', 'created_at']);
+      allow update: if isOwner(userId) && request.resource.data.role == resource.data.role && request.resource.data.created_at == resource.data.created_at;
     }
 
-    // Portfolio: public read for published, artists full access
+    // Portfolio: public read (includes drafts — acceptable since items have no sensitive data), artists full access
     match /portfolio_items/{itemId} {
       allow read: if true;
       allow create, update, delete: if isArtist();
@@ -35,11 +38,12 @@ service cloud.firestore {
       allow create, update, delete: if isArtist();
     }
 
-    // Courses: public read, artists full access
+    // Courses: public read, artists full access, clients can decrement spots via transaction
     match /courses/{courseId} {
       allow read: if true;
       allow create, delete: if isArtist();
-      allow update: if isArtist();
+      allow update: if isArtist() ||
+        (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['spots']) && resource.data.spots > 0 && request.resource.data.spots == resource.data.spots - 1);
     }
 
     // Studio settings: public read, artists update
@@ -48,38 +52,50 @@ service cloud.firestore {
       allow write: if isArtist();
     }
 
-    // Appointments: authenticated can create, clients see own, artists see all
+    // Appointments: artists can create freely, clients can create own (pending only)
     match /appointments/{apptId} {
       allow read: if isArtist() || (isSignedIn() && resource.data.client_id == request.auth.uid);
-      allow create: if isSignedIn() && request.resource.data.client_id == request.auth.uid;
+      allow create: if (isArtist() || (isSignedIn() && request.resource.data.client_id == request.auth.uid && request.resource.data.status == 'pending'))
+        && request.resource.data.keys().hasOnly(['client_id', 'client_name', 'date', 'time', 'description', 'body_part', 'style', 'status', 'deposit', 'phone', 'email', 'reference_images', 'size', 'notes', 'created_at']);
       allow update, delete: if isArtist();
     }
 
-    // Orders: authenticated can create, clients see own, artists see all
+    // Orders: authenticated can create own (pending + field whitelist), clients see own, artists update status only
     match /orders/{orderId} {
       allow read: if isArtist() || (isSignedIn() && resource.data.client_id == request.auth.uid);
-      allow create: if isSignedIn();
-      allow update: if isArtist();
+      allow create: if isSignedIn() && request.resource.data.client_id == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.keys().hasOnly(['client_id', 'client_name', 'client_email', 'client_phone', 'client_address', 'total', 'status', 'created_at']);
+      allow update: if isArtist() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updated_at'])
+        && request.resource.data.status in ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
     }
 
-    // Order items: same as orders
+    // Order items: artist reads all, clients read own order items, create requires ownership + field whitelist
     match /order_items/{itemId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
+      allow read: if isArtist() || (isSignedIn() && resource.data.client_id == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.client_id == request.auth.uid
+        && request.resource.data.keys().hasOnly(['order_id', 'client_id', 'shop_item_id', 'quantity', 'size', 'color', 'price']);
       allow update, delete: if isArtist();
     }
 
-    // Course reservations: authenticated can create, artists see all
+    // Course reservations: authenticated can create own (with field whitelist), artists see all + delete
     match /course_reservations/{resId} {
       allow read: if isArtist() || (isSignedIn() && resource.data.client_id == request.auth.uid);
-      allow create: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.client_id == request.auth.uid
+        && request.resource.data.keys().hasOnly(['course_id', 'client_id', 'name', 'email', 'phone', 'created_at']);
+      allow delete: if isArtist();
     }
 
-    // Chat messages: clients see own + send, artists see all + send + update
+    // Chat messages: clients send as client, artists send as artist, each side can mark read
     match /chat_messages/{msgId} {
       allow read: if isArtist() || (isSignedIn() && resource.data.client_id == request.auth.uid);
-      allow create: if isSignedIn() && (request.resource.data.client_id == request.auth.uid || isArtist());
-      allow update: if isArtist() || (isSignedIn() && resource.data.client_id == request.auth.uid);
+      allow create: if isSignedIn() && (
+        (request.resource.data.client_id == request.auth.uid && request.resource.data.sender_role == 'client') ||
+        (isArtist() && request.resource.data.sender_role == 'artist')
+      ) && request.resource.data.keys().hasOnly(['client_id', 'sender_role', 'text', 'read', 'created_at'])
+        && request.resource.data.text is string && request.resource.data.text.size() <= 2000;
+      allow update: if (isArtist() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']))
+        || (isSignedIn() && resource.data.client_id == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']));
     }
 
     // Reminders: artists only
@@ -87,35 +103,51 @@ service cloud.firestore {
       allow read, write: if isArtist();
     }
 
-    // Contact submissions: anyone can create, artists can read
+    // Contact submissions: anyone can create (with field constraints), artists can read
     match /contact_submissions/{subId} {
-      allow create: if true;
+      allow create: if request.resource.data.keys().hasOnly(['name', 'email', 'phone', 'message', 'tattoo_style', 'body_part', 'created_at'])
+        && request.resource.data.message is string
+        && request.resource.data.message.size() <= 2000;
       allow read: if isArtist();
     }
 
-    // Notifications: users read/update own, artists can create for any user
+    // Notifications: users read/update own (only read field), artists can create for any user
     match /notifications/{notifId} {
       allow read: if isSignedIn() && resource.data.user_id == request.auth.uid;
-      allow create: if isSignedIn() && (request.resource.data.user_id == request.auth.uid || isArtist());
-      allow update: if isSignedIn() && resource.data.user_id == request.auth.uid;
+      allow create: if isSignedIn()
+        && (request.resource.data.user_id == request.auth.uid || isArtist())
+        && request.resource.data.keys().hasOnly(['user_id', 'title', 'body', 'type', 'link', 'read', 'created_at']);
+      allow update: if isSignedIn() && resource.data.user_id == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if isSignedIn() && resource.data.user_id == request.auth.uid;
     }
 
-    // Stock notifications: authenticated create, artists read all
+    // Stock notifications: authenticated create own, artists read all, clients read/delete own
     match /stock_notifications/{notifId} {
-      allow create: if isSignedIn();
-      allow read: if isArtist();
+      allow create: if isSignedIn() && request.resource.data.user_id == request.auth.uid
+        && request.resource.data.keys().hasOnly(['user_id', 'item_id', 'email', 'created_at']);
+      allow read: if isArtist() || (isSignedIn() && resource.data.user_id == request.auth.uid);
+      allow delete: if isSignedIn() && resource.data.user_id == request.auth.uid;
     }
 
-    // Design shares: authenticated create, artists read all
+    // Design shares: authenticated create own, artists read all, clients read/delete own
     match /design_shares/{shareId} {
-      allow create: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.client_id == request.auth.uid
+        && request.resource.data.keys().hasOnly(['style', 'size', 'elements', 'colorMode', 'colors', 'notes', 'client_id', 'status', 'created_at']);
       allow read: if isArtist() || (isSignedIn() && resource.data.client_id == request.auth.uid);
+      allow delete: if isSignedIn() && resource.data.client_id == request.auth.uid;
     }
 
-    // Reviews: public read, authenticated create
+    // Reviews: public read, authenticated create own with required fields and valid rating
     match /reviews/{reviewId} {
       allow read: if true;
-      allow create: if isSignedIn();
+      allow create: if isSignedIn()
+        && request.resource.data.client_id == request.auth.uid
+        && request.resource.data.keys().hasOnly(['name', 'text', 'rating', 'style', 'client_id', 'created_at'])
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.text.size() <= 1000
+        && request.resource.data.name.size() <= 100;
     }
 
     // Client notes: artists only
@@ -123,10 +155,14 @@ service cloud.firestore {
       allow read, write: if isArtist();
     }
 
-    // User likes: users read/write own
+    // User likes: users read/create/update/delete own (doc ID must be user's UID)
     match /user_likes/{likeId} {
-      allow read, write: if isSignedIn() && resource.data.user_id == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.user_id == request.auth.uid;
+      allow read: if isSignedIn() && likeId == request.auth.uid;
+      allow create: if isSignedIn() && likeId == request.auth.uid && request.resource.data.user_id == request.auth.uid
+        && request.resource.data.keys().hasOnly(['user_id', 'liked_ids']);
+      allow update: if isSignedIn() && likeId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['liked_ids']);
+      allow delete: if isSignedIn() && likeId == request.auth.uid;
     }
   }
 }

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import type {
@@ -19,6 +19,7 @@ import {
   defaultAboutContent,
   defaultQuizConfig,
 } from '../data/defaults'
+import { mapFirestoreError } from '../utils/mapFirestoreError'
 
 export interface StudioConfig {
   studio_name: string
@@ -39,6 +40,7 @@ export interface StudioConfig {
   home_content: HomeContent
   about_content: AboutContent
   quiz_config: QuizConfig
+  monthly_target: number
 }
 
 const defaultConfig: StudioConfig = {
@@ -60,21 +62,18 @@ const defaultConfig: StudioConfig = {
   home_content: defaultHomeContent,
   about_content: defaultAboutContent,
   quiz_config: defaultQuizConfig,
+  monthly_target: 2000,
 }
 
 interface StudioConfigContextValue {
   config: StudioConfig
+  rawSettings: StudioSettings | null
   loading: boolean
   error: string | null
   refetch: () => Promise<void>
 }
 
-const StudioConfigContext = createContext<StudioConfigContextValue>({
-  config: defaultConfig,
-  loading: true,
-  error: null,
-  refetch: async () => {},
-})
+const StudioConfigContext = createContext<StudioConfigContextValue | undefined>(undefined)
 
 function mergeConfig(raw: StudioSettings): StudioConfig {
   return {
@@ -106,6 +105,7 @@ function mergeConfig(raw: StudioSettings): StudioConfig {
     quiz_config: raw.quiz_config?.questions?.length
       ? { ...defaultQuizConfig, ...raw.quiz_config }
       : defaultQuizConfig,
+    monthly_target: raw.monthly_target ?? 2000,
   }
 }
 
@@ -113,6 +113,7 @@ const SETTINGS_DOC = doc(db, 'studio_settings', 'main')
 
 export function StudioConfigProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<StudioConfig>(defaultConfig)
+  const [rawSettings, setRawSettings] = useState<StudioSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -120,24 +121,33 @@ export function StudioConfigProvider({ children }: { children: ReactNode }) {
     try {
       const snap = await getDoc(SETTINGS_DOC)
       if (snap.exists()) {
-        setConfig(mergeConfig({ id: snap.id, ...snap.data() } as StudioSettings))
+        const raw = { id: snap.id, ...snap.data() } as StudioSettings
+        setRawSettings(raw)
+        setConfig(mergeConfig(raw))
       }
       setError(null)
     } catch (e: unknown) {
-      setError((e as Error).message)
+      setError(mapFirestoreError(e))
     }
     setLoading(false)
   }, [])
 
   useEffect(() => { fetchConfig() }, [fetchConfig])
 
+  const value = useMemo(
+    () => ({ config, rawSettings, loading, error, refetch: fetchConfig }),
+    [config, rawSettings, loading, error, fetchConfig],
+  )
+
   return (
-    <StudioConfigContext.Provider value={{ config, loading, error, refetch: fetchConfig }}>
+    <StudioConfigContext.Provider value={value}>
       {children}
     </StudioConfigContext.Provider>
   )
 }
 
 export function useStudioConfig() {
-  return useContext(StudioConfigContext)
+  const ctx = useContext(StudioConfigContext)
+  if (!ctx) throw new Error('useStudioConfig must be used within StudioConfigProvider')
+  return ctx
 }

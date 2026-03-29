@@ -2,7 +2,9 @@ import { lazy, Suspense, useEffect } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import Layout from './components/Layout'
 import RequireArtist from './components/RequireArtist'
+import RouteErrorBoundary from './components/RouteErrorBoundary'
 import StudioLayout from './studio/StudioLayout'
+import LoadingSpinner from './components/LoadingSpinner'
 
 const Dashboard = lazy(() => import('./studio/Dashboard'))
 const PortfolioManager = lazy(() => import('./studio/PortfolioManager'))
@@ -27,10 +29,14 @@ const BookAppointment = lazy(() => import('./pages/BookAppointment'))
 const Chat = lazy(() => import('./pages/Chat'))
 const MyAccount = lazy(() => import('./pages/MyAccount'))
 const Login = lazy(() => import('./pages/Login'))
+const NotFound = lazy(() => import('./pages/NotFound'))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
-  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  useEffect(() => {
+    window.scrollTo(0, 0)
+    document.querySelector('main')?.scrollTo(0, 0)
+  }, [pathname])
   return null
 }
 
@@ -38,37 +44,38 @@ export default function App() {
   return (
     <>
     <ScrollToTop />
-    <Suspense fallback={<div className="min-h-dvh bg-ink flex items-center justify-center"><div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" /></div>}>
+    <Suspense fallback={<LoadingSpinner />}>
     <Routes>
       <Route element={<Layout />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/portfolio" element={<Portfolio />} />
-        <Route path="/agenda" element={<Agenda />} />
-        <Route path="/reminders" element={<Reminders />} />
-        <Route path="/chat" element={<Chat />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/shop" element={<Shop />} />
-        <Route path="/designer" element={<TattooDesigner />} />
-        <Route path="/visualizer" element={<BodyVisualizer />} />
-        <Route path="/suggestions" element={<Suggestions />} />
-        <Route path="/courses" element={<Courses />} />
-        <Route path="/account" element={<MyAccount />} />
+        <Route path="/" element={<RouteErrorBoundary section="consumer"><Home /></RouteErrorBoundary>} />
+        <Route path="/portfolio" element={<RouteErrorBoundary section="consumer"><Portfolio /></RouteErrorBoundary>} />
+        <Route path="/agenda" element={<RouteErrorBoundary section="consumer"><Agenda /></RouteErrorBoundary>} />
+        <Route path="/reminders" element={<RouteErrorBoundary section="consumer"><Reminders /></RouteErrorBoundary>} />
+        <Route path="/chat" element={<RouteErrorBoundary section="consumer"><Chat /></RouteErrorBoundary>} />
+        <Route path="/about" element={<RouteErrorBoundary section="consumer"><About /></RouteErrorBoundary>} />
+        <Route path="/contact" element={<RouteErrorBoundary section="consumer"><Contact /></RouteErrorBoundary>} />
+        <Route path="/shop" element={<RouteErrorBoundary section="consumer"><Shop /></RouteErrorBoundary>} />
+        <Route path="/designer" element={<RouteErrorBoundary section="consumer"><TattooDesigner /></RouteErrorBoundary>} />
+        <Route path="/visualizer" element={<RouteErrorBoundary section="consumer"><BodyVisualizer /></RouteErrorBoundary>} />
+        <Route path="/suggestions" element={<RouteErrorBoundary section="consumer"><Suggestions /></RouteErrorBoundary>} />
+        <Route path="/courses" element={<RouteErrorBoundary section="consumer"><Courses /></RouteErrorBoundary>} />
+        <Route path="/account" element={<RouteErrorBoundary section="consumer"><MyAccount /></RouteErrorBoundary>} />
       </Route>
-      <Route path="/book" element={<BookAppointment />} />
-      <Route path="/login" element={<Login />} />
+      <Route path="/book" element={<RouteErrorBoundary section="booking"><BookAppointment /></RouteErrorBoundary>} />
+      <Route path="/login" element={<RouteErrorBoundary section="login"><Login /></RouteErrorBoundary>} />
       <Route element={<RequireArtist />}>
         <Route element={<StudioLayout />}>
-          <Route path="/studio" element={<Dashboard />} />
-          <Route path="/studio/appointments" element={<Appointments />} />
-          <Route path="/studio/clients" element={<Clients />} />
-          <Route path="/studio/messages" element={<Messages />} />
-          <Route path="/studio/orders" element={<Orders />} />
-          <Route path="/studio/portfolio" element={<PortfolioManager />} />
-          <Route path="/studio/analytics" element={<Analytics />} />
-          <Route path="/studio/settings" element={<StudioSettings />} />
+          <Route path="/studio" element={<RouteErrorBoundary section="studio"><Dashboard /></RouteErrorBoundary>} />
+          <Route path="/studio/appointments" element={<RouteErrorBoundary section="studio"><Appointments /></RouteErrorBoundary>} />
+          <Route path="/studio/clients" element={<RouteErrorBoundary section="studio"><Clients /></RouteErrorBoundary>} />
+          <Route path="/studio/messages" element={<RouteErrorBoundary section="studio"><Messages /></RouteErrorBoundary>} />
+          <Route path="/studio/orders" element={<RouteErrorBoundary section="studio"><Orders /></RouteErrorBoundary>} />
+          <Route path="/studio/portfolio" element={<RouteErrorBoundary section="studio"><PortfolioManager /></RouteErrorBoundary>} />
+          <Route path="/studio/analytics" element={<RouteErrorBoundary section="studio"><Analytics /></RouteErrorBoundary>} />
+          <Route path="/studio/settings" element={<RouteErrorBoundary section="studio"><StudioSettings /></RouteErrorBoundary>} />
         </Route>
       </Route>
+      <Route path="*" element={<NotFound />} />
     </Routes>
     </Suspense>
     </>

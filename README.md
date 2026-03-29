@@ -89,6 +89,74 @@ firestore.rules              Firestore security rules
 seed-firestore.mjs           Database seed script
 ```
 
+## Mobile Builds (Capacitor)
+
+The app uses [Capacitor](https://capacitorjs.com/) to ship as a native Android and iOS app wrapping the same web build.
+
+### Prerequisites
+
+| Tool | Version | Install |
+|------|---------|---------|
+| Node.js | 20+ | [nodejs.org](https://nodejs.org) |
+| Java (OpenJDK) | 21 | `brew install openjdk@21` |
+| Android SDK | 35+ | Via [Android Studio](https://developer.android.com/studio) |
+| Xcode | 16+ | Mac App Store |
+| CocoaPods | 1.15+ | `brew install cocoapods` |
+
+Make sure Xcode command-line tools point to the full Xcode.app:
+
+```bash
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+sudo xcodebuild -license accept
+```
+
+### Build Debug Android APK
+
+```bash
+npm run cap:apk
+```
+
+The APK is output at `android/app/build/outputs/apk/debug/app-debug.apk`. Install it on a connected device with:
+
+```bash
+adb install android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+### Build iOS for TestFlight
+
+1. Sync web assets into the iOS project:
+
+```bash
+npm run cap:sync:ios
+```
+
+2. Open the project in Xcode:
+
+```bash
+npm run cap:ios:open
+```
+
+3. In Xcode:
+   - Select the **App** target > **Signing & Capabilities**
+   - Choose your Apple Developer team and enable **Automatically manage signing**
+   - Set **Version** to `1.0.0` and **Build** to an incremental number
+4. Archive: **Product > Archive** (destination: "Any iOS Device")
+5. Upload: In **Window > Organizer**, select the archive > **Distribute App** > **App Store Connect** > **Upload**
+
+The build appears in App Store Connect under TestFlight within 15–30 minutes.
+
+### Run on Simulator / Device
+
+```bash
+# Android
+npm run cap:android:open   # opens Android Studio
+
+# iOS
+npm run cap:ios:open       # opens Xcode
+```
+
+From there, select a simulator or connected device and press Run.
+
 ## Tech Stack
 
 - **Frontend**: React 19, TypeScript, Vite, TailwindCSS v4

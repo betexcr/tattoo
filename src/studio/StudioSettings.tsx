@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Save,
@@ -59,10 +59,10 @@ const DAYS = [
 ] as const
 
 const SIZE_LABELS: Record<string, string> = {
-  tiny: 'Tiny (2-5cm)',
-  small: 'Small (5-10cm)',
-  medium: 'Medium (10-20cm)',
-  large: 'Large (20-35cm)',
+  tiny: 'Diminuto (2-5cm)',
+  small: 'Pequeño (5-10cm)',
+  medium: 'Mediano (10-20cm)',
+  large: 'Grande (20-35cm)',
   xl: 'XL (35+cm)',
 }
 
@@ -102,7 +102,7 @@ const TABS = [
   { id: 'catalogo', label: 'Catálogo', icon: BookOpen },
   { id: 'sugerencias', label: 'Sugerencias y Quiz', icon: Lightbulb },
   { id: 'contenido', label: 'Contenido', icon: FileText },
-  { id: 'chat', label: 'Chat', icon: MessageCircle },
+  { id: 'chat', label: 'Mensajes', icon: MessageCircle },
   { id: 'notificaciones', label: 'Notificaciones', icon: Bell },
 ] as const
 
@@ -113,9 +113,13 @@ const inputClass =
 const labelClass = 'block text-xs text-subtle mb-1'
 
 export default function StudioSettings() {
-  const { settings: dbSettings, loading: settingsLoading, save } = useStudioSettings()
+  const { settings: dbSettings, loading: settingsLoading, error: fetchError, save } = useStudioSettings()
   const [activeTab, setActiveTab] = useState<TabId>('perfil')
   const [savedTab, setSavedTab] = useState<TabId | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const successTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(() => () => { clearTimeout(successTimerRef.current) }, [])
 
   // Perfil state
   const [studioName, setStudioName] = useState('INK & SOUL')
@@ -238,7 +242,8 @@ export default function StudioSettings() {
 
   const showSuccess = (tab: TabId) => {
     setSavedTab(tab)
-    setTimeout(() => setSavedTab(null), 3000)
+    clearTimeout(successTimerRef.current)
+    successTimerRef.current = setTimeout(() => setSavedTab(null), 3000)
   }
 
   const updateSchedule = (day: string, updates: Partial<DaySchedule>) => {
@@ -255,87 +260,84 @@ export default function StudioSettings() {
     }))
   }
 
-  const handleSavePerfil = async () => {
-    const { error } = await save({
-      studio_name: studioName,
-      artist_name: artistName,
-      bio,
-      phone,
-      email,
-      address,
-      schedule: schedule as Record<string, DaySchedule | string>,
-      prices: prices as Record<string, PriceRange | number>,
-      social_links: { instagram, tiktok, website },
-    })
-    if (!error) showSuccess('perfil')
+  const wrappedSave = async (data: Parameters<typeof save>[0], tab: TabId) => {
+    setSaving(true)
+    setSaveError(null)
+    try {
+      const { error } = await save(data)
+      if (error) {
+        setSaveError(error)
+      } else {
+        showSuccess(tab)
+      }
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const handleSaveCatalogo = async () => {
-    const { error } = await save({
-      tattoo_styles: tattooStyles,
-      body_parts: bodyParts,
-    })
-    if (!error) showSuccess('catalogo')
-  }
+  const handleSavePerfil = () => wrappedSave({
+    studio_name: studioName,
+    artist_name: artistName,
+    bio,
+    phone,
+    email,
+    address,
+    schedule: schedule as Record<string, DaySchedule | string>,
+    prices: prices as Record<string, PriceRange | number>,
+    social_links: { instagram, tiktok, website },
+  }, 'perfil')
 
-  const handleSaveSugerencias = async () => {
-    const { error } = await save({
-      suggestions,
-      quiz_config: {
-        questions: quizQuestions,
-        style_recommendations: styleRecommendations,
-        trending_threshold: trendingThreshold,
-      },
-    })
-    if (!error) showSuccess('sugerencias')
-  }
+  const handleSaveCatalogo = () => wrappedSave({
+    tattoo_styles: tattooStyles,
+    body_parts: bodyParts,
+  }, 'catalogo')
 
-  const handleSaveContenido = async () => {
-    const { error } = await save({
-      home_content: {
-        subtitle: homeSubtitle,
-        tagline: homeTagline,
-        reviews,
-      },
-      about_content: {
-        hero_image: aboutHeroImage,
-        artist_title: aboutArtistTitle,
-        bio: aboutBio,
-        stats: aboutStats,
-        specialties: aboutSpecialties,
-        certifications: aboutCertifications,
-      },
-    })
-    if (!error) showSuccess('contenido')
-  }
+  const handleSaveSugerencias = () => wrappedSave({
+    suggestions,
+    quiz_config: {
+      questions: quizQuestions,
+      style_recommendations: styleRecommendations,
+      trending_threshold: trendingThreshold,
+    },
+  }, 'sugerencias')
 
-  const handleSaveChat = async () => {
-    const { error } = await save({
-      chatbot_responses: chatbotResponses,
-      chat_config: {
-        artist_name: chatArtistName,
-        artist_initials: chatArtistInitials,
-        welcome_message: welcomeMessage,
-        quick_replies: quickReplies,
-        canned_responses: cannedResponses,
-        fallback_response: fallbackResponse,
-        response_time_text: responseTimeText,
-      },
-    })
-    if (!error) showSuccess('chat')
-  }
+  const handleSaveContenido = () => wrappedSave({
+    home_content: {
+      subtitle: homeSubtitle,
+      tagline: homeTagline,
+      reviews,
+    },
+    about_content: {
+      hero_image: aboutHeroImage,
+      artist_title: aboutArtistTitle,
+      bio: aboutBio,
+      stats: aboutStats,
+      specialties: aboutSpecialties,
+      certifications: aboutCertifications,
+    },
+  }, 'contenido')
 
-  const handleSaveNotificaciones = async () => {
-    const { error } = await save({
-      notifications: {
-        new_booking: newBooking,
-        message_notification: messageNotification,
-        reminder_notification: reminderNotification,
-        deposit_received: depositReceived,
-      },
-    })
-    if (!error) showSuccess('notificaciones')
-  }
+  const handleSaveChat = () => wrappedSave({
+    chatbot_responses: chatbotResponses,
+    chat_config: {
+      artist_name: chatArtistName,
+      artist_initials: chatArtistInitials,
+      welcome_message: welcomeMessage,
+      quick_replies: quickReplies,
+      canned_responses: cannedResponses,
+      fallback_response: fallbackResponse,
+      response_time_text: responseTimeText,
+    },
+  }, 'chat')
+
+  const handleSaveNotificaciones = () => wrappedSave({
+    notifications: {
+      new_booking: newBooking,
+      message_notification: messageNotification,
+      reminder_notification: reminderNotification,
+      deposit_received: depositReceived,
+    },
+  }, 'notificaciones')
 
   const addStyle = () => {
     const v = newStyleInput.trim()
@@ -368,7 +370,7 @@ export default function StudioSettings() {
         id: crypto.randomUUID(),
         title: '',
         description: '',
-        style: tattooStyles[0] ?? 'Fine Line',
+        style: tattooStyles[0] ?? 'Línea Fina',
         popularity: 50,
       },
     ])
@@ -456,7 +458,7 @@ export default function StudioSettings() {
   const addReview = () => {
     setReviews((s) => [
       ...s,
-      { name: '', text: '', rating: 5, style: tattooStyles[0] ?? 'Fine Line' },
+      { name: '', text: '', rating: 5, style: tattooStyles[0] ?? 'Línea Fina' },
     ])
   }
 
@@ -574,11 +576,15 @@ export default function StudioSettings() {
       animate="visible"
       className="p-4 pb-28"
     >
+      {fetchError && (
+        <div className="mb-4 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{fetchError}</div>
+      )}
       {/* Tab pills */}
       <div className="overflow-x-auto -mx-4 px-4 mb-6 scrollbar-hide">
         <div className="flex gap-2 min-w-max pb-2">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
+              type="button"
               key={id}
               onClick={() => setActiveTab(id)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
@@ -653,7 +659,7 @@ export default function StudioSettings() {
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>Email</label>
+                    <label className={labelClass}>Correo electrónico</label>
                     <input
                       type="email"
                       value={email}
@@ -684,7 +690,11 @@ export default function StudioSettings() {
                   >
                     <span className="text-cream text-sm w-24">{label}</span>
                     <button
+                      type="button"
                       onClick={() => updateSchedule(key, { open: !schedule[key].open })}
+                      role="switch"
+                      aria-checked={schedule[key].open}
+                      aria-label={label}
                       className={`relative w-12 h-7 rounded-full transition-colors ${
                         schedule[key].open ? 'bg-gold' : 'bg-ink-medium'
                       }`}
@@ -800,7 +810,8 @@ export default function StudioSettings() {
             <SaveButton
               onSave={handleSavePerfil}
               saved={savedTab === 'perfil'}
-              disabled={settingsLoading}
+              disabled={settingsLoading || saving}
+              error={saveError}
             />
           </motion.div>
         )}
@@ -825,6 +836,7 @@ export default function StudioSettings() {
                     >
                       {style}
                       <button
+                        type="button"
                         onClick={() => removeStyle(style)}
                         className="p-0.5 rounded hover:bg-white/10 text-subtle hover:text-cream"
                       >
@@ -843,6 +855,7 @@ export default function StudioSettings() {
                     className={inputClass}
                   />
                   <button
+                    type="button"
                     onClick={addStyle}
                     className="px-4 py-2.5 rounded-xl bg-gold text-ink font-medium flex items-center gap-2 shrink-0 hover:bg-gold-light"
                   >
@@ -864,6 +877,7 @@ export default function StudioSettings() {
                     >
                       {bp}
                       <button
+                        type="button"
                         onClick={() => removeBodyPart(bp)}
                         className="p-0.5 rounded hover:bg-white/10 text-subtle hover:text-cream"
                       >
@@ -882,6 +896,7 @@ export default function StudioSettings() {
                     className={inputClass}
                   />
                   <button
+                    type="button"
                     onClick={addBodyPart}
                     className="px-4 py-2.5 rounded-xl bg-gold text-ink font-medium flex items-center gap-2 shrink-0 hover:bg-gold-light"
                   >
@@ -895,7 +910,8 @@ export default function StudioSettings() {
             <SaveButton
               onSave={handleSaveCatalogo}
               saved={savedTab === 'catalogo'}
-              disabled={settingsLoading}
+              disabled={settingsLoading || saving}
+              error={saveError}
             />
           </motion.div>
         )}
@@ -926,6 +942,7 @@ export default function StudioSettings() {
                         className={`${inputClass} flex-1 mr-2`}
                       />
                       <button
+                        type="button"
                         onClick={() => removeSuggestion(s.id)}
                         className="p-2 rounded-lg hover:bg-white/10 text-subtle hover:text-cream"
                       >
@@ -973,6 +990,7 @@ export default function StudioSettings() {
                   </div>
                 ))}
                 <button
+                  type="button"
                   onClick={addSuggestion}
                   className="w-full py-3 rounded-xl border border-dashed border-white/20 text-subtle hover:text-cream hover:border-gold/50 flex items-center justify-center gap-2"
                 >
@@ -999,6 +1017,7 @@ export default function StudioSettings() {
                         className={`${inputClass} flex-1`}
                       />
                       <button
+                        type="button"
                         onClick={() => removeQuizQuestion(q.id)}
                         className="p-2 rounded-lg hover:bg-white/10 text-subtle hover:text-cream shrink-0"
                       >
@@ -1020,6 +1039,7 @@ export default function StudioSettings() {
                               className={inputClass}
                             />
                             <button
+                              type="button"
                               onClick={() => removeQuizQuestionOption(q.id, i)}
                               className="p-2 rounded-lg hover:bg-white/10 text-subtle hover:text-cream shrink-0"
                             >
@@ -1028,6 +1048,7 @@ export default function StudioSettings() {
                           </div>
                         ))}
                         <button
+                          type="button"
                           onClick={() => addQuizQuestionOption(q.id)}
                           className="text-sm text-gold hover:underline"
                         >
@@ -1038,6 +1059,7 @@ export default function StudioSettings() {
                   </div>
                 ))}
                 <button
+                  type="button"
                   onClick={addQuizQuestion}
                   className="w-full py-3 rounded-xl border border-dashed border-white/20 text-subtle hover:text-cream hover:border-gold/50 flex items-center justify-center gap-2"
                 >
@@ -1062,6 +1084,7 @@ export default function StudioSettings() {
                       </p>
                     </div>
                     <button
+                      type="button"
                       onClick={() => removeStyleRecommendation(key)}
                       className="p-2 rounded-lg hover:bg-white/10 text-subtle hover:text-cream shrink-0"
                     >
@@ -1092,6 +1115,7 @@ export default function StudioSettings() {
                     className={`${inputClass} flex-1 min-w-[140px]`}
                   />
                   <button
+                    type="button"
                     onClick={addStyleRecommendation}
                     className="px-4 py-2.5 rounded-xl bg-gold text-ink font-medium flex items-center gap-2 shrink-0 hover:bg-gold-light"
                   >
@@ -1103,7 +1127,7 @@ export default function StudioSettings() {
             </motion.section>
 
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Umbral Trending</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">Umbral de tendencia</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4">
                 <label className={labelClass}>
                   Popularidad mínima para mostrar como trending (0-100)
@@ -1124,7 +1148,8 @@ export default function StudioSettings() {
             <SaveButton
               onSave={handleSaveSugerencias}
               saved={savedTab === 'sugerencias'}
-              disabled={settingsLoading}
+              disabled={settingsLoading || saving}
+              error={saveError}
             />
           </motion.div>
         )}
@@ -1151,7 +1176,7 @@ export default function StudioSettings() {
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>Tagline</label>
+                  <label className={labelClass}>Eslogan</label>
                   <input
                     type="text"
                     value={homeTagline}
@@ -1179,6 +1204,7 @@ export default function StudioSettings() {
                         className={`${inputClass} flex-1 mr-2`}
                       />
                       <button
+                        type="button"
                         onClick={() => removeReview(idx)}
                         className="p-2 rounded-lg hover:bg-white/10 text-subtle hover:text-cream"
                       >
@@ -1226,6 +1252,7 @@ export default function StudioSettings() {
                   </div>
                 ))}
                 <button
+                  type="button"
                   onClick={addReview}
                   className="w-full py-3 rounded-xl border border-dashed border-white/20 text-subtle hover:text-cream hover:border-gold/50 flex items-center justify-center gap-2"
                 >
@@ -1285,6 +1312,7 @@ export default function StudioSettings() {
                           className={`${inputClass} flex-1`}
                         />
                         <button
+                          type="button"
                           onClick={() => removeAboutStat(idx)}
                           className="p-2 rounded-lg hover:bg-white/10 text-subtle hover:text-cream"
                         >
@@ -1293,6 +1321,7 @@ export default function StudioSettings() {
                       </div>
                     ))}
                     <button
+                      type="button"
                       onClick={addAboutStat}
                       className="text-sm text-gold hover:underline"
                     >
@@ -1310,6 +1339,7 @@ export default function StudioSettings() {
                       >
                         {sp}
                         <button
+                          type="button"
                           onClick={() => removeSpecialty(sp)}
                           className="p-0.5 rounded hover:bg-white/10 text-subtle hover:text-cream"
                         >
@@ -1328,6 +1358,7 @@ export default function StudioSettings() {
                       className={inputClass}
                     />
                     <button
+                      type="button"
                       onClick={addSpecialty}
                       className="px-4 py-2.5 rounded-xl bg-gold text-ink font-medium flex items-center gap-2 shrink-0 hover:bg-gold-light"
                     >
@@ -1346,6 +1377,7 @@ export default function StudioSettings() {
                       >
                         <span className="text-cream text-sm">{c}</span>
                         <button
+                          type="button"
                           onClick={() => removeCertification(c)}
                           className="p-1 rounded hover:bg-white/10 text-subtle hover:text-cream"
                         >
@@ -1364,6 +1396,7 @@ export default function StudioSettings() {
                       className={inputClass}
                     />
                     <button
+                      type="button"
                       onClick={addCertification}
                       className="px-4 py-2.5 rounded-xl bg-gold text-ink font-medium flex items-center gap-2 shrink-0 hover:bg-gold-light"
                     >
@@ -1378,7 +1411,8 @@ export default function StudioSettings() {
             <SaveButton
               onSave={handleSaveContenido}
               saved={savedTab === 'contenido'}
-              disabled={settingsLoading}
+              disabled={settingsLoading || saving}
+              error={saveError}
             />
           </motion.div>
         )}
@@ -1458,6 +1492,7 @@ export default function StudioSettings() {
                       className={`${inputClass} w-32`}
                     />
                     <button
+                      type="button"
                       onClick={() => removeQuickReply(idx)}
                       className="p-2 rounded-lg hover:bg-white/10 text-subtle hover:text-cream"
                     >
@@ -1466,6 +1501,7 @@ export default function StudioSettings() {
                   </div>
                 ))}
                 <button
+                  type="button"
                   onClick={addQuickReply}
                   className="w-full py-3 rounded-xl border border-dashed border-white/20 text-subtle hover:text-cream hover:border-gold/50 flex items-center justify-center gap-2"
                 >
@@ -1483,6 +1519,7 @@ export default function StudioSettings() {
                     <div className="flex justify-between items-center">
                       <span className="text-cream text-sm font-medium">{key}</span>
                       <button
+                        type="button"
                         onClick={() => removeChatbotResponse(key)}
                         className="p-1 rounded hover:bg-white/10 text-subtle hover:text-cream"
                       >
@@ -1514,6 +1551,7 @@ export default function StudioSettings() {
                     className={`${inputClass} resize-none`}
                   />
                   <button
+                    type="button"
                     onClick={addChatbotResponse}
                     className="px-4 py-2.5 rounded-xl bg-gold text-ink font-medium flex items-center gap-2 hover:bg-gold-light"
                   >
@@ -1525,7 +1563,7 @@ export default function StudioSettings() {
             </motion.section>
 
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Respuestas Predefinidas (sin auth)</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">Respuestas Predefinidas (sin autenticación)</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-3">
                 {cannedResponses.map((c, idx) => (
                   <div key={idx} className="flex gap-2">
@@ -1537,6 +1575,7 @@ export default function StudioSettings() {
                       className={`${inputClass} flex-1 resize-none`}
                     />
                     <button
+                      type="button"
                       onClick={() => removeCannedResponse(idx)}
                       className="p-2 rounded-lg hover:bg-white/10 text-subtle hover:text-cream shrink-0"
                     >
@@ -1545,6 +1584,7 @@ export default function StudioSettings() {
                   </div>
                 ))}
                 <button
+                  type="button"
                   onClick={addCannedResponse}
                   className="w-full py-3 rounded-xl border border-dashed border-white/20 text-subtle hover:text-cream hover:border-gold/50 flex items-center justify-center gap-2"
                 >
@@ -1572,7 +1612,8 @@ export default function StudioSettings() {
             <SaveButton
               onSave={handleSaveChat}
               saved={savedTab === 'chat'}
-              disabled={settingsLoading}
+              disabled={settingsLoading || saving}
+              error={saveError}
             />
           </motion.div>
         )}
@@ -1628,7 +1669,11 @@ export default function StudioSettings() {
                       <p className="text-subtle text-xs">{desc}</p>
                     </div>
                     <button
+                      type="button"
                       onClick={() => setter(!value)}
+                      role="switch"
+                      aria-checked={value}
+                      aria-label={label}
                       className={`relative w-12 h-7 rounded-full transition-colors ${
                         value ? 'bg-gold' : 'bg-ink-medium'
                       }`}
@@ -1647,7 +1692,8 @@ export default function StudioSettings() {
             <SaveButton
               onSave={handleSaveNotificaciones}
               saved={savedTab === 'notificaciones'}
-              disabled={settingsLoading}
+              disabled={settingsLoading || saving}
+              error={saveError}
             />
           </motion.div>
         )}
@@ -1660,10 +1706,12 @@ function SaveButton({
   onSave,
   saved,
   disabled,
+  error,
 }: {
-  onSave: () => Promise<void>
+  onSave: () => void
   saved: boolean
   disabled: boolean
+  error?: string | null
 }) {
   return (
     <motion.section variants={itemVariants}>
@@ -1680,13 +1728,17 @@ function SaveButton({
           </motion.div>
         )}
       </AnimatePresence>
+      {error && (
+        <div className="mb-3 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>
+      )}
       <button
+        type="button"
         onClick={onSave}
         disabled={disabled}
         className="w-full py-4 rounded-xl bg-gold text-ink font-serif font-semibold flex items-center justify-center gap-2 hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Save size={20} />
-        Guardar Cambios
+        {disabled ? 'Guardando...' : 'Guardar Cambios'}
       </button>
     </motion.section>
   )

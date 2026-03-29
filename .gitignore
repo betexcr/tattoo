@@ -24,6 +24,8 @@ dist-ssr
 *.sw?
 .vercel
 
-# Capacitor / Android
+# Capacitor / Native
 android/
+ios/
 *.apk
+*.ipa

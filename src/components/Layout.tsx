@@ -13,14 +13,14 @@ export default function Layout() {
     <div className="flex flex-col min-h-dvh bg-ink">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-gold focus:text-ink focus:rounded-lg focus:text-sm focus:font-medium">Saltar al contenido</a>
       {user && (
-        <div className="fixed top-2 right-3 z-40">
+        <div className="fixed top-[max(0.5rem,env(safe-area-inset-top,0.5rem))] right-[max(0.75rem,env(safe-area-inset-right,0.75rem))] z-40">
           <NotificationBell />
         </div>
       )}
-      <main id="main-content" className="flex-1 pb-20 overflow-y-auto">
+      <main id="main-content" className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] overflow-y-auto">
         <Outlet />
       </main>
-      <BottomNav onMenuToggle={() => setMenuOpen(true)} />
+      <BottomNav menuOpen={menuOpen} onMenuToggle={() => setMenuOpen(true)} />
       <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
     </div>
   )

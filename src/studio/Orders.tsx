@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Package, ChevronDown, ChevronUp } from 'lucide-react'
 import { useOrders } from '../hooks/useOrders'
 import { useNotifications } from '../hooks/useNotifications'
+import LoadingSpinner from '../components/LoadingSpinner'
 import type { Order } from '../types'
 
 type StatusFilter = '' | Order['status']
@@ -12,6 +13,7 @@ const STATUS_CONFIG: Record<Order['status'], { label: string; badge: string; nex
   confirmed: { label: 'Confirmado', badge: 'bg-emerald-500/20 text-emerald-400', next: 'shipped', nextLabel: 'Enviar' },
   shipped: { label: 'Enviado', badge: 'bg-blue-500/20 text-blue-400', next: 'delivered', nextLabel: 'Entregado' },
   delivered: { label: 'Entregado', badge: 'bg-subtle/20 text-subtle' },
+  cancelled: { label: 'Cancelado', badge: 'bg-red-500/20 text-red-400' },
 }
 
 function formatDate(iso: string) {
@@ -29,11 +31,12 @@ const itemVariants = {
 }
 
 export default function Orders() {
-  const { orders, updateStatus: hookUpdateStatus } = useOrders()
+  const { orders, loading, error, updateStatus: hookUpdateStatus } = useOrders()
   const { create: createNotification } = useNotifications()
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [updateError, setUpdateError] = useState<string | null>(null)
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null)
 
   const filtered = useMemo(
     () => statusFilter ? orders.filter(o => o.status === statusFilter) : orders,
@@ -48,18 +51,27 @@ export default function Orders() {
     { value: 'delivered', label: 'Entregados' },
   ]
 
+  if (loading) return <LoadingSpinner />
+  if (error) return (
+    <div className="p-4">
+      <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-red-400 text-sm">{error}</div>
+    </div>
+  )
+
   return (
     <div className="p-4 pb-24 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-xl text-cream">Pedidos</h1>
-        <span className="text-xs text-subtle">{orders.length} total</span>
+        <span className="text-xs text-subtle">{orders.length} en total</span>
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1">
         {filters.map(f => (
           <button
+            type="button"
             key={f.value}
             onClick={() => setStatusFilter(f.value)}
+            aria-pressed={statusFilter === f.value}
             className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
               statusFilter === f.value ? 'bg-gold text-ink' : 'bg-ink-medium text-subtle hover:text-cream-dark'
             }`}
@@ -77,12 +89,14 @@ export default function Orders() {
           </motion.div>
         ) : (
           filtered.map(order => {
-            const cfg = STATUS_CONFIG[order.status]
+            const cfg = STATUS_CONFIG[order.status] ?? { label: 'Desconocido', badge: 'bg-white/10 text-subtle' }
             const expanded = expandedId === order.id
             return (
               <motion.article key={order.id} variants={itemVariants} className="rounded-xl bg-ink-light border border-white/5 overflow-hidden">
                 <button
+                  type="button"
                   onClick={() => setExpandedId(expanded ? null : order.id)}
+                  aria-expanded={expanded}
                   className="w-full p-4 text-left"
                 >
                   <div className="flex items-start justify-between gap-3 mb-1">
@@ -120,8 +134,8 @@ export default function Orders() {
                         {order.items && order.items.length > 0 && (
                           <div className="space-y-1">
                             <p className="text-xs text-subtle uppercase tracking-wider">Artículos</p>
-                            {order.items.map((item, i) => (
-                              <div key={i} className="flex justify-between text-sm">
+                            {order.items.map((item) => (
+                              <div key={item.id} className="flex justify-between text-sm">
                                 <span className="text-cream-dark">{item.quantity}x — {item.size} / {item.color}</span>
                                 <span className="text-gold">€{item.price * item.quantity}</span>
                               </div>
@@ -135,13 +149,20 @@ export default function Orders() {
                         )}
                         {cfg.next && (
                           <button
+                            type="button"
                             onClick={async () => {
+                              if (updatingOrderId) return
+                              setUpdatingOrderId(order.id)
+                              setUpdateError(null)
                               try {
-                                setUpdateError(null)
-                                await hookUpdateStatus(order.id, cfg.next!)
+                                const result = await hookUpdateStatus(order.id, cfg.next!)
+                                if (result?.error) {
+                                  setUpdateError('Error al actualizar el estado del pedido')
+                                  return
+                                }
                                 if (order.client_id) {
                                   const nextCfg = STATUS_CONFIG[cfg.next!]
-                                  createNotification({
+                                  await createNotification({
                                     user_id: order.client_id,
                                     title: 'Pedido actualizado',
                                     body: `Tu pedido ha sido marcado como "${nextCfg.label}".`,
@@ -149,13 +170,14 @@ export default function Orders() {
                                     link: '/account',
                                   })
                                 }
-                              } catch {
-                                setUpdateError('Error al actualizar el estado del pedido')
+                              } finally {
+                                setUpdatingOrderId(null)
                               }
                             }}
-                            className="w-full py-2.5 rounded-xl bg-gold/10 text-gold text-sm font-medium hover:bg-gold/20 transition-colors"
+                            disabled={updatingOrderId === order.id}
+                            className="w-full py-2.5 rounded-xl bg-gold/10 text-gold text-sm font-medium hover:bg-gold/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {cfg.nextLabel}
+                            {updatingOrderId === order.id ? 'Actualizando...' : cfg.nextLabel}
                           </button>
                         )}
                       </div>

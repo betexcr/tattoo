@@ -1,5 +1,6 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import LoadingSpinner from '../components/LoadingSpinner'
 import { motion } from 'framer-motion'
 import {
   Calendar,
@@ -17,8 +18,6 @@ import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { useAppointments } from '../hooks/useAppointments'
 import { useOrders } from '../hooks/useOrders'
 import { useChatConversations } from '../hooks/useChat'
-
-const TODAY = new Date().toISOString().slice(0, 10)
 
 function getGreeting(): string {
   const hour = new Date().getHours()
@@ -61,9 +60,15 @@ const itemVariants = {
 
 export default function Dashboard() {
   const { config } = useStudioConfig()
-  const { appointments: localAppointments, updateStatus } = useAppointments()
-  const { orders } = useOrders()
-  const { conversations: chatConvs } = useChatConversations()
+  const { appointments: localAppointments, updateStatus, loading: apptLoading, error: apptError } = useAppointments()
+  const { orders, loading: ordersLoading, error: ordersError } = useOrders()
+  const { conversations: chatConvs, loading: chatLoading, error: chatError } = useChatConversations()
+
+  const hookError = apptError || ordersError || chatError
+  const hookLoading = apptLoading || ordersLoading || chatLoading
+
+  const now = new Date()
+  const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-')
 
   const artistFirstName = config.artist_name.split(' ')[0] || config.artist_name
   const artistInitials = config.chat_config.artist_initials || getInitials(config.artist_name)
@@ -76,21 +81,21 @@ export default function Dashboard() {
   const todayAppointments = useMemo(
     () =>
       localAppointments.filter(
-        (a) => a.date === TODAY && a.status === 'confirmed'
+        (a) => a.date === today && a.status === 'confirmed'
       ),
-    [localAppointments]
+    [localAppointments, today]
   )
 
   const upcomingAppointments = useMemo(() => {
     const confirmed = localAppointments.filter(
-      (a) => a.status === 'confirmed' && a.date >= TODAY
+      (a) => a.status === 'confirmed' && a.date >= today
     )
     return confirmed.sort(
       (a, b) =>
         new Date(a.date + 'T' + a.time).getTime() -
         new Date(b.date + 'T' + b.time).getTime()
     )
-  }, [localAppointments])
+  }, [localAppointments, today])
 
   const displaySchedule = todayAppointments.length > 0 ? todayAppointments : upcomingAppointments.slice(0, 3)
 
@@ -138,12 +143,41 @@ export default function Dashboard() {
 
   const maxRevenue = Math.max(...dailyRevenue, 1)
 
-  const handleConfirm = (id: string) => {
-    updateStatus(id, 'confirmed')
+  const [statusError, setStatusError] = useState<string | null>(null)
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
+
+  const handleConfirm = async (id: string) => {
+    if (updatingId) return
+    setUpdatingId(id)
+    setStatusError(null)
+    try {
+      const result = await updateStatus(id, 'confirmed')
+      if (result?.error) setStatusError(result.error)
+    } finally {
+      setUpdatingId(null)
+    }
   }
 
-  const handleReject = (id: string) => {
-    updateStatus(id, 'rejected')
+  const handleReject = async (id: string) => {
+    if (updatingId) return
+    setUpdatingId(id)
+    setStatusError(null)
+    try {
+      const result = await updateStatus(id, 'rejected')
+      if (result?.error) setStatusError(result.error)
+    } finally {
+      setUpdatingId(null)
+    }
+  }
+
+  if (hookLoading) return <LoadingSpinner />
+
+  if (hookError) {
+    return (
+      <div className="p-4">
+        <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-red-400 text-sm">{hookError}</div>
+      </div>
+    )
   }
 
   return (
@@ -163,7 +197,7 @@ export default function Dashboard() {
             {getGreeting()}, {artistFirstName}
           </h1>
           <p className="text-subtle text-sm capitalize">
-            {formatDateSpanish(TODAY)}
+            {formatDateSpanish(today)}
           </p>
         </div>
       </motion.header>
@@ -217,6 +251,9 @@ export default function Dashboard() {
             Ver todas
           </Link>
         </div>
+        {statusError && (
+          <div className="mb-3 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{statusError}</div>
+        )}
         {pendingAppointments.length === 0 ? (
           <div className="rounded-xl bg-ink-light border border-white/5 p-6 text-center">
             <p className="text-cream-dark text-sm">
@@ -239,14 +276,20 @@ export default function Dashboard() {
                   </div>
                   <div className="flex gap-2">
                     <button
+                      type="button"
+                      aria-label="Confirmar cita"
                       onClick={() => handleConfirm(apt.id)}
-                      className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center hover:bg-emerald-500/30 transition-colors"
+                      disabled={updatingId === apt.id}
+                      className="w-11 h-11 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center hover:bg-emerald-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Check size={16} />
                     </button>
                     <button
+                      type="button"
+                      aria-label="Rechazar cita"
                       onClick={() => handleReject(apt.id)}
-                      className="w-8 h-8 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500/30 transition-colors"
+                      disabled={updatingId === apt.id}
+                      className="w-11 h-11 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <X size={16} />
                     </button>
@@ -341,7 +384,7 @@ export default function Dashboard() {
               <ImagePlus className="w-5 h-5 text-gold" />
             </div>
             <span className="text-sm font-medium text-cream">
-              Agregar al Portfolio
+              Agregar al Portafolio
             </span>
           </Link>
           <Link

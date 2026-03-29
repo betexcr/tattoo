@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus,
@@ -12,7 +12,9 @@ import {
 } from 'lucide-react'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { useAppointments } from '../hooks/useAppointments'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useNotifications } from '../hooks/useNotifications'
+import LoadingSpinner from '../components/LoadingSpinner'
 import type { Appointment } from '../types'
 
 const WEEKDAY_LABELS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
@@ -23,12 +25,17 @@ function formatDateKey(year: number, month: number, day: number): string {
   return `${year}-${m}-${d}`
 }
 
+function formatDateLabel(dateKey: string): string {
+  const [y, m, d] = dateKey.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
 function getDayOfWeek(date: Date): number {
   return (date.getDay() + 6) % 7
 }
 
 function formatDate(dateStr: string) {
-  const d = new Date(dateStr)
+  const d = new Date(dateStr + 'T12:00:00')
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
@@ -42,6 +49,8 @@ function getStatusStyles(status: Appointment['status']) {
       return { badge: 'bg-subtle/20 text-subtle', label: 'Completada' }
     case 'rejected':
       return { badge: 'bg-red-500/20 text-red-400', label: 'Rechazada' }
+    default:
+      return { badge: 'bg-white/10 text-subtle', label: status ?? 'Desconocido' }
   }
 }
 
@@ -74,18 +83,207 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 }
 
+interface AppointmentCardProps {
+  apt: Appointment
+  rejectConfirmId: string | null
+  setRejectConfirmId: (id: string | null) => void
+  cancelConfirmId: string | null
+  setCancelConfirmId: (id: string | null) => void
+  onUpdateStatus: (id: string, status: Appointment['status']) => void
+  updatingApptId: string | null
+}
+
+function AppointmentCard({
+  apt,
+  rejectConfirmId,
+  setRejectConfirmId,
+  cancelConfirmId,
+  setCancelConfirmId,
+  onUpdateStatus,
+  updatingApptId,
+}: AppointmentCardProps) {
+  const styles = getStatusStyles(apt.status)
+  const hasActions = apt.status === 'pending' || apt.status === 'confirmed'
+
+  return (
+    <motion.article
+      variants={itemVariants}
+      className="rounded-xl bg-ink-light border border-white/5 overflow-hidden"
+    >
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3 mb-2">
+          <h3 className="font-serif text-cream font-medium">{apt.client_name}</h3>
+          <span className={`text-[10px] px-2 py-1 rounded-full shrink-0 ${styles.badge}`}>
+            {styles.label}
+          </span>
+        </div>
+        {apt.phone && (
+          <div className="flex items-center gap-1.5 text-subtle text-sm mb-1.5">
+            <Phone size={14} />
+            <span>{apt.phone}</span>
+          </div>
+        )}
+        <div className="flex flex-wrap gap-x-2 gap-y-1 text-sm text-subtle mb-2">
+          <span>{formatDate(apt.date)}</span>
+          <span>·</span>
+          <span>{apt.time}</span>
+          <span>·</span>
+          <span>{apt.body_part}</span>
+        </div>
+        <span className="inline-block text-[10px] text-gold/90 px-2 py-0.5 rounded bg-gold/10 mb-2">
+          {apt.style}
+        </span>
+        <p className="text-cream-dark text-sm mb-2">{apt.description}</p>
+        <p className="text-gold text-xs font-medium">Depósito: €{apt.deposit}</p>
+
+        {hasActions && (
+          <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-white/5">
+            {apt.status === 'pending' && (
+              <div className="flex items-center gap-2 ml-auto">
+                <AnimatePresence mode="wait">
+                  {rejectConfirmId === apt.id ? (
+                    <motion.div
+                      key="confirm-reject"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="flex items-center gap-1.5"
+                    >
+                      <AlertTriangle size={14} className="text-amber-400 shrink-0" />
+                      <span className="text-xs text-subtle">¿Seguro?</span>
+                      <button
+                        type="button"
+                        onClick={() => onUpdateStatus(apt.id, 'rejected')}
+                        disabled={updatingApptId === apt.id}
+                        className="px-2 py-1 rounded-lg bg-red-500/20 text-red-400 text-xs border border-red-500/30 hover:bg-red-500/30 disabled:opacity-50"
+                      >
+                        {updatingApptId === apt.id ? 'Rechazando...' : 'Sí, rechazar'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRejectConfirmId(null)}
+                        className="px-2 py-1 rounded-lg bg-white/5 text-subtle text-xs hover:bg-white/10"
+                      >
+                        Cancelar
+                      </button>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="buttons"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex items-center gap-2"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => onUpdateStatus(apt.id, 'confirmed')}
+                        disabled={updatingApptId === apt.id}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-medium hover:bg-emerald-500/30 disabled:opacity-50"
+                      >
+                        <Check size={14} />
+                        {updatingApptId === apt.id ? 'Confirmando...' : 'Confirmar'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRejectConfirmId(apt.id)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-medium hover:bg-red-500/20"
+                      >
+                        <X size={14} />
+                        Rechazar
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
+            {apt.status === 'confirmed' && (
+              <div className="flex items-center gap-2 ml-auto">
+                <AnimatePresence mode="wait">
+                  {cancelConfirmId === apt.id ? (
+                    <motion.div
+                      key="confirm-cancel"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="flex items-center gap-1.5"
+                    >
+                      <AlertTriangle size={14} className="text-amber-400 shrink-0" />
+                      <span className="text-xs text-subtle">¿Cancelar cita?</span>
+                      <button
+                        type="button"
+                        onClick={() => onUpdateStatus(apt.id, 'rejected')}
+                        disabled={updatingApptId === apt.id}
+                        className="px-2 py-1 rounded-lg bg-red-500/20 text-red-400 text-xs border border-red-500/30 hover:bg-red-500/30 disabled:opacity-50"
+                      >
+                        {updatingApptId === apt.id ? '...' : 'Sí'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCancelConfirmId(null)}
+                        className="px-2 py-1 rounded-lg bg-white/5 text-subtle text-xs hover:bg-white/10"
+                      >
+                        No
+                      </button>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="buttons"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex items-center gap-2"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => onUpdateStatus(apt.id, 'completed')}
+                        disabled={updatingApptId === apt.id}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gold/50 text-gold text-xs font-medium hover:bg-gold/10 disabled:opacity-50"
+                      >
+                        <CheckCheck size={14} />
+                        {updatingApptId === apt.id ? 'Completando...' : 'Completar'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCancelConfirmId(apt.id)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/30 text-red-400 text-xs font-medium hover:bg-red-500/10"
+                      >
+                        <X size={14} />
+                        Cancelar
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </motion.article>
+  )
+}
+
 export default function Appointments() {
   const { config } = useStudioConfig()
-  const { appointments, create, updateStatus: hookUpdateStatus } = useAppointments()
+  const { appointments, create, updateStatus: hookUpdateStatus, loading: hookLoading, error: hookError } = useAppointments()
   const { create: createNotification } = useNotifications()
   const [viewMode, setViewMode] = useState<ViewMode>('calendar')
-  const [calendarView, setCalendarView] = useState({ year: 2026, month: 2 })
+  const [calendarView, setCalendarView] = useState(() => {
+    const now = new Date()
+    return { year: now.getFullYear(), month: now.getMonth() }
+  })
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all')
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState(initialFormState)
   const [rejectConfirmId, setRejectConfirmId] = useState<string | null>(null)
   const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null)
+  const [updatingApptId, setUpdatingApptId] = useState<string | null>(null)
+  const modalPanelRef = useRef<HTMLDivElement>(null)
+  const closeModal = useCallback(() => setModalOpen(false), [])
+
+  useFocusTrap(modalPanelRef, modalOpen, closeModal)
 
   const today = useMemo(() => {
     const t = new Date()
@@ -194,42 +392,62 @@ export default function Appointments() {
   ]
 
   const handleUpdateStatus = async (id: string, status: Appointment['status']) => {
-    await hookUpdateStatus(id, status)
-    setRejectConfirmId(null)
-    setCancelConfirmId(null)
-    const apt = appointments.find(a => a.id === id)
-    if (apt?.client_id) {
-      const statusLabels: Record<string, string> = { confirmed: 'confirmada', rejected: 'rechazada', completed: 'completada' }
-      createNotification({
-        user_id: apt.client_id,
-        title: `Cita ${statusLabels[status] ?? status}`,
-        body: `Tu cita del ${apt.date} a las ${apt.time} ha sido ${statusLabels[status] ?? status}.`,
-        type: 'appointment',
-        link: '/agenda',
-      })
+    if (updatingApptId) return
+    setUpdatingApptId(id)
+    try {
+      const result = await hookUpdateStatus(id, status)
+      setRejectConfirmId(null)
+      setCancelConfirmId(null)
+      if (result?.error) return
+      const apt = appointments.find(a => a.id === id)
+      if (apt?.client_id) {
+        const statusLabels: Record<string, string> = { confirmed: 'confirmada', rejected: 'rechazada', completed: 'completada' }
+        await createNotification({
+          user_id: apt.client_id,
+          title: `Cita ${statusLabels[status] ?? status}`,
+          body: `Tu cita del ${apt.date} a las ${apt.time} ha sido ${statusLabels[status] ?? status}.`,
+          type: 'appointment',
+          link: '/agenda',
+        })
+      }
+    } finally {
+      setUpdatingApptId(null)
     }
   }
 
+  const [modalSaveError, setModalSaveError] = useState<string | null>(null)
+  const [modalSaving, setModalSaving] = useState(false)
+
   const handleSave = async () => {
-    if (!form.client.trim() || !form.date || !form.time) return
-    await create({
-      client_id: null,
-      client_name: form.client.trim(),
-      phone: form.phone || '',
-      email: form.email || '',
-      date: form.date,
-      time: form.time,
-      description: form.description.trim(),
-      body_part: form.bodyPart || '',
-      style: form.style || '',
-      status: form.status,
-      deposit: Number(form.deposit) || 0,
-      reference_images: [],
-      size: '',
-      notes: '',
-    })
-    setForm(initialFormState)
-    setModalOpen(false)
+    if (!form.client.trim() || !form.date || !form.time || modalSaving) return
+    setModalSaveError(null)
+    setModalSaving(true)
+    try {
+      const result = await create({
+        client_id: null,
+        client_name: form.client.trim(),
+        phone: form.phone || '',
+        email: form.email || '',
+        date: form.date,
+        time: form.time,
+        description: form.description.trim(),
+        body_part: form.bodyPart || '',
+        style: form.style || '',
+        status: form.status,
+        deposit: Number(form.deposit) || 0,
+        reference_images: [],
+        size: '',
+        notes: '',
+      })
+      if (result?.error) {
+        setModalSaveError(result.error)
+        return
+      }
+      setForm(initialFormState)
+      setModalOpen(false)
+    } finally {
+      setModalSaving(false)
+    }
   }
 
   const filters: { key: FilterKey; label: string }[] = [
@@ -240,160 +458,14 @@ export default function Appointments() {
     { key: 'rejected', label: 'Rechazadas' },
   ]
 
-  function AppointmentCard({ apt }: { apt: Appointment }) {
-    const styles = getStatusStyles(apt.status)
-    const hasActions = apt.status === 'pending' || apt.status === 'confirmed'
-
-    return (
-      <motion.article
-        variants={itemVariants}
-        className="rounded-xl bg-ink-light border border-white/5 overflow-hidden"
-      >
-        <div className="p-4">
-          <div className="flex items-start justify-between gap-3 mb-2">
-            <h3 className="font-serif text-cream font-medium">{apt.client_name}</h3>
-            <span className={`text-[10px] px-2 py-1 rounded-full shrink-0 ${styles.badge}`}>
-              {styles.label}
-            </span>
-          </div>
-          {apt.phone && (
-            <div className="flex items-center gap-1.5 text-subtle text-sm mb-1.5">
-              <Phone size={14} />
-              <span>{apt.phone}</span>
-            </div>
-          )}
-          <div className="flex flex-wrap gap-x-2 gap-y-1 text-sm text-subtle mb-2">
-            <span>{formatDate(apt.date)}</span>
-            <span>·</span>
-            <span>{apt.time}</span>
-            <span>·</span>
-            <span>{apt.body_part}</span>
-          </div>
-          <span className="inline-block text-[10px] text-gold/90 px-2 py-0.5 rounded bg-gold/10 mb-2">
-            {apt.style}
-          </span>
-          <p className="text-cream-dark text-sm mb-2">{apt.description}</p>
-          <p className="text-gold text-xs font-medium">Depósito: €{apt.deposit}</p>
-
-          {hasActions && (
-            <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-white/5">
-              {apt.status === 'pending' && (
-                <div className="flex items-center gap-2 ml-auto">
-                  <AnimatePresence mode="wait">
-                    {rejectConfirmId === apt.id ? (
-                      <motion.div
-                        key="confirm-reject"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className="flex items-center gap-1.5"
-                      >
-                        <AlertTriangle size={14} className="text-amber-400 shrink-0" />
-                        <span className="text-xs text-subtle">¿Seguro?</span>
-                        <button
-                          onClick={() => handleUpdateStatus(apt.id, 'rejected')}
-                          className="px-2 py-1 rounded-lg bg-red-500/20 text-red-400 text-xs border border-red-500/30 hover:bg-red-500/30"
-                        >
-                          Sí, rechazar
-                        </button>
-                        <button
-                          onClick={() => setRejectConfirmId(null)}
-                          className="px-2 py-1 rounded-lg bg-white/5 text-subtle text-xs hover:bg-white/10"
-                        >
-                          Cancelar
-                        </button>
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="buttons"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="flex items-center gap-2"
-                      >
-                        <button
-                          onClick={() => handleUpdateStatus(apt.id, 'confirmed')}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-medium hover:bg-emerald-500/30"
-                        >
-                          <Check size={14} />
-                          Confirmar
-                        </button>
-                        <button
-                          onClick={() => setRejectConfirmId(apt.id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-medium hover:bg-red-500/20"
-                        >
-                          <X size={14} />
-                          Rechazar
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
-
-              {apt.status === 'confirmed' && (
-                <div className="flex items-center gap-2 ml-auto">
-                  <AnimatePresence mode="wait">
-                    {cancelConfirmId === apt.id ? (
-                      <motion.div
-                        key="confirm-cancel"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className="flex items-center gap-1.5"
-                      >
-                        <AlertTriangle size={14} className="text-amber-400 shrink-0" />
-                        <span className="text-xs text-subtle">¿Cancelar cita?</span>
-                        <button
-                          onClick={() => handleUpdateStatus(apt.id, 'rejected')}
-                          className="px-2 py-1 rounded-lg bg-red-500/20 text-red-400 text-xs border border-red-500/30 hover:bg-red-500/30"
-                        >
-                          Sí
-                        </button>
-                        <button
-                          onClick={() => setCancelConfirmId(null)}
-                          className="px-2 py-1 rounded-lg bg-white/5 text-subtle text-xs hover:bg-white/10"
-                        >
-                          No
-                        </button>
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="buttons"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="flex items-center gap-2"
-                      >
-                        <button
-                          onClick={() => handleUpdateStatus(apt.id, 'completed')}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gold/50 text-gold text-xs font-medium hover:bg-gold/10"
-                        >
-                          <CheckCheck size={14} />
-                          Completar
-                        </button>
-                        <button
-                          onClick={() => setCancelConfirmId(apt.id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/30 text-red-400 text-xs font-medium hover:bg-red-500/10"
-                        >
-                          <X size={14} />
-                          Cancelar
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </motion.article>
-    )
-  }
+  if (hookLoading) return <LoadingSpinner />
 
   return (
     <div className="min-h-dvh bg-ink">
       <div className="px-4 pt-4 pb-28">
+        {hookError && (
+          <div className="mb-4 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{hookError}</div>
+        )}
         {/* View toggle */}
         <motion.div
           initial={{ opacity: 0, y: -8 }}
@@ -401,7 +473,9 @@ export default function Appointments() {
           className="flex gap-2 mb-4"
         >
           <button
+            type="button"
             onClick={() => setViewMode('calendar')}
+            aria-pressed={viewMode === 'calendar'}
             className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
               viewMode === 'calendar'
                 ? 'bg-gold text-ink'
@@ -411,7 +485,9 @@ export default function Appointments() {
             Calendario
           </button>
           <button
+            type="button"
             onClick={() => setViewMode('list')}
+            aria-pressed={viewMode === 'list'}
             className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
               viewMode === 'list'
                 ? 'bg-gold text-ink'
@@ -431,8 +507,10 @@ export default function Appointments() {
         >
           {filters.map((f) => (
             <button
+              type="button"
               key={f.key}
               onClick={() => setActiveFilter(f.key)}
+              aria-pressed={activeFilter === f.key}
               className={`relative shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                 activeFilter === f.key
                   ? 'bg-gold/20 text-gold border border-gold/40'
@@ -465,12 +543,14 @@ export default function Appointments() {
               <div className="rounded-2xl bg-ink-light border border-white/5 p-4">
                 <div className="flex items-center justify-between mb-4">
                   <button
+                    type="button"
+                    aria-label="Mes anterior"
                     onClick={() =>
                       setCalendarView((v) =>
                         v.month === 0 ? { year: v.year - 1, month: 11 } : { ...v, month: v.month - 1 }
                       )
                     }
-                    className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream"
+                    className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream"
                   >
                     <ChevronLeft size={18} />
                   </button>
@@ -478,12 +558,14 @@ export default function Appointments() {
                     {monthNames[calendarView.month]} {calendarView.year}
                   </span>
                   <button
+                    type="button"
+                    aria-label="Mes siguiente"
                     onClick={() =>
                       setCalendarView((v) =>
                         v.month === 11 ? { year: v.year + 1, month: 0 } : { ...v, month: v.month + 1 }
                       )
                     }
-                    className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream"
+                    className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream"
                   >
                     <ChevronRight size={18} />
                   </button>
@@ -510,6 +592,8 @@ export default function Appointments() {
                         key={cell.date}
                         type="button"
                         onClick={() => setSelectedDate(cell.date)}
+                        aria-label={formatDateLabel(cell.date)}
+                        aria-pressed={isSelected}
                         className={`
                           aspect-square rounded-lg text-sm font-medium transition-all flex flex-col items-center justify-center gap-0.5
                           ${!cell.isCurrentMonth ? 'text-subtle/40' : 'text-cream'}
@@ -547,7 +631,16 @@ export default function Appointments() {
                       className="space-y-3"
                     >
                       {selectedDateAppointments.map((apt) => (
-                        <AppointmentCard key={apt.id} apt={apt} />
+                        <AppointmentCard
+                          key={apt.id}
+                          apt={apt}
+                          rejectConfirmId={rejectConfirmId}
+                          setRejectConfirmId={setRejectConfirmId}
+                          cancelConfirmId={cancelConfirmId}
+                          setCancelConfirmId={setCancelConfirmId}
+                          onUpdateStatus={handleUpdateStatus}
+                          updatingApptId={updatingApptId}
+                        />
                       ))}
                     </motion.div>
                   ) : (
@@ -580,7 +673,16 @@ export default function Appointments() {
                       </h3>
                       <div className="space-y-3">
                         {apts.map((apt) => (
-                          <AppointmentCard key={apt.id} apt={apt} />
+                          <AppointmentCard
+                            key={apt.id}
+                            apt={apt}
+                            rejectConfirmId={rejectConfirmId}
+                            setRejectConfirmId={setRejectConfirmId}
+                            cancelConfirmId={cancelConfirmId}
+                            setCancelConfirmId={setCancelConfirmId}
+                            onUpdateStatus={handleUpdateStatus}
+                            updatingApptId={updatingApptId}
+                          />
                         ))}
                       </div>
                     </div>
@@ -602,6 +704,8 @@ export default function Appointments() {
 
       {/* FAB */}
       <motion.button
+        type="button"
+        aria-label="Nueva cita"
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         whileTap={{ scale: 0.95 }}
@@ -623,17 +727,24 @@ export default function Appointments() {
               className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-sm"
             />
             <motion.div
+              ref={modalPanelRef}
+              tabIndex={-1}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Nueva cita"
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-50 max-h-[90dvh] overflow-y-auto rounded-t-2xl bg-ink-light border-t border-white/10"
+              className="fixed bottom-0 left-0 right-0 z-50 max-h-[90dvh] overflow-y-auto rounded-t-2xl bg-ink-light border-t border-white/10 focus:outline-none"
             >
               <div className="sticky top-0 bg-ink-light/95 backdrop-blur flex items-center justify-between px-5 py-4 border-b border-white/5">
                 <h2 className="font-serif text-lg text-cream">Nueva cita</h2>
                 <button
+                  type="button"
+                  aria-label="Cerrar"
                   onClick={() => setModalOpen(false)}
-                  className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream"
+                  className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream"
                 >
                   <X size={18} />
                 </button>
@@ -643,11 +754,12 @@ export default function Appointments() {
                   e.preventDefault()
                   handleSave()
                 }}
-                className="p-5 space-y-4"
+                className="p-5 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-4"
               >
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">Cliente</label>
+                  <label htmlFor="appt-client" className="block text-xs text-subtle mb-1.5">Cliente</label>
                   <input
+                    id="appt-client"
                     type="text"
                     value={form.client}
                     onChange={(e) => setForm((f) => ({ ...f, client: e.target.value }))}
@@ -656,8 +768,9 @@ export default function Appointments() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">Teléfono</label>
+                  <label htmlFor="appt-phone" className="block text-xs text-subtle mb-1.5">Teléfono</label>
                   <input
+                    id="appt-phone"
                     type="tel"
                     value={form.phone}
                     onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
@@ -666,8 +779,9 @@ export default function Appointments() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">Email</label>
+                  <label htmlFor="appt-email" className="block text-xs text-subtle mb-1.5">Correo electrónico</label>
                   <input
+                    id="appt-email"
                     type="email"
                     value={form.email}
                     onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
@@ -677,8 +791,9 @@ export default function Appointments() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-subtle mb-1.5">Fecha</label>
+                    <label htmlFor="appt-date" className="block text-xs text-subtle mb-1.5">Fecha</label>
                     <input
+                      id="appt-date"
                       type="date"
                       value={form.date}
                       onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
@@ -686,8 +801,9 @@ export default function Appointments() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-subtle mb-1.5">Hora</label>
+                    <label htmlFor="appt-time" className="block text-xs text-subtle mb-1.5">Hora</label>
                     <input
+                      id="appt-time"
                       type="time"
                       value={form.time}
                       onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
@@ -696,8 +812,9 @@ export default function Appointments() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">Descripción</label>
+                  <label htmlFor="appt-description" className="block text-xs text-subtle mb-1.5">Descripción</label>
                   <textarea
+                    id="appt-description"
                     value={form.description}
                     onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                     placeholder="Describe el diseño..."
@@ -706,8 +823,9 @@ export default function Appointments() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">Parte del cuerpo</label>
+                  <label htmlFor="appt-bodypart" className="block text-xs text-subtle mb-1.5">Parte del cuerpo</label>
                   <select
+                    id="appt-bodypart"
                     value={form.bodyPart}
                     onChange={(e) => setForm((f) => ({ ...f, bodyPart: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl bg-ink border border-white/5 text-cream focus:outline-none focus:border-gold/50"
@@ -721,8 +839,9 @@ export default function Appointments() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">Estilo</label>
+                  <label htmlFor="appt-style" className="block text-xs text-subtle mb-1.5">Estilo</label>
                   <select
+                    id="appt-style"
                     value={form.style}
                     onChange={(e) => setForm((f) => ({ ...f, style: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl bg-ink border border-white/5 text-cream focus:outline-none focus:border-gold/50"
@@ -736,8 +855,9 @@ export default function Appointments() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">Depósito (€)</label>
+                  <label htmlFor="appt-deposit" className="block text-xs text-subtle mb-1.5">Depósito (€)</label>
                   <input
+                    id="appt-deposit"
                     type="number"
                     min="0"
                     step="5"
@@ -748,8 +868,9 @@ export default function Appointments() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">Estado</label>
+                  <label htmlFor="appt-status" className="block text-xs text-subtle mb-1.5">Estado</label>
                   <select
+                    id="appt-status"
                     value={form.status}
                     onChange={(e) =>
                       setForm((f) => ({
@@ -763,11 +884,15 @@ export default function Appointments() {
                     <option value="confirmed">Confirmada</option>
                   </select>
                 </div>
+                {modalSaveError && (
+                  <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{modalSaveError}</p>
+                )}
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-xl bg-gold text-ink font-medium hover:bg-gold-light transition-colors"
+                  disabled={modalSaving}
+                  className="w-full py-3.5 rounded-xl bg-gold text-ink font-medium hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Guardar
+                  {modalSaving ? 'Guardando...' : 'Guardar'}
                 </button>
               </form>
             </motion.div>

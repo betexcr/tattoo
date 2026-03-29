@@ -25,6 +25,12 @@ html {
   scroll-behavior: smooth;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 body {
   margin: 0;
   background-color: var(--color-ink);
@@ -41,6 +47,11 @@ body {
   flex-direction: column;
 }
 
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ink-medium) var(--color-ink);
+}
+
 ::-webkit-scrollbar {
   width: 4px;
 }
@@ -54,8 +65,4 @@ body {
 
 input, textarea, select {
   font-family: var(--font-sans);
-}
-
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom);
 }

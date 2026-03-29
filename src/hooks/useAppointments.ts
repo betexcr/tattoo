@@ -1,29 +1,36 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, doc,
-  where,
+  where, limit,
 } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import type { Appointment } from '../types'
+import { mapFirestoreError } from '../utils/mapFirestoreError'
 
 export function useAppointments(clientId?: string | null) {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const fetchIdRef = useRef(0)
 
   const fetch = useCallback(async () => {
+    const id = ++fetchIdRef.current
     setLoading(true)
+    setError(null)
     try {
       const constraints = clientId
-        ? [where('client_id', '==', clientId), orderBy('date', 'asc')]
-        : [orderBy('date', 'asc')]
+        ? [where('client_id', '==', clientId), orderBy('date', 'asc'), limit(500)]
+        : [orderBy('date', 'asc'), limit(500)]
       const q = query(collection(db, 'appointments'), ...constraints)
       const snap = await getDocs(q)
+      if (fetchIdRef.current !== id) return
       setAppointments(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Appointment))
+      setLoading(false)
     } catch (e: unknown) {
-      setError((e as Error).message)
+      if (fetchIdRef.current !== id) return
+      setError(mapFirestoreError(e))
+      setLoading(false)
     }
-    setLoading(false)
   }, [clientId])
 
   useEffect(() => { fetch() }, [fetch])
@@ -38,7 +45,7 @@ export function useAppointments(clientId?: string | null) {
       setAppointments(prev => [...prev, newAppt])
       return { error: null, data: newAppt }
     } catch (e: unknown) {
-      return { error: (e as Error).message }
+      return { error: mapFirestoreError(e) }
     }
   }
 
@@ -48,7 +55,7 @@ export function useAppointments(clientId?: string | null) {
       setAppointments(prev => prev.map(a => a.id === id ? { ...a, status } : a))
       return { error: null }
     } catch (e: unknown) {
-      return { error: (e as Error).message }
+      return { error: mapFirestoreError(e) }
     }
   }
 
@@ -58,7 +65,7 @@ export function useAppointments(clientId?: string | null) {
       setAppointments(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a))
       return { error: null }
     } catch (e: unknown) {
-      return { error: (e as Error).message }
+      return { error: mapFirestoreError(e) }
     }
   }
 
@@ -68,7 +75,7 @@ export function useAppointments(clientId?: string | null) {
       setAppointments(prev => prev.filter(a => a.id !== id))
       return { error: null }
     } catch (e: unknown) {
-      return { error: (e as Error).message }
+      return { error: mapFirestoreError(e) }
     }
   }
 

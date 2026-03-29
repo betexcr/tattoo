@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, X, Check } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useReminders } from '../hooks/useReminders'
 import type { Reminder } from '../types'
 
@@ -61,9 +62,14 @@ const initialFormState = {
 }
 
 export default function Reminders() {
-  const { reminders, create, toggleComplete } = useReminders()
+  const { reminders, create, toggleComplete, loading, error } = useReminders()
   const [showSheet, setShowSheet] = useState(false)
   const [form, setForm] = useState(initialFormState)
+  const [mutationError, setMutationError] = useState<string | null>(null)
+  const sheetRef = useRef<HTMLDivElement>(null)
+  const closeSheet = useCallback(() => setShowSheet(false), [])
+
+  useFocusTrap(sheetRef, showSheet, closeSheet)
 
   const groupedReminders = useMemo(() => {
     const today: Reminder[] = []
@@ -84,17 +90,47 @@ export default function Reminders() {
     return { today, tomorrow, upcoming }
   }, [reminders])
 
+  const [saving, setSaving] = useState(false)
+
   const handleSave = async () => {
-    if (!form.title || !form.date || !form.time) return
-    await create({
-      title: form.title,
-      date: form.date,
-      time: form.time,
-      type: form.type,
-      completed: false,
-    })
-    setForm(initialFormState)
-    setShowSheet(false)
+    if (!form.title || !form.date || !form.time) {
+      setMutationError('Completa todos los campos obligatorios')
+      return
+    }
+    if (saving) return
+    setSaving(true)
+    setMutationError(null)
+    try {
+      const result = await create({
+        title: form.title,
+        date: form.date,
+        time: form.time,
+        type: form.type,
+        completed: false,
+      })
+      if (result?.error) {
+        setMutationError(result.error)
+        return
+      }
+      setForm(initialFormState)
+      setShowSheet(false)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const [togglingId, setTogglingId] = useState<string | null>(null)
+
+  const handleToggle = async (id: string) => {
+    if (togglingId) return
+    setTogglingId(id)
+    setMutationError(null)
+    try {
+      const result = await toggleComplete(id)
+      if (result?.error) setMutationError(result.error)
+    } finally {
+      setTogglingId(null)
+    }
   }
 
   const renderReminderCard = (reminder: Reminder) => {
@@ -108,8 +144,11 @@ export default function Reminders() {
         }`}
       >
         <button
-          onClick={() => toggleComplete(reminder.id)}
-          className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+          type="button"
+          onClick={() => handleToggle(reminder.id)}
+          disabled={togglingId === reminder.id}
+          aria-label={reminder.completed ? 'Marcar como pendiente' : 'Marcar como completado'}
+          className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors disabled:opacity-50 ${
             reminder.completed
               ? 'bg-gold/30 border-gold text-gold'
               : 'border-subtle/50 hover:border-gold/50 text-transparent'
@@ -140,9 +179,21 @@ export default function Reminders() {
     )
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center">
+        <p className="text-subtle text-sm">Cargando...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-dvh bg-ink">
       <PageHeader title="Recordatorios" subtitle="No olvides nada" />
+
+      {(error || mutationError) && (
+        <div className="mx-5 mt-4 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{error || mutationError}</div>
+      )}
 
       <div className="px-5 pt-4 pb-28">
         <motion.div
@@ -192,10 +243,12 @@ export default function Reminders() {
 
       {/* FAB */}
       <motion.button
+        type="button"
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setShowSheet(true)}
+        aria-label="Nuevo recordatorio"
         className="fixed bottom-24 right-5 z-40 w-14 h-14 rounded-full bg-gold text-ink flex items-center justify-center shadow-lg shadow-gold/25 hover:bg-gold-light transition-colors"
       >
         <Plus size={24} strokeWidth={2.5} />
@@ -213,17 +266,24 @@ export default function Reminders() {
               className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-sm"
             />
             <motion.div
+              ref={sheetRef}
+              tabIndex={-1}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Nuevo recordatorio"
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-50 max-h-[75dvh] overflow-y-auto rounded-t-2xl bg-ink-light border-t border-white/10"
+              className="fixed bottom-0 left-0 right-0 z-50 max-h-[75dvh] overflow-y-auto rounded-t-2xl bg-ink-light border-t border-white/10 outline-none"
             >
               <div className="sticky top-0 bg-ink-light/95 backdrop-blur flex items-center justify-between px-5 py-4 border-b border-white/5">
                 <h2 className="font-serif text-lg text-cream">Nuevo recordatorio</h2>
                 <button
+                  type="button"
                   onClick={() => setShowSheet(false)}
-                  className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream"
+                  aria-label="Cerrar"
+                  className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream"
                 >
                   <X size={18} />
                 </button>
@@ -236,8 +296,9 @@ export default function Reminders() {
                 className="p-5 space-y-4"
               >
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">Título</label>
+                  <label htmlFor="reminder-title" className="block text-xs text-subtle mb-1.5">Título</label>
                   <input
+                    id="reminder-title"
                     type="text"
                     value={form.title}
                     onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
@@ -247,8 +308,9 @@ export default function Reminders() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-subtle mb-1.5">Fecha</label>
+                    <label htmlFor="reminder-date" className="block text-xs text-subtle mb-1.5">Fecha</label>
                     <input
+                      id="reminder-date"
                       type="date"
                       value={form.date}
                       onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
@@ -256,8 +318,9 @@ export default function Reminders() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-subtle mb-1.5">Hora</label>
+                    <label htmlFor="reminder-time" className="block text-xs text-subtle mb-1.5">Hora</label>
                     <input
+                      id="reminder-time"
                       type="time"
                       value={form.time}
                       onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
@@ -266,8 +329,9 @@ export default function Reminders() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">Tipo</label>
+                  <label htmlFor="reminder-type" className="block text-xs text-subtle mb-1.5">Tipo</label>
                   <select
+                    id="reminder-type"
                     value={form.type}
                     onChange={(e) =>
                       setForm((f) => ({ ...f, type: e.target.value as Reminder['type'] }))
@@ -281,9 +345,10 @@ export default function Reminders() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-xl bg-gold text-ink font-medium hover:bg-gold-light transition-colors"
+                  disabled={saving}
+                  className="w-full py-3.5 rounded-xl bg-gold text-ink font-medium hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Guardar
+                  {saving ? 'Guardando...' : 'Guardar'}
                 </button>
               </form>
             </motion.div>

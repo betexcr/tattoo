@@ -19,13 +19,14 @@ const itemVariants = {
 }
 
 export default function Analytics() {
-  const { appointments, loading: loadingAppts } = useAppointments()
-  const { orders, loading: loadingOrders } = useOrders()
+  const { appointments, loading: loadingAppts, error: errorAppts } = useAppointments()
+  const { orders, loading: loadingOrders, error: errorOrders } = useOrders()
   const { config } = useStudioConfig()
 
   const loading = loadingAppts || loadingOrders
+  const error = errorAppts || errorOrders
 
-  const MONTHLY_TARGET = (config.prices as Record<string, number>).monthly_target ?? 2000
+  const MONTHLY_TARGET = config.monthly_target || 2000
 
   const stats = useMemo(() => {
     const confirmedOrCompleted = appointments.filter(
@@ -68,10 +69,28 @@ export default function Analytics() {
       .slice(0, 5)
     const maxBodyCount = Math.max(...bodyRanked.map(([, c]) => c), 1)
 
+    const now = new Date()
+    const currentMonth = now.getMonth()
+    const currentYear = now.getFullYear()
+    const monthlyTattooRevenue = confirmedOrCompleted
+      .filter((a) => {
+        const d = new Date(a.date + 'T12:00:00')
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear
+      })
+      .reduce((s, a) => s + a.deposit, 0)
+    const monthlyShopRevenue = orders
+      .filter((o) => {
+        if (o.status === 'pending') return false
+        const d = new Date(o.created_at)
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear
+      })
+      .reduce((s, o) => s + o.total, 0)
+    const monthlyRevenue = monthlyTattooRevenue + monthlyShopRevenue
+
     const uniqueClients = new Set(appointments.map((a) => a.client_name)).size
     const avgDeposit =
       confirmedOrCompleted.length > 0
-        ? totalRevenue / confirmedOrCompleted.length
+        ? tattooRevenue / confirmedOrCompleted.length
         : 0
     const clientCounts = appointments.reduce<Record<string, number>>(
       (acc, a) => {
@@ -102,6 +121,7 @@ export default function Analytics() {
       tattooRevenue,
       shopRevenue,
       totalFromAll,
+      monthlyRevenue,
       byStatus,
       totalAppts,
       confirmedPct,
@@ -124,8 +144,20 @@ export default function Analytics() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="flex items-center justify-center py-20" role="status">
+        <span className="sr-only">Cargando...</span>
         <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-20 px-4">
+        <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-center max-w-sm">
+          <p className="text-red-400 text-sm font-medium mb-1">Error al cargar datos</p>
+          <p className="text-subtle text-xs">{error}</p>
+        </div>
       </div>
     )
   }
@@ -149,7 +181,7 @@ export default function Analytics() {
             €{stats.totalRevenue}
           </p>
           <p className="text-xs text-subtle mt-1">
-            Depósitos de citas confirmadas/completadas
+            Depósitos de citas + pedidos de tienda (total histórico)
           </p>
         </div>
 
@@ -157,7 +189,7 @@ export default function Analytics() {
           <p className="text-sm text-subtle mb-2">Objetivo mensual</p>
           <div className="flex items-center justify-between mb-2">
             <span className="text-cream font-medium">
-              €{stats.totalRevenue} / €{MONTHLY_TARGET}
+              €{stats.monthlyRevenue} / €{MONTHLY_TARGET}
             </span>
           </div>
           <div className="h-2 rounded-full bg-ink overflow-hidden">
@@ -165,7 +197,7 @@ export default function Analytics() {
               initial={{ width: 0 }}
               animate={{
                 width: `${Math.min(
-                  (stats.totalRevenue / MONTHLY_TARGET) * 100,
+                  (stats.monthlyRevenue / MONTHLY_TARGET) * 100,
                   100
                 )}%`,
               }}

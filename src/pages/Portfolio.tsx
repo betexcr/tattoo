@@ -1,13 +1,13 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback, memo } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useFocusTrap } from '../hooks/useFocusTrap'
+import { useScrollLock } from '../hooks/useScrollLock'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { usePortfolio } from '../hooks/usePortfolio'
 import type { PortfolioItem } from '../types'
-
-const FILTER_STYLES = ['Fine Line', 'Blackwork', 'Geometric', 'Dotwork', 'Watercolor', 'Mandala', 'Neo Traditional']
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -22,14 +22,51 @@ const cardVariants = {
   visible: { opacity: 1, y: 0 },
 }
 
+const PortfolioCard = memo(function PortfolioCard({ item, onClick }: { item: PortfolioItem; onClick: (item: PortfolioItem) => void }) {
+  return (
+    <motion.article
+      variants={cardVariants}
+      role="button"
+      tabIndex={0}
+      onClick={() => onClick(item)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(item) } }}
+      aria-label={`${item.title} — ${item.style}`}
+      className="break-inside-avoid mb-3 cursor-pointer group"
+    >
+      <div className="relative overflow-hidden rounded-xl border border-white/5 hover:border-gold/30 transition-colors">
+        <img
+          src={item.image_url}
+          alt={item.title}
+          loading="lazy"
+          decoding="async"
+          className="w-full aspect-[4/5] object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent opacity-80" />
+        <div className="absolute bottom-0 left-0 right-0 p-3">
+          <h3 className="font-serif text-cream text-sm font-medium">{item.title}</h3>
+          <span className="text-[10px] text-gold/90 uppercase tracking-wider">
+            {item.style}
+          </span>
+        </div>
+      </div>
+    </motion.article>
+  )
+})
+
 export default function Portfolio() {
   const { config } = useStudioConfig()
-  const { items: portfolioItems, loading } = usePortfolio()
+  const { items: portfolioItems, loading, error } = usePortfolio()
   const [searchParams] = useSearchParams()
   const styleFromUrl = searchParams.get('style')
   const [selectedStyle, setSelectedStyle] = useState('Todos')
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const detailPanelRef = useRef<HTMLDivElement>(null)
+  const closeDetail = useCallback(() => setSelectedItem(null), [])
+  const handleCardClick = useCallback((item: PortfolioItem) => setSelectedItem(item), [])
+  useScrollLock(selectedItem !== null)
+
+  useFocusTrap(detailPanelRef, selectedItem !== null, closeDetail)
 
   useEffect(() => {
     if (styleFromUrl && config.tattoo_styles.includes(styleFromUrl)) {
@@ -38,8 +75,8 @@ export default function Portfolio() {
   }, [styleFromUrl, config.tattoo_styles])
 
   const styleFilters = useMemo(
-    () => ['Todos', ...config.tattoo_styles.filter((s) => FILTER_STYLES.includes(s))],
-    [config.tattoo_styles]
+    () => ['Todos', ...config.tattoo_styles],
+    [config.tattoo_styles],
   )
 
   const filteredItems = useMemo(() => {
@@ -61,7 +98,11 @@ export default function Portfolio() {
 
   return (
     <div className="min-h-dvh pb-6">
-      <PageHeader title="Portfolio" subtitle="Mi trabajo" />
+      <PageHeader title="Portafolio" subtitle="Mi trabajo" />
+
+      {error && (
+        <div className="mx-5 mt-4 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{error}</div>
+      )}
 
       {/* Search */}
       <div className="px-5 pt-4 pb-2">
@@ -72,6 +113,7 @@ export default function Portfolio() {
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Buscar diseños..."
+            aria-label="Buscar diseños"
             className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle text-sm focus:outline-none focus:border-gold/40 transition-colors"
           />
         </div>
@@ -82,8 +124,10 @@ export default function Portfolio() {
         <div className="flex gap-2 min-w-max pr-5">
           {styleFilters.map((style) => (
             <button
+              type="button"
               key={style}
               onClick={() => setSelectedStyle(style)}
+              aria-pressed={selectedStyle === style}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                 selectedStyle === style
                   ? 'bg-gold text-ink'
@@ -104,29 +148,7 @@ export default function Portfolio() {
         className="columns-2 gap-3 px-5"
       >
         {filteredItems.map((item) => (
-          <motion.article
-            key={item.id}
-            variants={cardVariants}
-            onClick={() => setSelectedItem(item)}
-            className="break-inside-avoid mb-3 cursor-pointer group"
-          >
-            <div className="relative overflow-hidden rounded-xl border border-white/5 hover:border-gold/30 transition-colors">
-              <img
-                src={item.image_url}
-                alt={item.title}
-                loading="lazy"
-                decoding="async"
-                className="w-full aspect-[4/5] object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent opacity-80" />
-              <div className="absolute bottom-0 left-0 right-0 p-3">
-                <h3 className="font-serif text-cream text-sm font-medium">{item.title}</h3>
-                <span className="text-[10px] text-gold/90 uppercase tracking-wider">
-                  {item.style}
-                </span>
-              </div>
-            </div>
-          </motion.article>
+          <PortfolioCard key={item.id} item={item} onClick={handleCardClick} />
         ))}
       </motion.div>
 
@@ -147,6 +169,8 @@ export default function Portfolio() {
             className="fixed inset-0 z-50 bg-ink/95 backdrop-blur-sm flex items-center justify-center p-5"
           >
             <motion.div
+              ref={detailPanelRef}
+              tabIndex={-1}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -155,13 +179,14 @@ export default function Portfolio() {
               role="dialog"
               aria-modal="true"
               aria-label="Detalle de la obra"
-              onKeyDown={(e) => { if (e.key === 'Escape') setSelectedItem(null) }}
-              className="w-full max-w-md bg-ink-light rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
+              className="w-full max-w-md bg-ink-light rounded-2xl overflow-hidden border border-white/10 shadow-2xl focus:outline-none"
             >
               <div className="relative">
                 <img
                   src={selectedItem.image_url}
                   alt={selectedItem.title}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full aspect-[4/5] object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent opacity-60" />

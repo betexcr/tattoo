@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
-  collection, query, orderBy, getDocs, updateDoc, doc, where, writeBatch,
+  collection, query, orderBy, limit, getDocs, updateDoc, doc, where, writeBatch,
 } from 'firebase/firestore'
 import { db, auth } from '../lib/firebase'
 import type { Order, OrderItem } from '../types'
+import { mapFirestoreError } from '../utils/mapFirestoreError'
 
 interface CreateOrderInput {
   client_name: string
@@ -24,15 +25,19 @@ export function useOrders(clientId?: string | null) {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const fetchIdRef = useRef(0)
 
   const fetch = useCallback(async () => {
+    const id = ++fetchIdRef.current
     setLoading(true)
+    setError(null)
     try {
       const constraints = clientId
-        ? [where('client_id', '==', clientId), orderBy('created_at', 'desc')]
-        : [orderBy('created_at', 'desc')]
+        ? [where('client_id', '==', clientId), orderBy('created_at', 'desc'), limit(200)]
+        : [orderBy('created_at', 'desc'), limit(200)]
       const q = query(collection(db, 'orders'), ...constraints)
       const snap = await getDocs(q)
+      if (fetchIdRef.current !== id) return
       const orderList = snap.docs.map(d => ({ id: d.id, ...d.data() }) as Order)
 
       const orderIds = orderList.map(o => o.id)
@@ -43,6 +48,7 @@ export function useOrders(clientId?: string | null) {
         const itemSnap = await getDocs(itemQ)
         allItems.push(...itemSnap.docs.map(d => ({ id: d.id, ...d.data() }) as OrderItem))
       }
+      if (fetchIdRef.current !== id) return
       const itemsByOrder = new Map<string, OrderItem[]>()
       for (const item of allItems) {
         const list = itemsByOrder.get(item.order_id) ?? []
@@ -55,10 +61,12 @@ export function useOrders(clientId?: string | null) {
       }
 
       setOrders(orderList)
+      setLoading(false)
     } catch (e: unknown) {
-      setError((e as Error).message)
+      if (fetchIdRef.current !== id) return
+      setError(mapFirestoreError(e))
+      setLoading(false)
     }
-    setLoading(false)
   }, [clientId])
 
   useEffect(() => { fetch() }, [fetch])
@@ -83,7 +91,7 @@ export function useOrders(clientId?: string | null) {
 
       for (const item of input.items) {
         const itemRef = doc(collection(db, 'order_items'))
-        batch.set(itemRef, { order_id: orderRef.id, ...item })
+        batch.set(itemRef, { order_id: orderRef.id, client_id: user?.uid ?? null, ...item })
       }
 
       await batch.commit()
@@ -92,7 +100,7 @@ export function useOrders(clientId?: string | null) {
       setOrders(prev => [newOrder, ...prev])
       return { error: null, data: newOrder }
     } catch (e: unknown) {
-      return { error: (e as Error).message }
+      return { error: mapFirestoreError(e) }
     }
   }
 
@@ -102,7 +110,7 @@ export function useOrders(clientId?: string | null) {
       setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o))
       return { error: null }
     } catch (e: unknown) {
-      return { error: (e as Error).message }
+      return { error: mapFirestoreError(e) }
     }
   }
 

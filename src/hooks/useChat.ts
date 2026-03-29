@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
-  collection, query, where, orderBy, getDocs, addDoc, doc,
-  onSnapshot, type Unsubscribe, writeBatch,
+  collection, query, where, orderBy, limit, getDocs, addDoc, doc,
+  documentId, onSnapshot, type Unsubscribe, writeBatch,
 } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import type { ChatMessage, ChatConversation } from '../types'
+import { mapFirestoreError } from '../utils/mapFirestoreError'
 
 export function useChat(clientId?: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -13,25 +14,43 @@ export function useChat(clientId?: string) {
   const unsubRef = useRef<Unsubscribe | null>(null)
   const messagesRef = useRef(messages)
   messagesRef.current = messages
+  const fetchIdRef = useRef(0)
 
   const fetchMessages = useCallback(async () => {
-    if (!clientId) { setLoading(false); return }
+    const id = ++fetchIdRef.current
+    if (!clientId) {
+      setMessages([])
+      setError(null)
+      setLoading(false)
+      return
+    }
     setLoading(true)
+    setError(null)
     try {
       const q = query(
         collection(db, 'chat_messages'),
         where('client_id', '==', clientId),
         orderBy('created_at', 'asc'),
+        limit(100),
       )
       const snap = await getDocs(q)
+      if (fetchIdRef.current !== id) return
       setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() }) as ChatMessage))
+      setLoading(false)
     } catch (e: unknown) {
-      setError((e as Error).message)
+      if (fetchIdRef.current !== id) return
+      setError(mapFirestoreError(e))
+      setLoading(false)
     }
-    setLoading(false)
   }, [clientId])
 
-  useEffect(() => { fetchMessages() }, [fetchMessages])
+  useEffect(() => {
+    if (!unsubRef.current) fetchMessages()
+  }, [fetchMessages])
+
+  useEffect(() => {
+    return () => { unsubRef.current?.() }
+  }, [clientId])
 
   const subscribe = useCallback(() => {
     if (!clientId) return
@@ -40,11 +59,12 @@ export function useChat(clientId?: string) {
       collection(db, 'chat_messages'),
       where('client_id', '==', clientId),
       orderBy('created_at', 'asc'),
+      limit(100),
     )
     const unsub = onSnapshot(q, (snap) => {
       setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() }) as ChatMessage))
     }, (e) => {
-      setError(e.message)
+      setError(mapFirestoreError(e))
     })
     unsubRef.current = unsub
   }, [clientId])
@@ -57,7 +77,7 @@ export function useChat(clientId?: string) {
   }, [])
 
   const send = useCallback(async (text: string, senderRole: 'client' | 'artist') => {
-    if (!clientId) return { error: 'No client ID' }
+    if (!clientId) return { error: 'ID de cliente no disponible' }
     try {
       await addDoc(collection(db, 'chat_messages'), {
         client_id: clientId,
@@ -68,7 +88,7 @@ export function useChat(clientId?: string) {
       })
       return { error: null }
     } catch (e: unknown) {
-      return { error: (e as Error).message }
+      return { error: mapFirestoreError(e) }
     }
   }, [clientId])
 
@@ -77,14 +97,17 @@ export function useChat(clientId?: string) {
     const unreadMsgs = messagesRef.current.filter(m => !m.read)
     if (unreadMsgs.length === 0) return
     try {
-      const batch = writeBatch(db)
-      for (const m of unreadMsgs) {
-        batch.update(doc(db, 'chat_messages', m.id), { read: true })
+      for (let i = 0; i < unreadMsgs.length; i += 500) {
+        const chunk = unreadMsgs.slice(i, i + 500)
+        const batch = writeBatch(db)
+        for (const m of chunk) {
+          batch.update(doc(db, 'chat_messages', m.id), { read: true })
+        }
+        await batch.commit()
       }
-      await batch.commit()
       setMessages(prev => prev.map(m => ({ ...m, read: true })))
     } catch (e: unknown) {
-      setError((e as Error).message)
+      setError(mapFirestoreError(e))
     }
   }, [clientId])
 
@@ -95,15 +118,20 @@ export function useChatConversations() {
   const [conversations, setConversations] = useState<ChatConversation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const fetchIdRef = useRef(0)
 
   const fetch = useCallback(async () => {
+    const id = ++fetchIdRef.current
     setLoading(true)
+    setError(null)
     try {
       const q = query(
         collection(db, 'chat_messages'),
         orderBy('created_at', 'desc'),
+        limit(50),
       )
       const snap = await getDocs(q)
+      if (fetchIdRef.current !== id) return
       const msgs = snap.docs.map(d => d.data())
 
       if (msgs.length === 0) {
@@ -112,11 +140,16 @@ export function useChatConversations() {
         return
       }
 
-      const profileSnap = await getDocs(collection(db, 'profiles'))
+      const clientIds = [...new Set(msgs.map(m => m.client_id as string))]
       const profileMap = new Map<string, string>()
-      profileSnap.docs.forEach(d => {
-        profileMap.set(d.id, (d.data().full_name as string) || 'Cliente')
-      })
+      for (let i = 0; i < clientIds.length; i += 30) {
+        const batch = clientIds.slice(i, i + 30)
+        const pSnap = await getDocs(query(collection(db, 'profiles'), where(documentId(), 'in', batch)))
+        if (fetchIdRef.current !== id) return
+        pSnap.docs.forEach(d => {
+          profileMap.set(d.id, (d.data().full_name as string) || 'Cliente')
+        })
+      }
 
       const convMap = new Map<string, ChatConversation>()
       for (const m of msgs) {
@@ -136,12 +169,13 @@ export function useChatConversations() {
       }
 
       setConversations([...convMap.values()])
-      setError(null)
+      setLoading(false)
     } catch (e: unknown) {
-      setError((e as Error).message)
+      if (fetchIdRef.current !== id) return
+      setError(mapFirestoreError(e))
       setConversations([])
+      setLoading(false)
     }
-    setLoading(false)
   }, [])
 
   useEffect(() => { fetch() }, [fetch])

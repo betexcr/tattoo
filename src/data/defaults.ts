@@ -12,10 +12,10 @@ import type {
 } from '../types'
 
 export const defaultTattooStyles: string[] = [
-  'Fine Line', 'Blackwork', 'Traditional', 'Neo Traditional',
-  'Japanese', 'Geometric', 'Dotwork', 'Watercolor',
-  'Realism', 'Tribal', 'Lettering', 'Mandala',
-  'Minimalist', 'Ornamental', 'Sketch', 'Surrealism',
+  'Línea Fina', 'Blackwork', 'Tradicional', 'Neo Tradicional',
+  'Japonés', 'Geométrico', 'Puntillismo', 'Acuarela',
+  'Realismo', 'Tribal', 'Lettering', 'Mandala',
+  'Minimalista', 'Ornamental', 'Sketch', 'Surrealismo',
 ]
 
 export const defaultBodyParts: string[] = [
@@ -26,24 +26,24 @@ export const defaultBodyParts: string[] = [
 ]
 
 export const defaultSuggestions: Suggestion[] = [
-  { id: '1', title: 'Minimalismo Botánico', description: 'Hojas y flores con líneas delicadas, perfecto para primeros tatuajes', style: 'Fine Line', popularity: 95 },
-  { id: '2', title: 'Geometría Sagrada', description: 'Patrones geométricos con significado espiritual profundo', style: 'Geometric', popularity: 88 },
-  { id: '3', title: 'Fauna Mística', description: 'Animales con elementos místicos y celestiales', style: 'Dotwork', popularity: 82 },
+  { id: '1', title: 'Minimalismo Botánico', description: 'Hojas y flores con líneas delicadas, perfecto para primeros tatuajes', style: 'Línea Fina', popularity: 95 },
+  { id: '2', title: 'Geometría Sagrada', description: 'Patrones geométricos con significado espiritual profundo', style: 'Geométrico', popularity: 88 },
+  { id: '3', title: 'Fauna Mística', description: 'Animales con elementos místicos y celestiales', style: 'Puntillismo', popularity: 82 },
   { id: '4', title: 'Lettering Artístico', description: 'Frases y palabras con tipografías únicas y decorativas', style: 'Lettering', popularity: 78 },
-  { id: '5', title: 'Micro Realismo', description: 'Detalles hiperrealistas en tamaño pequeño', style: 'Realism', popularity: 92 },
-  { id: '6', title: 'Neo Tradicional Floral', description: 'Flores con colores vibrantes y líneas definidas', style: 'Neo Traditional', popularity: 85 },
-  { id: '7', title: 'Constelaciones', description: 'Tu signo zodiacal o constelación favorita', style: 'Minimalist', popularity: 90 },
+  { id: '5', title: 'Micro Realismo', description: 'Detalles hiperrealistas en tamaño pequeño', style: 'Realismo', popularity: 92 },
+  { id: '6', title: 'Neo Tradicional Floral', description: 'Flores con colores vibrantes y líneas definidas', style: 'Neo Tradicional', popularity: 85 },
+  { id: '7', title: 'Constelaciones', description: 'Tu signo zodiacal o constelación favorita', style: 'Minimalista', popularity: 90 },
   { id: '8', title: 'Mandalas Personalizados', description: 'Diseños circulares únicos con tu propia simbología', style: 'Mandala', popularity: 87 },
 ]
 
 export const defaultChatbotResponses: Record<string, string> = {
-  'precio': '💰 Los precios varían según tamaño y complejidad:\n• Tiny (2-5cm): €50-80\n• Pequeño (5-10cm): €80-150\n• Mediano (10-20cm): €150-300\n• Grande (20-35cm): €300-500\n• Extra grande (35+cm): €500+\n\nPide un presupuesto exacto reservando una cita.',
+  'precio': '💰 Los precios varían según tamaño y complejidad:\n• Diminuto (2-5cm): €50-80\n• Pequeño (5-10cm): €80-150\n• Mediano (10-20cm): €150-300\n• Grande (20-35cm): €300-500\n• Extra grande (35+cm): €500+\n\nPide un presupuesto exacto reservando una cita.',
   'cuidados': '🩹 Cuidados post-tatuaje:\n1. Deja el film protector 3-4 horas\n2. Lava suavemente con jabón neutro\n3. Aplica crema cicatrizante 2-3 veces al día\n4. No rasques ni arranques costras\n5. Evita sol directo 2-3 semanas\n6. No te bañes en piscina/mar 2 semanas',
   'deposito': '💳 Se requiere un depósito del 30% para confirmar la cita. Se descuenta del precio final. Si cancelas con más de 48h de antelación, se te devuelve íntegro.',
-  'duracion': '⏱️ La duración depende del tamaño y detalle:\n• Tiny: 30-60 min\n• Pequeño: 1-2 horas\n• Mediano: 2-4 horas\n• Grande: 4-6 horas\n• Extra grande: varias sesiones',
+  'duracion': '⏱️ La duración depende del tamaño y detalle:\n• Diminuto: 30-60 min\n• Pequeño: 1-2 horas\n• Mediano: 2-4 horas\n• Grande: 4-6 horas\n• Extra grande: varias sesiones',
   'dolor': '😬 El dolor varía según la zona:\n• Poco dolor: Brazo, muslo, pantorrilla\n• Dolor medio: Hombro, espalda, pecho\n• Dolor alto: Costillas, pies, manos, cuello\n\nUsamos cremas anestésicas si lo necesitas.',
   'horario': '🕐 Nuestro horario:\n• Lunes a Viernes: 10:00 - 19:00\n• Sábado: 10:00 - 15:00\n• Domingo: Cerrado\n\nLas citas se agendan con mínimo 3 días de anticipación.',
-  'estilos': '🎨 Especialidades de la artista:\n• Fine Line: Líneas delicadas y minimalistas\n• Dotwork: Puntillismo detallado\n• Geometric: Formas geométricas y simetría\n• Botanical: Flores y plantas\n• Watercolor: Efecto acuarela\n• Mandala: Diseños simétricos espirituales',
+  'estilos': '🎨 Especialidades de la artista:\n• Línea Fina: Líneas delicadas y minimalistas\n• Puntillismo: Puntillismo detallado\n• Geométrico: Formas geométricas y simetría\n• Botánico: Flores y plantas\n• Acuarela: Efecto acuarela\n• Mandala: Diseños simétricos espirituales',
   'cancelar': '❌ Política de cancelación:\n• Más de 48h antes: Reembolso completo del depósito\n• 24-48h antes: 50% del depósito\n• Menos de 24h: Sin reembolso\n\nPara cancelar, escríbenos o llama al +34 612 345 678.',
   'preparacion': '✅ Antes de tu cita:\n1. Descansa bien la noche anterior\n2. Come bien antes de venir\n3. No bebas alcohol 24h antes\n4. Hidrata la zona los días previos\n5. No tomes sol en la zona\n6. Trae ropa cómoda que permita acceso a la zona',
 }
@@ -80,13 +80,13 @@ export const defaultChatConfig: ChatConfig = {
 }
 
 export const defaultReviews: ReviewDisplay[] = [
-  { name: 'Lucía M.', text: 'Un trabajo increíble. Valentina captó exactamente lo que quería. Totalmente recomendable.', rating: 5, style: 'Fine Line' },
-  { name: 'Andrés P.', text: 'El estudio es precioso y la atención impecable. Mi tatuaje sanó perfecto.', rating: 5, style: 'Geometric' },
-  { name: 'Carmen R.', text: 'Ya llevo 3 tatuajes con ella. Cada vez supera mis expectativas. Artista de verdad.', rating: 5, style: 'Dotwork' },
+  { name: 'Lucía M.', text: 'Un trabajo increíble. Valentina captó exactamente lo que quería. Totalmente recomendable.', rating: 5, style: 'Línea Fina' },
+  { name: 'Andrés P.', text: 'El estudio es precioso y la atención impecable. Mi tatuaje sanó perfecto.', rating: 5, style: 'Geométrico' },
+  { name: 'Carmen R.', text: 'Ya llevo 3 tatuajes con ella. Cada vez supera mis expectativas. Artista de verdad.', rating: 5, style: 'Puntillismo' },
 ]
 
 export const defaultHomeContent: HomeContent = {
-  subtitle: 'Tattoo Art Studio',
+  subtitle: 'Estudio de Arte y Tatuaje',
   tagline: 'Arte que vive en tu piel. Diseños únicos, hechos con pasión y dedicación.',
   reviews: defaultReviews,
 }
@@ -99,14 +99,14 @@ export const defaultAboutStats: AboutStat[] = [
 
 export const defaultAboutContent: AboutContent = {
   hero_image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&h=800&fit=crop',
-  artist_title: 'Tattoo Artist & Visual Creator',
-  bio: 'Con más de 8 años de experiencia en el mundo del tatuaje, mi pasión es transformar ideas en arte que perdura. Especializada en fine line, dotwork y diseños botánicos, cada pieza que creo es única y personal. Mi estudio es un espacio seguro donde el arte y la expresión se encuentran.',
+  artist_title: 'Artista del Tatuaje y Creadora Visual',
+  bio: 'Con más de 8 años de experiencia en el mundo del tatuaje, mi pasión es transformar ideas en arte que perdura. Especializada en línea fina, puntillismo y diseños botánicos, cada pieza que creo es única y personal. Mi estudio es un espacio seguro donde el arte y la expresión se encuentran.',
   stats: defaultAboutStats,
-  specialties: ['Fine Line', 'Dotwork', 'Botanical', 'Geometric', 'Watercolor', 'Mandala'],
+  specialties: ['Línea Fina', 'Puntillismo', 'Botánico', 'Geométrico', 'Acuarela', 'Mandala'],
   certifications: [
     'Curso Avanzado de Higiene y Bioseguridad',
-    'Masterclass en Fine Line - Barcelona 2023',
-    'Workshop de Color Theory - México 2024',
+    'Masterclass en Línea Fina - Barcelona 2023',
+    'Taller de Teoría del Color - México 2024',
   ],
 }
 
@@ -117,21 +117,21 @@ export const defaultQuizQuestions: QuizQuestion[] = [
 ]
 
 export const defaultStyleRecommendations: Record<string, StyleRecommendation> = {
-  'Naturaleza-Minimalista': { style: 'Fine Line', description: 'Líneas delicadas con elementos botánicos' },
-  'Naturaleza-Detallada': { style: 'Neo Traditional', description: 'Flores y naturaleza con detalles ricos' },
-  'Naturaleza-Colorida': { style: 'Watercolor', description: 'Naturaleza con splash de colores' },
+  'Naturaleza-Minimalista': { style: 'Línea Fina', description: 'Líneas delicadas con elementos botánicos' },
+  'Naturaleza-Detallada': { style: 'Neo Tradicional', description: 'Flores y naturaleza con detalles ricos' },
+  'Naturaleza-Colorida': { style: 'Acuarela', description: 'Naturaleza con splash de colores' },
   'Naturaleza-Oscura': { style: 'Blackwork', description: 'Elementos naturales en negro intenso' },
-  'Geometría-Minimalista': { style: 'Geometric', description: 'Formas puras y líneas limpias' },
+  'Geometría-Minimalista': { style: 'Geométrico', description: 'Formas puras y líneas limpias' },
   'Geometría-Detallada': { style: 'Mandala', description: 'Patrones geométricos intrincados' },
-  'Geometría-Colorida': { style: 'Neo Traditional', description: 'Geometría con acentos de color' },
+  'Geometría-Colorida': { style: 'Neo Tradicional', description: 'Geometría con acentos de color' },
   'Geometría-Oscura': { style: 'Blackwork', description: 'Geometría sagrada en negro' },
-  'Animales-Minimalista': { style: 'Fine Line', description: 'Siluetas de animales delicadas' },
-  'Animales-Detallada': { style: 'Dotwork', description: 'Fauna con texturas y detalles' },
-  'Animales-Colorida': { style: 'Neo Traditional', description: 'Animales con colores vibrantes' },
+  'Animales-Minimalista': { style: 'Línea Fina', description: 'Siluetas de animales delicadas' },
+  'Animales-Detallada': { style: 'Puntillismo', description: 'Fauna con texturas y detalles' },
+  'Animales-Colorida': { style: 'Neo Tradicional', description: 'Animales con colores vibrantes' },
   'Animales-Oscura': { style: 'Tribal', description: 'Animales en estilo tribal oscuro' },
-  'Símbolos-Minimalista': { style: 'Minimalist', description: 'Símbolos simples y elegantes' },
+  'Símbolos-Minimalista': { style: 'Minimalista', description: 'Símbolos simples y elegantes' },
   'Símbolos-Detallada': { style: 'Ornamental', description: 'Símbolos decorativos elaborados' },
-  'Símbolos-Colorida': { style: 'Traditional', description: 'Símbolos clásicos con color' },
+  'Símbolos-Colorida': { style: 'Tradicional', description: 'Símbolos clásicos con color' },
   'Símbolos-Oscura': { style: 'Blackwork', description: 'Símbolos en negro sólido' },
 }
 

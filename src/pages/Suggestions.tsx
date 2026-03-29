@@ -1,5 +1,7 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { useScrollLock } from '../hooks/useScrollLock'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Heart, Flame, ChevronRight } from 'lucide-react'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
@@ -14,7 +16,7 @@ function getStyleRecommendation(
 ): { style: string; description: string } {
   const key = `${answers[0]}-${answers[2]}`
   return styleRecommendations[key] ?? {
-    style: 'Fine Line',
+    style: 'Línea Fina',
     description: 'Líneas delicadas y elegantes para cualquier diseño',
   }
 }
@@ -39,6 +41,8 @@ export default function Suggestions() {
   const [quizOpen, setQuizOpen] = useState(false)
   const [quizStep, setQuizStep] = useState(0)
   const [quizAnswers, setQuizAnswers] = useState<string[]>([])
+  const quizDialogRef = useRef<HTMLDivElement>(null)
+  useScrollLock(quizOpen)
 
   useEffect(() => {
     if (!user) return
@@ -88,11 +92,13 @@ export default function Suggestions() {
     }
   }
 
-  const handleCloseQuiz = () => {
+  const handleCloseQuiz = useCallback(() => {
     setQuizOpen(false)
     setQuizStep(0)
     setQuizAnswers([])
-  }
+  }, [])
+
+  useFocusTrap(quizDialogRef, quizOpen, handleCloseQuiz)
 
   const quizResult = quizAnswers.length === 3 ? getStyleRecommendation(quizAnswers, styleRecommendations) : null
 
@@ -118,7 +124,7 @@ export default function Suggestions() {
             <div className="flex items-center gap-2 flex-wrap">
               <span className="inline-flex items-center gap-1.5 text-xs text-gold font-medium">
                 <Flame size={14} className="text-gold" />
-                Trending ahora
+                Popular ahora
               </span>
               <div className="flex gap-2 flex-wrap">
                 {trendingStyles.map((style) => (
@@ -141,6 +147,9 @@ export default function Suggestions() {
           variants={containerVariants}
           className="space-y-4"
         >
+          {sortedSuggestions.length === 0 && (
+            <motion.p variants={itemVariants} className="text-subtle text-sm text-center py-8">No hay sugerencias disponibles</motion.p>
+          )}
           {sortedSuggestions.map((suggestion) => (
             <motion.article
               key={suggestion.id}
@@ -154,6 +163,7 @@ export default function Suggestions() {
                     <p className="text-cream-dark text-sm mt-1 leading-relaxed">{suggestion.description}</p>
                   </div>
                   <button
+                    type="button"
                     onClick={() => toggleLike(suggestion.id)}
                     aria-label="Me gusta"
                     aria-pressed={likedIds.has(suggestion.id)}
@@ -217,10 +227,12 @@ export default function Suggestions() {
             Responde unas preguntas y te ayudaremos a encontrar tu estilo ideal
           </p>
           <button
+            type="button"
             onClick={() => setQuizOpen(true)}
-            className="w-full py-3 rounded-lg border-2 border-gold text-gold font-medium text-sm hover:bg-gold/10 transition-colors"
+            disabled={quizQuestions.length === 0}
+            className="w-full py-3 rounded-lg border-2 border-gold text-gold font-medium text-sm hover:bg-gold/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Comenzar Quiz
+            Comenzar Cuestionario
           </button>
         </motion.section>
       </div>
@@ -236,15 +248,25 @@ export default function Suggestions() {
             className="fixed inset-0 z-50 bg-ink/95 backdrop-blur-sm flex items-center justify-center p-5"
           >
             <motion.div
+              ref={quizDialogRef}
+              tabIndex={-1}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Cuestionario de estilo"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md bg-ink-light rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
+              className="w-full max-w-md bg-ink-light rounded-2xl overflow-hidden border border-white/10 shadow-2xl outline-none"
             >
               <div className="p-6">
-                {!quizResult ? (
+                {quizQuestions.length === 0 ? (
+                  <div className="text-center space-y-3">
+                    <p className="text-cream text-sm">No hay preguntas disponibles en este momento.</p>
+                    <button type="button" onClick={handleCloseQuiz} className="px-5 py-2.5 rounded-full bg-gold text-ink text-sm font-medium hover:bg-gold-light transition-colors">Cerrar</button>
+                  </div>
+                ) : !quizResult ? (
                   <>
                     <div className="flex gap-1 mb-6">
                       {quizQuestions.map((_, i) => (
@@ -263,6 +285,7 @@ export default function Suggestions() {
                     <div className="space-y-2">
                       {quizQuestions[quizStep].options.map((opt) => (
                         <motion.button
+                          type="button"
                           key={opt}
                           whileTap={{ scale: 0.98 }}
                           onClick={() => handleQuizAnswer(opt)}
@@ -292,6 +315,7 @@ export default function Suggestions() {
                       Ver diseños {quizResult.style}
                     </Link>
                     <button
+                      type="button"
                       onClick={handleCloseQuiz}
                       className="w-full py-2.5 text-subtle text-sm hover:text-cream transition-colors"
                     >

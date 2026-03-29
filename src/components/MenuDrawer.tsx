@@ -1,4 +1,7 @@
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
+import { useScrollLock } from '../hooks/useScrollLock'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   X, Palette, PenTool, Eye, Lightbulb,
@@ -8,8 +11,8 @@ import { useAuth } from '../contexts/AuthContext'
 
 const menuItems = [
   { to: '/shop', icon: ShoppingBag, label: 'Tienda', desc: 'Arte para llevar' },
-  { to: '/designer', icon: PenTool, label: 'Tattoo Designer', desc: 'Diseña tu tatuaje' },
-  { to: '/visualizer', icon: Eye, label: 'Body Visualizer', desc: 'Visualiza en tu cuerpo' },
+  { to: '/designer', icon: PenTool, label: 'Diseñador de Tatuajes', desc: 'Diseña tu tatuaje' },
+  { to: '/visualizer', icon: Eye, label: 'Visualizador Corporal', desc: 'Visualiza en tu cuerpo' },
   { to: '/suggestions', icon: Lightbulb, label: 'Sugerencias', desc: 'Inspiración y estilos' },
   { to: '/courses', icon: GraduationCap, label: 'Cursos y Talleres', desc: 'Aprende con nosotros' },
   { to: '/reminders', icon: Bell, label: 'Recordatorios', desc: 'Tus citas y avisos' },
@@ -25,11 +28,23 @@ interface MenuDrawerProps {
 export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
   const { user, profile, isArtist, signOut } = useAuth()
   const navigate = useNavigate()
+  const [signOutError, setSignOutError] = useState<string | null>(null)
+  useScrollLock(open)
+
+  const drawerRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(drawerRef, open, onClose)
+
+  useEffect(() => { if (open) setSignOutError(null) }, [open])
 
   const handleSignOut = async () => {
-    await signOut()
-    onClose()
-    navigate('/')
+    try {
+      await signOut()
+      onClose()
+      navigate('/')
+    } catch (e: unknown) {
+      console.warn('Error cerrando sesión:', e)
+      setSignOutError('No se pudo cerrar sesión. Inténtalo de nuevo.')
+    }
   }
 
   return (
@@ -45,6 +60,7 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
             onClick={onClose}
           />
           <motion.div
+            ref={drawerRef}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
@@ -52,7 +68,6 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
             role="dialog"
             aria-modal="true"
             aria-label="Menú"
-            onKeyDown={(e) => { if (e.key === 'Escape') onClose() }}
             className="fixed bottom-0 left-0 right-0 z-50 bg-ink-light rounded-t-3xl max-h-[85dvh] overflow-y-auto"
           >
             <div className="flex items-center justify-between p-5 border-b border-white/5">
@@ -61,8 +76,10 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                 <h2 className="font-serif text-lg text-cream">Explorar</h2>
               </div>
               <button
+                type="button"
                 onClick={onClose}
-                className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
+                aria-label="Cerrar menú"
+                className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
               >
                 <X size={18} />
               </button>
@@ -83,8 +100,9 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                     <NavLink
                       to="/account"
                       onClick={onClose}
-                      className="w-8 h-8 rounded-lg bg-gold/10 flex items-center justify-center text-gold hover:bg-gold/20 transition-colors"
+                      className="w-10 h-10 min-w-[44px] min-h-[44px] rounded-lg bg-gold/10 flex items-center justify-center text-gold hover:bg-gold/20 transition-colors"
                       title="Mi Cuenta"
+                      aria-label="Mi Cuenta"
                     >
                       <UserCircle size={16} />
                     </NavLink>
@@ -92,20 +110,26 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                       <NavLink
                         to="/studio"
                         onClick={onClose}
-                        className="w-8 h-8 rounded-lg bg-gold/10 flex items-center justify-center text-gold hover:bg-gold/20 transition-colors"
-                        title="Studio"
+                        className="w-10 h-10 min-w-[44px] min-h-[44px] rounded-lg bg-gold/10 flex items-center justify-center text-gold hover:bg-gold/20 transition-colors"
+                        title="Estudio"
+                        aria-label="Estudio"
                       >
                         <LayoutDashboard size={16} />
                       </NavLink>
                     )}
                     <button
+                      type="button"
                       onClick={handleSignOut}
-                      className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-subtle hover:text-rose transition-colors"
+                      className="w-10 h-10 min-w-[44px] min-h-[44px] rounded-lg bg-white/5 flex items-center justify-center text-subtle hover:text-rose transition-colors"
                       title="Cerrar sesión"
+                      aria-label="Cerrar sesión"
                     >
                       <LogOut size={16} />
                     </button>
                   </div>
+                  {signOutError && (
+                    <p className="text-rose text-xs mt-1">{signOutError}</p>
+                  )}
                 </div>
               ) : (
                 <NavLink
@@ -124,7 +148,7 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
               )}
             </div>
 
-            <div className="p-4 pb-8 space-y-1">
+            <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-1">
               {menuItems.filter(item => item.to !== '/reminders' || isArtist).map(({ to, icon: Icon, label, desc }) => (
                 <NavLink
                   key={to}

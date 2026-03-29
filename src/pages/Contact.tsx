@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import PageHeader from '../components/PageHeader'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Phone, Mail, MapPin, Clock, Instagram, Video, LayoutGrid, CheckCircle } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { useContactForm } from '../hooks/useContactForm'
+import { safeHref } from '../utils/safeHref'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -45,7 +46,7 @@ function formatScheduleDisplay(schedule: Record<string, unknown>): string {
 
 export default function Contact() {
   const { config } = useStudioConfig()
-  const { submit } = useContactForm()
+  const { submit, loading: submitting } = useContactForm()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -56,11 +57,13 @@ export default function Contact() {
   })
   const [submitted, setSubmitted] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const submittedTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(() => () => { clearTimeout(submittedTimerRef.current) }, [])
 
   const contactInfo = useMemo(
     () => [
       { icon: Phone as LucideIcon, label: 'Teléfono', value: config.phone },
-      { icon: Mail as LucideIcon, label: 'Email', value: config.email },
+      { icon: Mail as LucideIcon, label: 'Correo electrónico', value: config.email },
       { icon: MapPin as LucideIcon, label: 'Ubicación', value: config.address },
       { icon: Clock as LucideIcon, label: 'Horario', value: formatScheduleDisplay(config.schedule) },
     ],
@@ -98,7 +101,7 @@ export default function Contact() {
     setSubmitError(null)
     setSubmitted(true)
     setFormData({ name: '', email: '', phone: '', message: '', tattooStyle: '', bodyPart: '' })
-    setTimeout(() => setSubmitted(false), 4000)
+    submittedTimerRef.current = setTimeout(() => setSubmitted(false), 4000)
   }
 
   const handleChange = (
@@ -185,7 +188,7 @@ export default function Contact() {
 
           <motion.div variants={itemVariants}>
             <label htmlFor="email" className="block text-cream-dark text-sm mb-1.5">
-              Email
+              Correo electrónico
             </label>
             <input
               id="email"
@@ -285,9 +288,10 @@ export default function Contact() {
           <motion.div variants={itemVariants}>
             <button
               type="submit"
-              className="w-full py-3.5 rounded-xl font-medium text-ink bg-gradient-to-r from-gold to-gold-dark hover:from-gold-light hover:to-gold transition-all active:scale-[0.99]"
+              disabled={submitting}
+              className="w-full py-3.5 rounded-xl font-medium text-ink bg-gradient-to-r from-gold to-gold-dark hover:from-gold-light hover:to-gold transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Enviar Mensaje
+              {submitting ? 'Enviando...' : 'Enviar Mensaje'}
             </button>
           </motion.div>
         </motion.form>
@@ -308,7 +312,7 @@ export default function Contact() {
               {socialLinks.map(({ label, icon: Icon, href }) => (
                 <a
                   key={label}
-                  href={href}
+                  href={safeHref(href)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-11 h-11 rounded-full bg-ink-medium border border-white/5 flex items-center justify-center text-gold hover:bg-gold/10 hover:border-gold/30 transition-colors"

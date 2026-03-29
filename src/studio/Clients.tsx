@@ -1,9 +1,10 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, ArrowLeft, MessageCircle, CalendarPlus, Phone, Mail, UserCheck, Users } from 'lucide-react'
 import { collection, getDocs, doc, setDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import { mapFirestoreError } from '../utils/mapFirestoreError'
 import { useAppointments } from '../hooks/useAppointments'
 import { useClients } from '../hooks/useClients'
 import type { Appointment } from '../types'
@@ -116,36 +117,43 @@ const itemVariants = {
 }
 
 export default function Clients() {
-  const { appointments } = useAppointments()
-  const { clients: registeredClients, loading: clientsLoading } = useClients()
+  const { appointments, loading: appointmentsLoading, error: appointmentsError } = useAppointments()
+  const { clients: registeredClients, loading: clientsLoading, error: clientsError } = useClients()
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<SortKey>('nombre')
   const [viewTab, setViewTab] = useState<ViewTab>('all')
   const [selectedClient, setSelectedClient] = useState<ClientEntry | null>(null)
   const [clientNotes, setClientNotes] = useState<Record<string, string>>({})
-  const [noteSaveTimer, setNoteSaveTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
+  const noteSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [noteError, setNoteError] = useState<string | null>(null)
 
   useEffect(() => {
+    let cancelled = false
     getDocs(collection(db, 'client_notes')).then(snap => {
+      if (cancelled) return
       const notes: Record<string, string> = {}
       snap.docs.forEach(d => { notes[d.id] = (d.data().text as string) ?? '' })
       setClientNotes(notes)
-    }).catch((e: unknown) => { setNoteError((e as Error).message) })
+    }).catch((e: unknown) => { if (!cancelled) setNoteError(mapFirestoreError(e)) })
+    return () => { cancelled = true }
   }, [])
 
   const clientNoteKey = selectedClient?.id || selectedClient?.name || ''
   const currentNotes = selectedClient ? (clientNotes[clientNoteKey] ?? '') : ''
   const persistNote = useCallback((key: string, text: string) => {
     if (!key) return
-    setDoc(doc(db, 'client_notes', key), { text, updated_at: new Date().toISOString() }).catch((e: unknown) => { setNoteError((e as Error).message) })
+    setDoc(doc(db, 'client_notes', key), { text, updated_at: new Date().toISOString() }).catch((e: unknown) => { setNoteError(mapFirestoreError(e)) })
   }, [])
+  useEffect(() => {
+    return () => { if (noteSaveTimerRef.current) clearTimeout(noteSaveTimerRef.current) }
+  }, [])
+
   const setCurrentNotes = (value: string) => {
     if (!selectedClient) return
     const key = selectedClient.id || selectedClient.name
     setClientNotes(prev => ({ ...prev, [key]: value }))
-    if (noteSaveTimer) clearTimeout(noteSaveTimer)
-    setNoteSaveTimer(setTimeout(() => persistNote(key, value), 800))
+    if (noteSaveTimerRef.current) clearTimeout(noteSaveTimerRef.current)
+    noteSaveTimerRef.current = setTimeout(() => persistNote(key, value), 800)
   }
 
   const clientList = useMemo(() => buildClientList(appointments, registeredClients), [appointments, registeredClients])
@@ -165,6 +173,16 @@ export default function Clients() {
     return list
   }, [clientList, search, sort, viewTab])
 
+  const hooksLoading = appointmentsLoading || clientsLoading
+  const hooksError = [appointmentsError, clientsError].filter(Boolean).join(' · ') || null
+
+  if (hooksLoading) return <LoadingSpinner />
+  if (hooksError) return (
+    <div className="p-4">
+      <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-red-400 text-sm">{hooksError}</div>
+    </div>
+  )
+
   return (
     <div className="p-4 pb-24">
       <AnimatePresence mode="wait">
@@ -178,6 +196,7 @@ export default function Clients() {
             className="space-y-6"
           >
             <button
+              type="button"
               onClick={() => setSelectedClient(null)}
               className="flex items-center gap-2 text-subtle hover:text-cream transition-colors"
             >
@@ -284,6 +303,7 @@ export default function Clients() {
                 value={currentNotes}
                 onChange={(e) => { setNoteError(null); setCurrentNotes(e.target.value) }}
                 placeholder="Notas privadas sobre el cliente..."
+                aria-label="Notas privadas del cliente"
                 className="w-full h-24 px-4 py-3 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle text-sm resize-none focus:outline-none focus:border-gold/40 transition-colors"
               />
               {noteError && (
@@ -316,10 +336,9 @@ export default function Clients() {
             animate="visible"
             className="space-y-4"
           >
-            {clientsLoading && <LoadingSpinner message="Cargando clientes..." />}
-
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={() => setViewTab('all')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                   viewTab === 'all' ? 'bg-gold text-ink' : 'bg-ink-light text-subtle hover:text-cream border border-white/5'
@@ -329,6 +348,7 @@ export default function Clients() {
                 Todos ({clientList.length})
               </button>
               <button
+                type="button"
                 onClick={() => setViewTab('registered')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                   viewTab === 'registered' ? 'bg-gold text-ink' : 'bg-ink-light text-subtle hover:text-cream border border-white/5'
@@ -349,6 +369,7 @@ export default function Clients() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar por nombre..."
+                aria-label="Buscar clientes por nombre"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle text-sm focus:outline-none focus:border-gold/40 transition-colors"
               />
             </div>
@@ -356,6 +377,7 @@ export default function Clients() {
             <div className="flex gap-2">
               {(['nombre', 'visitas', 'gasto'] as const).map((key) => (
                 <button
+                  type="button"
                   key={key}
                   onClick={() => setSort(key)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
@@ -372,7 +394,8 @@ export default function Clients() {
             <div className="space-y-3">
               {filteredAndSorted.map((client) => (
                 <motion.button
-                  key={client.name}
+                  type="button"
+                  key={client.id ?? client.name}
                   variants={itemVariants}
                   onClick={() => setSelectedClient(client)}
                   className="w-full flex items-center gap-4 p-4 rounded-xl bg-ink-light border border-white/5 hover:border-gold/20 transition-colors text-left"

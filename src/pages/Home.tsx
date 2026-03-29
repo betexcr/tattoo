@@ -1,70 +1,27 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
-  Image,
-  CalendarPlus,
-  PenTool,
-  User,
-  ShoppingBag,
-  GraduationCap,
-  ChevronRight,
   Sparkles,
   Lock,
-  Star,
+  ChevronRight,
   ArrowRight,
   MessageCircle,
-  Plus,
 } from 'lucide-react'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { usePortfolio } from '../hooks/usePortfolio'
 import { useShop } from '../hooks/useShop'
 import { useCourses } from '../hooks/useCourses'
-import { useReviews } from '../hooks/useReviews'
-import { useAuth } from '../contexts/AuthContext'
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
-  },
-}
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0 },
-}
-
-const lineVariants = {
-  hidden: { scaleX: 0, originX: 0 },
-  visible: {
-    scaleX: 1,
-    originX: 0,
-    transition: { duration: 1.2, ease: [0.22, 1, 0.36, 1] as const },
-  },
-}
-
-const quickActions = [
-  { to: '/portfolio', label: 'Portfolio', icon: Image, desc: 'Ver trabajos' },
-  { to: '/book', label: 'Reservar', icon: CalendarPlus, desc: 'Agendar cita' },
-  { to: '/designer', label: 'Diseñador', icon: PenTool, desc: 'Crea tu tattoo' },
-  { to: '/visualizer', label: 'Visualizar', icon: User, desc: 'En tu cuerpo' },
-  { to: '/shop', label: 'Tienda', icon: ShoppingBag, desc: 'Arte exclusivo' },
-  { to: '/courses', label: 'Cursos', icon: GraduationCap, desc: 'Aprende' },
-]
+import { containerVariants, itemVariants, lineVariants, quickActions } from './home/constants'
+import FeaturedWorkRow from './home/FeaturedWorkRow'
+import ShopPreviewRow from './home/ShopPreviewRow'
+import HomeReviewsSection from './home/HomeReviewsSection'
 
 export default function Home() {
   const { config } = useStudioConfig()
-  const { items: allPortfolioItems } = usePortfolio()
-  const { items: allShopItems } = useShop()
-  const { courses: allCourses } = useCourses()
-  const { reviews: dbReviews, create: createReview } = useReviews()
-  const { profile } = useAuth()
-  const [showReviewForm, setShowReviewForm] = useState(false)
-  const [reviewForm, setReviewForm] = useState({ name: '', text: '', rating: 5, style: '' })
-  const [reviewSubmitted, setReviewSubmitted] = useState(false)
-  const [reviewError, setReviewError] = useState<string | null>(null)
+  const { items: allPortfolioItems, loading: loadingPortfolio } = usePortfolio()
+  const { items: allShopItems, loading: loadingShop } = useShop()
+  const { courses: allCourses, loading: loadingCourses } = useCourses()
 
   const topSuggestions = useMemo(
     () => [...config.suggestions].sort((a, b) => b.popularity - a.popularity).slice(0, 3),
@@ -74,24 +31,6 @@ export default function Home() {
   const featuredWork = allPortfolioItems.slice(0, 6)
   const featuredProducts = allShopItems.filter((s) => s.in_stock).slice(0, 4)
   const nextCourse = allCourses[0]
-  const allReviews = useMemo(() => {
-    const fromDb = dbReviews.map(r => ({ name: r.name, text: r.text, rating: r.rating, style: r.style }))
-    return [...fromDb, ...config.home_content.reviews]
-  }, [dbReviews, config.home_content.reviews])
-  const reviews = allReviews.slice(0, 6)
-
-  const handleReviewSubmit = async () => {
-    if (!reviewForm.text.trim() || !reviewForm.name.trim()) return
-    const { error } = await createReview(reviewForm)
-    if (error) {
-      setReviewError(error)
-      return
-    }
-    setReviewError(null)
-    setReviewSubmitted(true)
-    setReviewForm({ name: '', text: '', rating: 5, style: '' })
-    setTimeout(() => { setShowReviewForm(false); setReviewSubmitted(false) }, 2000)
-  }
 
   return (
     <div className="min-h-dvh">
@@ -137,58 +76,13 @@ export default function Home() {
               to="/portfolio"
               className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-gold/30 text-gold text-sm font-medium hover:bg-gold/5 transition-colors"
             >
-              Ver portfolio
+              Ver portafolio
             </Link>
           </motion.div>
         </div>
       </motion.section>
 
-      {/* Featured Work - Horizontal scroll */}
-      <motion.section
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: '-50px' }}
-        variants={containerVariants}
-        className="py-8"
-      >
-        <motion.div variants={itemVariants} className="flex items-center justify-between px-5 mb-4">
-          <h2 className="font-serif text-xl text-cream">Trabajos Recientes</h2>
-          <Link
-            to="/portfolio"
-            className="text-xs text-gold hover:text-gold-light transition-colors flex items-center gap-1"
-          >
-            Ver todos
-            <ChevronRight size={14} />
-          </Link>
-        </motion.div>
-        <motion.div
-          variants={itemVariants}
-          className="flex gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {featuredWork.map((item) => (
-            <Link
-              key={item.id}
-              to="/portfolio"
-              className="shrink-0 w-36 group"
-            >
-              <div className="relative w-36 h-48 rounded-xl overflow-hidden border border-white/5 group-hover:border-gold/30 transition-all">
-                <img
-                  src={item.image_url}
-                  alt={item.title}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-2.5">
-                  <p className="text-cream text-xs font-medium truncate">{item.title}</p>
-                  <span className="text-gold/70 text-[10px]">{item.style}</span>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </motion.div>
-      </motion.section>
+      <FeaturedWorkRow items={featuredWork} loading={loadingPortfolio} />
 
       {/* Quick Actions */}
       <motion.section
@@ -246,151 +140,9 @@ export default function Home() {
         </motion.div>
       </motion.section>
 
-      {/* Shop Preview */}
-      <motion.section
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: '-50px' }}
-        variants={containerVariants}
-        className="py-8"
-      >
-        <motion.div variants={itemVariants} className="flex items-center justify-between px-5 mb-4">
-          <h2 className="font-serif text-xl text-cream">Tienda</h2>
-          <Link
-            to="/shop"
-            className="text-xs text-gold hover:text-gold-light transition-colors flex items-center gap-1"
-          >
-            Ver todo
-            <ChevronRight size={14} />
-          </Link>
-        </motion.div>
-        <motion.div
-          variants={itemVariants}
-          className="flex gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {featuredProducts.map((item) => (
-            <Link
-              key={item.id}
-              to="/shop"
-              className="shrink-0 w-40 group"
-            >
-              <div className="relative w-40 h-52 rounded-xl overflow-hidden border border-white/5 group-hover:border-gold/30 transition-all">
-                <img
-                  src={item.image_url}
-                  alt={item.title}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-3">
-                  <p className="text-cream text-xs font-medium truncate">{item.title}</p>
-                  <span className="text-gold font-semibold text-sm">€{item.price}</span>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </motion.div>
-      </motion.section>
+      <ShopPreviewRow items={featuredProducts} loading={loadingShop} />
 
-      {/* Reviews */}
-      <motion.section
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: '-50px' }}
-        variants={containerVariants}
-        className="px-5 py-8"
-      >
-        <motion.div variants={itemVariants} className="flex items-center justify-between mb-4">
-          <h2 className="font-serif text-xl text-cream">Lo que dicen nuestros clientes</h2>
-          <button
-            onClick={() => { setShowReviewForm(true); if (profile) setReviewForm(f => ({ ...f, name: profile.full_name })) }}
-            className="flex items-center gap-1 text-xs text-gold hover:text-gold-light transition-colors"
-          >
-            <Plus size={14} />
-            Dejar reseña
-          </button>
-        </motion.div>
-
-        <AnimatePresence>
-          {showReviewForm && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden mb-4"
-            >
-              {reviewSubmitted ? (
-                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-                  <p className="text-emerald-400 text-sm font-medium">Gracias por tu reseña</p>
-                </div>
-              ) : (
-                <div className="p-4 rounded-xl bg-ink-medium/40 border border-white/5 space-y-3">
-                  <input
-                    type="text"
-                    placeholder="Tu nombre"
-                    aria-label="Tu nombre"
-                    value={reviewForm.name}
-                    onChange={e => setReviewForm(f => ({ ...f, name: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-lg bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm"
-                  />
-                  <textarea
-                    placeholder="Tu experiencia..."
-                    aria-label="Tu experiencia"
-                    value={reviewForm.text}
-                    onChange={e => setReviewForm(f => ({ ...f, text: e.target.value }))}
-                    rows={2}
-                    className="w-full px-3 py-2 rounded-lg bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm resize-none"
-                  />
-                  <div className="flex items-center gap-4">
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map(n => (
-                        <button key={n} onClick={() => setReviewForm(f => ({ ...f, rating: n }))} aria-label={`Valorar ${n} estrella${n > 1 ? 's' : ''}`}>
-                          <Star size={18} className={n <= reviewForm.rating ? 'text-gold fill-gold' : 'text-subtle'} />
-                        </button>
-                      ))}
-                    </div>
-                    <select
-                      value={reviewForm.style}
-                      onChange={e => setReviewForm(f => ({ ...f, style: e.target.value }))}
-                      className="flex-1 px-2 py-1 rounded-lg bg-ink border border-white/10 text-cream text-xs"
-                    >
-                      <option value="">Estilo</option>
-                      {config.tattoo_styles.slice(0, 8).map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => setShowReviewForm(false)} className="flex-1 py-2 rounded-lg border border-white/10 text-subtle text-sm">Cancelar</button>
-                    <button onClick={handleReviewSubmit} className="flex-1 py-2 rounded-lg bg-gold text-ink text-sm font-medium">Enviar</button>
-                  </div>
-                  {reviewError && <p className="text-rose text-xs mt-2">{reviewError}</p>}
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div className="space-y-3">
-          {reviews.map((review, i) => (
-            <motion.div
-              key={i}
-              variants={itemVariants}
-              className="p-4 rounded-xl bg-ink-medium/40 border border-white/5"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <div className="flex gap-0.5">
-                  {Array.from({ length: review.rating }).map((_, j) => (
-                    <Star key={j} size={12} className="text-gold fill-gold" />
-                  ))}
-                </div>
-                {review.style && <span className="text-[10px] text-subtle px-1.5 py-0.5 rounded bg-white/5">{review.style}</span>}
-              </div>
-              <p className="text-cream-dark text-sm leading-relaxed italic">"{review.text}"</p>
-              <p className="text-subtle text-xs mt-2">— {review.name}</p>
-            </motion.div>
-          ))}
-        </div>
-      </motion.section>
+      <HomeReviewsSection tattooStyles={config.tattoo_styles} staticReviews={config.home_content.reviews} />
 
       {/* Trending Styles */}
       <motion.section
@@ -428,7 +180,12 @@ export default function Home() {
       </motion.section>
 
       {/* Next Course */}
-      {nextCourse && (
+      {loadingCourses ? (
+        <div className="px-5 py-6">
+          <div className="h-40 rounded-2xl bg-ink-medium/40 animate-pulse" />
+        </div>
+      ) : null}
+      {!loadingCourses && nextCourse && (
         <motion.section
           initial="hidden"
           whileInView="visible"
@@ -488,7 +245,7 @@ export default function Home() {
             className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-ink-medium/40 border border-white/5 text-cream text-sm font-medium hover:border-gold/20 transition-all"
           >
             <MessageCircle size={16} className="text-gold" />
-            Chat
+            Mensajes
           </Link>
           <Link
             to="/contact"

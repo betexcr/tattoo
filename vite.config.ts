@@ -4,6 +4,18 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+          'vendor-motion': ['framer-motion'],
+          'vendor-lucide': ['lucide-react'],
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),
@@ -11,7 +23,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon-32x32.svg'],
       manifest: {
-        name: 'INK & SOUL — Tattoo Studio',
+        name: 'INK & SOUL — Estudio de Tatuajes',
         short_name: 'INK & SOUL',
         description: 'Tu estudio de tatuajes de confianza',
         theme_color: '#0a0a0a',
@@ -31,8 +43,8 @@ export default defineConfig({
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: { cacheName: 'firebase-storage', expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 } },
+            handler: 'StaleWhileRevalidate',
+            options: { cacheName: 'firebase-storage', expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 7 } },
           },
         ],
       },

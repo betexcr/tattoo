@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, X, CalendarPlus, Check, Phone, MessageCircle, CheckCheck, AlertTriangle } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { useAppointments } from '../hooks/useAppointments'
 import { useAuth } from '../contexts/AuthContext'
@@ -70,11 +71,17 @@ type TabKey = 'pending' | 'confirmed' | 'completed'
 export default function Agenda() {
   const { config } = useStudioConfig()
   const { user, isArtist } = useAuth()
-  const { appointments, create, updateStatus } = useAppointments(isArtist ? undefined : user?.uid)
+  const { appointments, create, updateStatus, loading, error } = useAppointments(isArtist ? undefined : user?.uid)
   const [activeTab, setActiveTab] = useState<TabKey>('pending')
+  const [statusError, setStatusError] = useState<string | null>(null)
+  const [updatingApptId, setUpdatingApptId] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState(initialFormState)
   const [rejectConfirmId, setRejectConfirmId] = useState<string | null>(null)
+  const sheetRef = useRef<HTMLDivElement>(null)
+  const closeModal = useCallback(() => setShowModal(false), [])
+
+  useFocusTrap(sheetRef, showModal, closeModal)
 
   const pendingAppointments = appointments
     .filter((a) => a.status === 'pending')
@@ -101,31 +108,52 @@ export default function Agenda() {
         ? confirmedAppointments
         : completedAppointments
 
-  const handleStatusUpdate = (id: string, status: Appointment['status']) => {
-    updateStatus(id, status)
-    setRejectConfirmId(null)
+  const handleStatusUpdate = async (id: string, status: Appointment['status']) => {
+    if (updatingApptId) return
+    setStatusError(null)
+    setUpdatingApptId(id)
+    try {
+      const result = await updateStatus(id, status)
+      if (result?.error) setStatusError(result.error)
+      setRejectConfirmId(null)
+    } finally {
+      setUpdatingApptId(null)
+    }
   }
 
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+
   const handleSave = async () => {
-    if (!form.client || !form.date || !form.time) return
-    await create({
-      client_id: null,
-      client_name: form.client,
-      date: form.date,
-      time: form.time,
-      description: form.description,
-      body_part: form.bodyPart,
-      style: form.style,
-      status: 'pending',
-      deposit: Number(form.deposit) || 0,
-      phone: '',
-      email: '',
-      reference_images: [],
-      size: '',
-      notes: '',
-    })
-    setForm(initialFormState)
-    setShowModal(false)
+    if (!form.client || !form.date || !form.time || saving) return
+    setSaving(true)
+    try {
+      const result = await create({
+        client_id: null,
+        client_name: form.client,
+        date: form.date,
+        time: form.time,
+        description: form.description,
+        body_part: form.bodyPart,
+        style: form.style,
+        status: 'pending',
+        deposit: Number(form.deposit) || 0,
+        phone: '',
+        email: '',
+        reference_images: [],
+        size: '',
+        notes: '',
+      })
+      if (result?.error) {
+        setSaveError(result.error)
+        return
+      }
+      setSaveError(null)
+      setForm(initialFormState)
+      setShowModal(false)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const tabs: { key: TabKey; label: string }[] = [
@@ -134,8 +162,19 @@ export default function Agenda() {
     { key: 'completed', label: 'Completadas' },
   ]
 
+  if (loading) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center">
+        <p className="text-subtle text-sm">Cargando...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-dvh bg-ink">
+      {(error || statusError) && (
+        <div className="mx-4 mt-4 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{error || statusError}</div>
+      )}
       <PageHeader
         title="Agenda"
         subtitle="Gestiona tus citas"
@@ -159,8 +198,10 @@ export default function Agenda() {
         >
           {tabs.map((tab) => (
             <button
+              type="button"
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
+              aria-pressed={activeTab === tab.key}
               className={`relative px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 activeTab === tab.key
                   ? 'bg-gold text-ink'
@@ -232,7 +273,7 @@ export default function Agenda() {
                         className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 text-subtle text-xs hover:bg-white/10 hover:text-cream transition-colors"
                       >
                         <MessageCircle size={14} />
-                        Chat
+                        Mensajes
                       </Link>
 
                       {isArtist && apt.status === 'pending' && (
@@ -249,12 +290,15 @@ export default function Agenda() {
                                 <AlertTriangle size={14} className="text-amber-400 shrink-0" />
                                 <span className="text-xs text-subtle">¿Seguro?</span>
                                 <button
+                                  type="button"
                                   onClick={() => handleStatusUpdate(apt.id, 'rejected')}
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/20 text-red-400 text-xs border border-red-500/30 hover:bg-red-500/30 transition-colors"
+                                  disabled={updatingApptId === apt.id}
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/20 text-red-400 text-xs border border-red-500/30 hover:bg-red-500/30 transition-colors disabled:opacity-50"
                                 >
-                                  Sí, rechazar
+                                  {updatingApptId === apt.id ? 'Rechazando...' : 'Sí, rechazar'}
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => setRejectConfirmId(null)}
                                   className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 text-subtle text-xs hover:bg-white/10 transition-colors"
                                 >
@@ -270,13 +314,16 @@ export default function Agenda() {
                                 className="flex items-center gap-2"
                               >
                                 <button
+                                  type="button"
                                   onClick={() => handleStatusUpdate(apt.id, 'confirmed')}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-medium hover:bg-emerald-500/30 transition-colors"
+                                  disabled={updatingApptId === apt.id}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-medium hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
                                 >
                                   <Check size={14} />
-                                  Confirmar
+                                  {updatingApptId === apt.id ? 'Confirmando...' : 'Confirmar'}
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => setRejectConfirmId(apt.id)}
                                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-medium hover:bg-red-500/20 transition-colors"
                                 >
@@ -291,8 +338,10 @@ export default function Agenda() {
 
                       {isArtist && apt.status === 'confirmed' && (
                         <button
+                          type="button"
                           onClick={() => handleStatusUpdate(apt.id, 'completed')}
-                          className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 text-subtle text-xs hover:bg-white/10 hover:text-cream transition-colors"
+                          disabled={updatingApptId === apt.id}
+                          className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 text-subtle text-xs hover:bg-white/10 hover:text-cream transition-colors disabled:opacity-50"
                         >
                           <CheckCheck size={14} />
                           Marcar como completada
@@ -316,10 +365,12 @@ export default function Agenda() {
       {/* FAB (artist only) */}
       {isArtist && (
         <motion.button
+          type="button"
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowModal(true)}
+          aria-label="Nueva cita"
           className="fixed bottom-24 right-5 z-40 w-14 h-14 rounded-full bg-gold text-ink flex items-center justify-center shadow-lg shadow-gold/25 hover:bg-gold-light transition-colors"
         >
           <Plus size={24} strokeWidth={2.5} />
@@ -338,25 +389,33 @@ export default function Agenda() {
               className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-sm"
             />
             <motion.div
+              ref={sheetRef}
+              tabIndex={-1}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Nueva cita"
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-50 max-h-[85dvh] overflow-y-auto rounded-t-2xl bg-ink-light border-t border-white/10"
+              className="fixed bottom-0 left-0 right-0 z-50 max-h-[85dvh] overflow-y-auto rounded-t-2xl bg-ink-light border-t border-white/10 outline-none"
             >
               <div className="sticky top-0 bg-ink-light/95 backdrop-blur flex items-center justify-between px-5 py-4 border-b border-white/5">
                 <h2 className="font-serif text-lg text-cream">Nueva cita</h2>
                 <button
+                  type="button"
                   onClick={() => setShowModal(false)}
-                  className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream"
+                  aria-label="Cerrar"
+                  className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream"
                 >
                   <X size={18} />
                 </button>
               </div>
               <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="p-5 space-y-4">
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">Cliente</label>
+                  <label htmlFor="agenda-client" className="block text-xs text-subtle mb-1.5">Cliente</label>
                   <input
+                    id="agenda-client"
                     type="text"
                     value={form.client}
                     onChange={(e) => setForm((f) => ({ ...f, client: e.target.value }))}
@@ -366,8 +425,9 @@ export default function Agenda() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-subtle mb-1.5">Fecha</label>
+                    <label htmlFor="agenda-date" className="block text-xs text-subtle mb-1.5">Fecha</label>
                     <input
+                      id="agenda-date"
                       type="date"
                       value={form.date}
                       onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
@@ -375,8 +435,9 @@ export default function Agenda() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-subtle mb-1.5">Hora</label>
+                    <label htmlFor="agenda-time" className="block text-xs text-subtle mb-1.5">Hora</label>
                     <input
+                      id="agenda-time"
                       type="time"
                       value={form.time}
                       onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
@@ -385,8 +446,9 @@ export default function Agenda() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">Descripción del tatuaje</label>
+                  <label htmlFor="agenda-description" className="block text-xs text-subtle mb-1.5">Descripción del tatuaje</label>
                   <textarea
+                    id="agenda-description"
                     value={form.description}
                     onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                     placeholder="Describe el diseño..."
@@ -395,8 +457,9 @@ export default function Agenda() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">Parte del cuerpo</label>
+                  <label htmlFor="agenda-bodypart" className="block text-xs text-subtle mb-1.5">Parte del cuerpo</label>
                   <select
+                    id="agenda-bodypart"
                     value={form.bodyPart}
                     onChange={(e) => setForm((f) => ({ ...f, bodyPart: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl bg-ink border border-white/5 text-cream focus:outline-none focus:border-gold/50"
@@ -408,8 +471,9 @@ export default function Agenda() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">Estilo</label>
+                  <label htmlFor="agenda-style" className="block text-xs text-subtle mb-1.5">Estilo</label>
                   <select
+                    id="agenda-style"
                     value={form.style}
                     onChange={(e) => setForm((f) => ({ ...f, style: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl bg-ink border border-white/5 text-cream focus:outline-none focus:border-gold/50"
@@ -421,8 +485,9 @@ export default function Agenda() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">Depósito (€)</label>
+                  <label htmlFor="agenda-deposit" className="block text-xs text-subtle mb-1.5">Depósito (€)</label>
                   <input
+                    id="agenda-deposit"
                     type="number"
                     min="0"
                     step="5"
@@ -432,11 +497,15 @@ export default function Agenda() {
                     className="w-full px-4 py-3 rounded-xl bg-ink border border-white/5 text-cream placeholder:text-subtle/60 focus:outline-none focus:border-gold/50"
                   />
                 </div>
+                {saveError && (
+                  <p className="text-rose text-xs">{saveError}</p>
+                )}
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-xl bg-gold text-ink font-medium hover:bg-gold-light transition-colors"
+                  disabled={saving}
+                  className="w-full py-3.5 rounded-xl bg-gold text-ink font-medium hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Guardar
+                  {saving ? 'Guardando...' : 'Guardar'}
                 </button>
               </form>
             </motion.div>

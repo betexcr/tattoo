@@ -1,39 +1,23 @@
-import { useState, useEffect, useCallback } from 'react'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, setDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import { useStudioConfig } from '../contexts/StudioConfigContext'
 import type { StudioSettings } from '../types'
+import { mapFirestoreError } from '../utils/mapFirestoreError'
 
 const SETTINGS_DOC = doc(db, 'studio_settings', 'main')
 
 export function useStudioSettings() {
-  const [settings, setSettings] = useState<StudioSettings | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    try {
-      const snap = await getDoc(SETTINGS_DOC)
-      if (snap.exists()) {
-        setSettings({ id: snap.id, ...snap.data() } as StudioSettings)
-      }
-    } catch (e: unknown) {
-      setError((e as Error).message)
-    }
-    setLoading(false)
-  }, [])
-
-  useEffect(() => { fetch() }, [fetch])
+  const { rawSettings, loading, error, refetch } = useStudioConfig()
 
   const save = async (updates: Partial<StudioSettings>) => {
     try {
       await setDoc(SETTINGS_DOC, { ...updates, updated_at: new Date().toISOString() }, { merge: true })
-      setSettings(prev => prev ? { ...prev, ...updates } : prev)
+      await refetch()
       return { error: null }
     } catch (e: unknown) {
-      return { error: (e as Error).message }
+      return { error: mapFirestoreError(e) }
     }
   }
 
-  return { settings, loading, error, refetch: fetch, save }
+  return { settings: rawSettings, loading, error, refetch, save }
 }

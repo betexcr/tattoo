@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Pencil,
@@ -13,6 +13,7 @@ import {
 import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { usePortfolio } from '../hooks/usePortfolio'
 import { useImageUpload } from '../hooks/useImageUpload'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import type { PortfolioItem } from '../types'
 
 const containerVariants = {
@@ -40,14 +41,21 @@ export default function PortfolioManager() {
     image_url: '',
   })
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [mutationError, setMutationError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
   const { upload, uploading } = useImageUpload()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const editPanelRef = useRef<HTMLDivElement>(null)
+  const closeEditModal = useCallback(() => setEditModalOpen(false), [])
+
+  useFocusTrap(editPanelRef, editModalOpen, closeEditModal)
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     const path = `portfolio/${Date.now()}-${file.name}`
-    const { url } = await upload(file, path)
+    const { url, error } = await upload(file, path)
+    if (error) { setMutationError(error); return }
     if (url) setFormData(f => ({ ...f, image_url: url }))
   }
 
@@ -80,30 +88,40 @@ export default function PortfolioManager() {
   }
 
   const handleSave = async () => {
-    if (!formData.title || !formData.style || !formData.image_url) return
-    if (selectedItem) {
-      const { error } = await update(selectedItem.id, {
-        title: formData.title,
-        style: formData.style,
-        description: formData.description ?? '',
-        image_url: formData.image_url,
-      })
-      if (!error) setEditModalOpen(false)
-    } else {
-      const { error } = await create({
-        title: formData.title as string,
-        style: formData.style as string,
-        description: (formData.description ?? '') as string,
-        image_url: formData.image_url as string,
-        published: true,
-        sort_order: portfolio.length,
-      })
-      if (!error) setEditModalOpen(false)
+    if (!formData.title || !formData.style || !formData.image_url || saving) return
+    setMutationError(null)
+    setSaving(true)
+    try {
+      if (selectedItem) {
+        const { error } = await update(selectedItem.id, {
+          title: formData.title,
+          style: formData.style,
+          description: formData.description ?? '',
+          image_url: formData.image_url,
+        })
+        if (error) { setMutationError(error); return }
+        setEditModalOpen(false)
+      } else {
+        const { error } = await create({
+          title: formData.title as string,
+          style: formData.style as string,
+          description: (formData.description ?? '') as string,
+          image_url: formData.image_url as string,
+          published: true,
+          sort_order: portfolio.length,
+        })
+        if (error) { setMutationError(error); return }
+        setEditModalOpen(false)
+      }
+    } finally {
+      setSaving(false)
     }
   }
 
   const handleDelete = async (id: string) => {
-    await remove(id)
+    setMutationError(null)
+    const result = await remove(id)
+    if (result?.error) { setMutationError(result.error); return }
     setDeleteConfirmId(null)
   }
 
@@ -112,19 +130,25 @@ export default function PortfolioManager() {
     if (idx < 0) return
     const targetIdx = idx + dir
     if (targetIdx < 0 || targetIdx >= portfolio.length) return
+    setMutationError(null)
     const targetItem = portfolio[targetIdx]
     const currentItem = portfolio[idx]
-    await update(id, { sort_order: targetItem.sort_order })
-    await update(targetItem.id, { sort_order: currentItem.sort_order })
+    const r1 = await update(id, { sort_order: targetItem.sort_order })
+    if (r1?.error) { setMutationError(r1.error); return }
+    const r2 = await update(targetItem.id, { sort_order: currentItem.sort_order })
+    if (r2?.error) setMutationError(r2.error)
   }
 
   const togglePublished = async (item: PortfolioItem) => {
-    await update(item.id, { published: !item.published })
+    setMutationError(null)
+    const result = await update(item.id, { published: !item.published })
+    if (result?.error) setMutationError(result.error)
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="flex items-center justify-center py-20" role="status">
+        <span className="sr-only">Cargando...</span>
         <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
       </div>
     )
@@ -152,8 +176,11 @@ export default function PortfolioManager() {
             <p className="text-2xl font-serif font-semibold text-gold">
               {totalItems}
             </p>
-            <p className="text-sm text-subtle">Total items</p>
+            <p className="text-sm text-subtle">Total de trabajos</p>
           </div>
+          {mutationError && (
+            <div className="mt-3 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{mutationError}</div>
+          )}
           <div className="flex flex-wrap gap-2">
             {Object.entries(styleBreakdown).map(([style, count]) => (
               <span
@@ -179,6 +206,8 @@ export default function PortfolioManager() {
               <img
                 src={item.image_url}
                 alt={item.title}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent opacity-80" />
@@ -194,13 +223,17 @@ export default function PortfolioManager() {
               {/* Move buttons */}
               <div className="absolute top-2 left-2 flex flex-col gap-0.5">
                 <button
+                  type="button"
                   onClick={(e) => { e.stopPropagation(); moveItem(item.id, -1) }}
+                  aria-label="Subir en la lista"
                   className="w-6 h-6 rounded-md bg-black/50 flex items-center justify-center text-cream hover:bg-black/70 transition-colors"
                 >
                   <ChevronUp size={12} />
                 </button>
                 <button
+                  type="button"
                   onClick={(e) => { e.stopPropagation(); moveItem(item.id, 1) }}
+                  aria-label="Bajar en la lista"
                   className="w-6 h-6 rounded-md bg-black/50 flex items-center justify-center text-cream hover:bg-black/70 transition-colors"
                 >
                   <ChevronDown size={12} />
@@ -209,9 +242,11 @@ export default function PortfolioManager() {
 
               {/* Published toggle */}
               <button
+                type="button"
                 onClick={() => togglePublished(item)}
                 className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center hover:bg-black/60 transition-colors"
                 title={item.published ? 'Publicado' : 'Borrador'}
+                aria-label={item.published ? 'Marcado como publicado' : 'Marcado como borrador'}
               >
                 {item.published ? (
                   <Eye size={14} className="text-emerald-400" />
@@ -223,7 +258,9 @@ export default function PortfolioManager() {
               {/* Actions overlay */}
               <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity bg-black/50">
                 <button
+                  type="button"
                   onClick={() => handleEdit(item)}
+                  aria-label="Editar trabajo"
                   className="w-10 h-10 rounded-full bg-gold/80 text-ink flex items-center justify-center hover:bg-gold transition-colors"
                 >
                   <Pencil size={18} />
@@ -231,12 +268,14 @@ export default function PortfolioManager() {
                 {deleteConfirmId === item.id ? (
                   <div className="flex gap-2">
                     <button
+                      type="button"
                       onClick={() => handleDelete(item.id)}
                       className="px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-medium"
                     >
                       Sí
                     </button>
                     <button
+                      type="button"
                       onClick={() => setDeleteConfirmId(null)}
                       className="px-3 py-1.5 rounded-lg bg-ink-medium text-cream text-xs"
                     >
@@ -245,7 +284,9 @@ export default function PortfolioManager() {
                   </div>
                 ) : (
                   <button
+                    type="button"
                     onClick={() => setDeleteConfirmId(item.id)}
+                    aria-label="Eliminar trabajo"
                     className="w-10 h-10 rounded-full bg-red-500/80 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
                   >
                     <Trash2 size={18} />
@@ -259,10 +300,12 @@ export default function PortfolioManager() {
 
       {/* FAB */}
       <motion.button
+        type="button"
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: 'spring', damping: 20, stiffness: 300 }}
         onClick={handleAdd}
+        aria-label="Añadir al portafolio"
         className="fixed bottom-24 right-4 w-14 h-14 rounded-full bg-gold text-ink flex items-center justify-center shadow-lg shadow-gold/30 hover:bg-gold-light transition-colors z-30"
       >
         <Plus size={24} strokeWidth={2.5} />
@@ -280,23 +323,29 @@ export default function PortfolioManager() {
               onClick={() => setEditModalOpen(false)}
             />
             <motion.div
+              ref={editPanelRef}
+              tabIndex={-1}
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-50 bg-ink-light rounded-t-3xl max-h-[85dvh] overflow-y-auto"
+              role="dialog"
+              aria-modal="true"
+              aria-label={selectedItem ? 'Editar trabajo del portafolio' : 'Nuevo trabajo del portafolio'}
+              className="fixed bottom-0 left-0 right-0 z-50 bg-ink-light rounded-t-3xl max-h-[85dvh] overflow-y-auto focus:outline-none"
             >
               <div className="p-5 border-b border-white/5">
                 <h2 className="font-serif text-lg text-cream">
-                  {selectedItem ? 'Editar item' : 'Nuevo item'}
+                  {selectedItem ? 'Editar trabajo' : 'Nuevo trabajo'}
                 </h2>
               </div>
-              <div className="p-5 space-y-4">
+              <div className="p-5 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-4">
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">
+                  <label htmlFor="pm-title" className="block text-xs text-subtle mb-1.5">
                     Título
                   </label>
                   <input
+                    id="pm-title"
                     type="text"
                     value={formData.title}
                     onChange={(e) =>
@@ -307,10 +356,11 @@ export default function PortfolioManager() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">
+                  <label htmlFor="pm-style" className="block text-xs text-subtle mb-1.5">
                     Estilo
                   </label>
                   <select
+                    id="pm-style"
                     value={formData.style}
                     onChange={(e) =>
                       setFormData((f) => ({ ...f, style: e.target.value }))
@@ -325,10 +375,11 @@ export default function PortfolioManager() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">
+                  <label htmlFor="pm-description" className="block text-xs text-subtle mb-1.5">
                     Descripción
                   </label>
                   <textarea
+                    id="pm-description"
                     value={formData.description}
                     onChange={(e) =>
                       setFormData((f) => ({
@@ -342,9 +393,10 @@ export default function PortfolioManager() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-subtle mb-1.5">Imagen</label>
+                  <label htmlFor="pm-image" className="block text-xs text-subtle mb-1.5">Imagen</label>
                   <div className="flex gap-2">
                     <input
+                      id="pm-image"
                       type="url"
                       value={formData.image_url}
                       onChange={(e) =>
@@ -365,26 +417,31 @@ export default function PortfolioManager() {
                     <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
                   </div>
                   {formData.image_url && (
-                    <img src={formData.image_url} alt="preview" className="mt-2 w-20 h-20 rounded-lg object-cover border border-white/10" />
+                    <img src={formData.image_url} alt="Vista previa" loading="lazy" decoding="async" className="mt-2 w-20 h-20 rounded-lg object-cover border border-white/10" />
                   )}
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button
+                    type="button"
                     onClick={() => setEditModalOpen(false)}
                     className="flex-1 py-3 rounded-xl bg-ink-medium text-cream font-medium"
                   >
                     Cancelar
                   </button>
                   <button
+                    type="button"
                     onClick={handleSave}
                     disabled={
-                      !formData.title || !formData.style || !formData.image_url
+                      !formData.title || !formData.style || !formData.image_url || saving
                     }
                     className="flex-1 py-3 rounded-xl bg-gold text-ink font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gold-light transition-colors"
                   >
-                    Guardar
+                    {saving ? 'Guardando...' : 'Guardar'}
                   </button>
                 </div>
+                {mutationError && (
+                  <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 mt-2">{mutationError}</p>
+                )}
               </div>
             </motion.div>
           </>

@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Send } from 'lucide-react'
 import { useChatConversations, useChat } from '../hooks/useChat'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
+import LoadingSpinner from '../components/LoadingSpinner'
+import { formatRelativeTime } from '../utils/formatRelativeTime'
 
 function getInitials(name: string): string {
   return name
@@ -12,21 +14,6 @@ function getInitials(name: string): string {
     .slice(0, 2)
     .join('')
     .toUpperCase()
-}
-
-function formatRelativeTime(iso: string): string {
-  const date = new Date(iso)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
-
-  if (diffMins < 1) return 'ahora'
-  if (diffMins < 60) return `hace ${diffMins}m`
-  if (diffHours < 24) return `hace ${diffHours}h`
-  if (diffDays < 7) return `hace ${diffDays}d`
-  return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 }
 
 const containerVariants = {
@@ -45,12 +32,12 @@ const itemVariants = {
 export default function Messages() {
   const { config } = useStudioConfig()
   const quickReplies = config.chat_config.canned_responses.slice(0, 6)
-  const { conversations } = useChatConversations()
+  const { conversations, loading: conversationsLoading, error: conversationsError } = useChatConversations()
   const [activeClientId, setActiveClientId] = useState<string | null>(null)
   const [inputText, setInputText] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const { messages, send, markRead, subscribe, unsubscribe } = useChat(
+  const { messages, send, markRead, subscribe, unsubscribe, loading: chatLoading, error: chatError } = useChat(
     activeClientId ?? undefined
   )
 
@@ -84,11 +71,24 @@ export default function Messages() {
     }
   }, [activeClientId, subscribe, unsubscribe, markRead])
 
+  const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState<string | null>(null)
+
   const handleSend = async () => {
     const text = inputText.trim()
-    if (!text || !activeClientId) return
-    await send(text, 'artist')
+    if (!text || !activeClientId || sending) return
+    setSending(true)
+    setSendError(null)
     setInputText('')
+    try {
+      const result = await send(text, 'artist')
+      if (result?.error) {
+        setSendError(result.error)
+        setInputText(text)
+      }
+    } finally {
+      setSending(false)
+    }
   }
 
   const handleQuickReply = (text: string) => {
@@ -98,6 +98,13 @@ export default function Messages() {
   const handleOpenConversation = (clientId: string) => {
     setActiveClientId(clientId)
   }
+
+  if (!activeClientId && conversationsLoading) return <LoadingSpinner />
+  if (!activeClientId && conversationsError) return (
+    <div className="p-4">
+      <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-red-400 text-sm">{conversationsError}</div>
+    </div>
+  )
 
   return (
     <div className="flex flex-col h-[calc(100dvh-3rem)] pb-16">
@@ -113,6 +120,7 @@ export default function Messages() {
           >
             <header className="flex items-center gap-3 px-4 py-3 border-b border-white/5 bg-ink-light/95 shrink-0">
               <button
+                type="button"
                 onClick={() => setActiveClientId(null)}
                 aria-label="Volver a conversaciones"
                 className="w-10 h-10 rounded-full flex items-center justify-center text-subtle hover:text-cream transition-colors"
@@ -133,7 +141,12 @@ export default function Messages() {
             </header>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {messages.map((msg, i) => {
+              {chatError && (
+                <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-red-400 text-sm mb-2">{chatError}</div>
+              )}
+              {chatLoading && messages.length === 0 ? (
+                <LoadingSpinner />
+              ) : messages.map((msg, i) => {
                 const prev = messages[i - 1]
                 const showTimestamp =
                   !prev ||
@@ -166,13 +179,14 @@ export default function Messages() {
                   </div>
                 )
               })}
-              <div ref={messagesEndRef} />
+              {!(chatLoading && messages.length === 0) && <div ref={messagesEndRef} />}
             </div>
 
             <div className="p-4 border-t border-white/5 bg-ink shrink-0 space-y-2">
               <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                 {quickReplies.map((text) => (
                   <button
+                    type="button"
                     key={text}
                     onClick={() => handleQuickReply(text)}
                     className="shrink-0 px-3 py-1.5 rounded-full bg-ink-light border border-white/5 text-subtle text-xs hover:text-cream hover:border-gold/30 transition-colors"
@@ -181,6 +195,7 @@ export default function Messages() {
                   </button>
                 ))}
               </div>
+              {sendError && <p className="text-rose text-xs mb-1 px-1">{sendError}</p>}
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -188,11 +203,14 @@ export default function Messages() {
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
                   placeholder="Escribe un mensaje..."
+                  aria-label="Mensaje"
                   className="flex-1 px-4 py-2.5 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle text-sm focus:outline-none focus:border-gold/40 transition-colors"
                 />
                 <button
+                  type="button"
                   onClick={handleSend}
-                  disabled={!inputText.trim()}
+                  disabled={!inputText.trim() || sending}
+                  aria-label="Enviar mensaje"
                   className="w-10 h-10 rounded-xl bg-gold text-ink flex items-center justify-center shrink-0 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gold-light transition-colors"
                 >
                   <Send size={18} strokeWidth={2} />
@@ -220,6 +238,7 @@ export default function Messages() {
               )}
               {sortedConversations.map((conv) => (
                 <motion.button
+                  type="button"
                   key={conv.client_id}
                   variants={itemVariants}
                   onClick={() => handleOpenConversation(conv.client_id)}
