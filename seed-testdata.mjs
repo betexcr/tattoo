@@ -96,6 +96,33 @@ async function createAuthUser(email, password) {
 async function seed() {
   accessToken = await getAccessToken()
   console.log('Token refreshed.\n')
+
+  // --- Artist account ---
+  console.log('Creating artist account...')
+  let artistUid = await createAuthUser('test@inknsoul.com', 'Test1234!')
+  if (artistUid) {
+    await setDoc('profiles', artistUid, {
+      full_name: 'Valentina Reyes',
+      phone: '+34 611 222 333',
+      role: 'artist',
+      avatar_url: '',
+      created_at: new Date().toISOString(),
+    })
+    console.log(`  + Valentina Reyes / artist (${artistUid})`)
+  } else {
+    console.log('  ~ Artist account already exists, looking up UID...')
+    const signInRes = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'test@inknsoul.com', password: 'Test1234!', returnSecureToken: true }),
+    })
+    const signInData = await signInRes.json()
+    artistUid = signInData.localId
+    console.log(`  ~ Valentina Reyes / artist (${artistUid})`)
+  }
+  console.log()
+
+  // --- Client accounts ---
   console.log('Creating test client accounts...')
   const clients = [
     { email: 'lucia@test.com', password: 'Test1234!', name: 'Lucía Martínez', phone: '+34 612 345 678' },
@@ -131,7 +158,7 @@ async function seed() {
     artist_name: 'Valentina Reyes',
     bio: 'Tatuadora profesional con más de 8 años de experiencia. Especializada en línea fina, geométrico y puntillismo. Mi pasión es transformar ideas en arte permanente que cuente tu historia. Cada pieza es única y diseñada a medida.',
     phone: '+34 611 222 333',
-    email: 'hola@inknsoul.com',
+    email: 'test@inknsoul.com',
     address: 'Calle del Arte 42, Madrid, España',
     schedule: {
       lunes: { open: true, start: '10:00', end: '19:00' },
@@ -278,7 +305,6 @@ async function seed() {
 
   // --- Appointments ---
   console.log('Creating appointments...')
-  const artistUid = 'y7rfsnppbnMZKihSE6iwUPWqR7P2'
   const appointments = [
     { client_name: 'Lucía Martínez', date: '2026-03-09', time: '10:00', description: 'Serpiente fine line en el antebrazo derecho, estilo minimalista con elementos botánicos', body_part: 'Antebrazo', style: 'Línea Fina', status: 'completed', deposit: 80, phone: '+34 612 345 678', email: 'lucia@test.com', reference_images: [], size: 'Mediano (15-25cm)', notes: 'Primera sesión completada. Necesita retoque en 3 semanas.', client_id: clientIds[0]?.uid || null },
     { client_name: 'Andrés Pérez', date: '2026-03-10', time: '11:00', description: 'Mandala geométrico en el hombro, diseño simétrico con patrones sagrados', body_part: 'Hombro', style: 'Geométrico', status: 'completed', deposit: 120, phone: '+34 623 456 789', email: 'andres@test.com', reference_images: [], size: 'Grande (25cm+)', notes: 'Cliente regular. Muy contento con el resultado.', client_id: clientIds[1]?.uid || null },
