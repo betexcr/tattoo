@@ -14,7 +14,7 @@ import DesignCanvas from './designer/DesignCanvas'
 export default function TattooDesigner() {
   const navigate = useNavigate()
   const { config } = useStudioConfig()
-  const { user, requireAuth } = useRequireAuth()
+  const { user, requireAuth, authPrompt } = useRequireAuth()
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null)
   const [selectedSize, setSelectedSize] = useState<SizeOption>('medium')
   const [selectedElements, setSelectedElements] = useState<DesignElement[]>([])
@@ -49,6 +49,7 @@ export default function TattooDesigner() {
 
   return (
     <div className="min-h-dvh bg-ink pb-24">
+      {authPrompt}
       <PageHeader title="Diseñador de Tatuajes" subtitle="Diseña tu tatuaje" />
 
       <div className="px-5 py-6 space-y-6">

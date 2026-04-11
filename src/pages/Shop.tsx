@@ -103,7 +103,7 @@ const ShopProductCard = memo(function ShopProductCard({ item, onClick }: { item:
 export default function Shop() {
   const { items: shopItems, loading, error: shopError } = useShop()
   const { create: createOrder } = useOrders()
-  const { user, requireAuth } = useRequireAuth()
+  const { user, requireAuth, authPrompt } = useRequireAuth()
   const [categoryFilter, setCategoryFilter] = useState<Category>('')
   const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null)
   const [cart, setCart] = useState<CartLine[]>([])
@@ -252,6 +252,7 @@ export default function Shop() {
 
   return (
     <div className="min-h-dvh pb-6">
+      {authPrompt}
       {shopError && (
         <div className="mx-5 mt-4 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{shopError}</div>
       )}

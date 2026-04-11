@@ -1,18 +1,36 @@
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
+import { createElement } from 'react'
+import { AnimatePresence } from 'framer-motion'
+import AuthPromptModal from '../components/AuthPromptModal'
 
 export function useRequireAuth() {
   const { user } = useAuth()
-  const navigate = useNavigate()
+  const [promptReturn, setPromptReturn] = useState<string | undefined>()
+  const [showPrompt, setShowPrompt] = useState(false)
 
   const requireAuth = useCallback((returnTo?: string) => {
     if (!user) {
-      navigate(`/login${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`)
+      setPromptReturn(returnTo)
+      setShowPrompt(true)
       return false
     }
     return true
-  }, [user, navigate])
+  }, [user])
 
-  return { user, requireAuth }
+  const closePrompt = useCallback(() => setShowPrompt(false), [])
+
+  const authPrompt = createElement(
+    AnimatePresence,
+    null,
+    showPrompt
+      ? createElement(AuthPromptModal, {
+          key: 'auth-prompt',
+          returnTo: promptReturn,
+          onClose: closePrompt,
+        })
+      : null,
+  )
+
+  return { user, requireAuth, authPrompt }
 }

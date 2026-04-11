@@ -64,7 +64,7 @@ export default function BookAppointment() {
   const navigate = useNavigate()
   const { config } = useStudioConfig()
   const { create, getOccupiedSlots } = useAppointments()
-  const { user, requireAuth } = useRequireAuth()
+  const { user, requireAuth, authPrompt } = useRequireAuth()
   const { create: createNotification } = useNotifications(user?.uid)
   const occupiedSlots = getOccupiedSlots()
   const [step, setStep] = useState(0)
@@ -358,6 +358,7 @@ export default function BookAppointment() {
 
   return (
     <div className="min-h-dvh bg-ink flex flex-col">
+      {authPrompt}
       {/* Header */}
       <header className="sticky top-0 z-40 bg-ink/90 backdrop-blur-lg border-b border-white/5 pt-[env(safe-area-inset-top,0px)]">
         <div className="flex items-center justify-between px-5 h-14">

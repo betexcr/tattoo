@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate, Link, useSearchParams } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -10,7 +10,14 @@ export default function Login() {
   const { config } = useStudioConfig()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login')
+  const location = useLocation()
+  const [mode, setMode] = useState<'login' | 'signup' | 'reset'>(
+    location.hash === '#signup' ? 'signup' : 'login'
+  )
+
+  useEffect(() => {
+    if (location.hash === '#signup') setMode('signup')
+  }, [location.hash])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')

@@ -47,7 +47,7 @@ const INITIAL_FORM = { name: '', email: '', phone: '' }
 
 export default function Courses() {
   const { courses, reservedIds, reserve, loading, error } = useCourses()
-  const { requireAuth } = useRequireAuth()
+  const { requireAuth, authPrompt } = useRequireAuth()
   const [reservingCourse, setReservingCourse] = useState<Course | null>(null)
   const [reservationForm, setReservationForm] = useState(INITIAL_FORM)
   const [showSuccess, setShowSuccess] = useState(false)
@@ -115,6 +115,7 @@ export default function Courses() {
 
   return (
     <div className="min-h-dvh pb-6">
+      {authPrompt}
       <PageHeader
         title="Cursos y Talleres"
         subtitle="Aprende con nosotros"
