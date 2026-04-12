@@ -1,0 +1,23 @@
+Versión corta (DM de Instagram/WhatsApp):
+
+Hola! Vi tu trabajo y está muy bueno. ¿Alguna vez pensaste en tener tu propia app para que tus clientes vean tu portafolio, agenden citas y te escriban directo? Sin depender de Instagram. Te la dejamos lista con tu marca por un solo pago. ¿Te interesa que te muestre cómo se ve?
+
+Versión en persona / nota de voz:
+
+Mae, mirá — yo trabajo con un equipo que le hace apps a tatuadores. Básicamente es tu propia plataforma: los clientes entran, ven tu portafolio, agendan cita, te escriben por chat, hasta pueden comprar si vendés algo. Todo con tu nombre, tu logo, tus precios. No es página de Facebook ni nada de eso — es tu app, la instalás en el celular como cualquier otra.
+
+Lo mejor es que es un solo pago, no hay mensualidad. Ya la tenemos hecha, solo la personalizamos para vos.
+
+¿Querés que te la enseñe? Son 2 minutos.
+
+Si el tatuador pregunta "¿y cuánto es?":
+
+Desde $350 y te queda lista con todo — portafolio, citas, agenda de clientes, tienda, chat. Un solo pago. Si después querés algo extra, se cotiza aparte, pero la mayoría no necesita nada más.
+
+Si el tatuador dice "ya tengo Instagram para eso":
+
+Sí claro, pero Instagram no te deja agendar citas, no te organiza los clientes, y si te cierran la cuenta perdés todo. Esto es tuyo — tu nombre, tu dominio, tus datos. Instagram te sirve para atraer gente, y la app para cerrar el trabajo.
+
+Si dice "lo pienso":
+
+Cero presión. Te paso la demo para que la veás tranquilo: [link al /demo]. Si te convence me escribís.
