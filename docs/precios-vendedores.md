@@ -2,6 +2,10 @@
 
 **Plataforma completa para estudios de tatuaje:** portafolio, tienda, agenda, chat con clientes, visualizador corporal, diseñador de tatuajes, cursos, panel de analíticas y administración del estudio.
 
+> **Para compartir en Instagram:** usá la imagen `precios-instagram.png` en este mismo directorio.
+>
+> ![Precios Instagram](precios-instagram.png)
+
 ---
 
 ## Nivel 1 — "Llave en Mano" (Configuración Completa)
