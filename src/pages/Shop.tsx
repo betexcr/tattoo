@@ -379,6 +379,7 @@ export default function Shop() {
               onClick={closeCartDrawer}
               className="fixed inset-0 z-[100] bg-ink/80 backdrop-blur-sm"
             />
+            <div className="fixed inset-0 z-[100] flex items-end justify-center pointer-events-none sm:px-4 sm:pb-4">
             <motion.div
               ref={cartPanelRef}
               tabIndex={-1}
@@ -389,7 +390,7 @@ export default function Shop() {
               role="dialog"
               aria-modal="true"
               aria-label="Carrito de compras"
-              className="fixed bottom-0 left-0 right-0 z-[100] max-h-[90dvh] bg-ink-light rounded-t-3xl overflow-hidden border-t border-white/10 shadow-2xl flex flex-col focus:outline-none"
+              className="pointer-events-auto flex max-h-[90dvh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl border-t border-white/10 bg-ink-light shadow-2xl focus:outline-none"
             >
               <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 rounded-full bg-white/10" />
@@ -516,6 +517,7 @@ export default function Shop() {
                 )}
               </div>
             </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>
@@ -530,17 +532,18 @@ export default function Shop() {
               onClick={() => { setSelectedItem(null); setSelectedSize(''); setSelectedColor('') }}
               className="fixed inset-0 z-[100] bg-ink/80 backdrop-blur-sm"
             />
+            <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none p-4 sm:p-6">
             <motion.div
               ref={detailPanelRef}
               tabIndex={-1}
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              initial={{ opacity: 0, scale: 0.96, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 16 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
               role="dialog"
               aria-modal="true"
               aria-label="Detalle del producto"
-              className="fixed inset-x-0 bottom-0 z-[100] flex max-h-[92dvh] flex-col bg-ink-light rounded-t-3xl border-t border-white/10 shadow-2xl focus:outline-none sm:inset-x-auto sm:left-1/2 sm:max-w-md sm:-translate-x-1/2 sm:rounded-2xl"
+              className="pointer-events-auto flex max-h-[min(92dvh,720px)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-white/10 bg-ink-light shadow-2xl focus:outline-none"
             >
               <div className="flex justify-center pt-2.5 pb-1 shrink-0">
                 <div className="h-1 w-10 rounded-full bg-white/15" aria-hidden />
@@ -725,6 +728,7 @@ export default function Shop() {
                 </div>
               </div>
             </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>
