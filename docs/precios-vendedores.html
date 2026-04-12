@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: #1a1a2e;
+    background: #fff;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 32mm 28mm 24mm 28mm;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .page::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, #e63946, #d62828, #1a1a2e);
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e8e8e8;
+  }
+
+  .logo-text {
+    font-size: 28pt;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #1a1a2e;
+  }
+
+  .logo-text span {
+    color: #e63946;
+  }
+
+  .subtitle {
+    font-size: 9pt;
+    font-weight: 500;
+    color: #666;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .intro {
+    text-align: center;
+    color: #444;
+    font-size: 9.5pt;
+    max-width: 440px;
+    margin: 0 auto 30px auto;
+    line-height: 1.6;
+  }
+
+  .tiers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .tier {
+    border: 1px solid #e8e8e8;
+    border-radius: 10px;
+    padding: 18px 16px;
+    position: relative;
+    background: #fff;
+  }
+
+  .tier.featured {
+    border-color: #e63946;
+    box-shadow: 0 0 0 1px #e63946;
+  }
+
+  .tier.featured::after {
+    content: '★ RECOMENDADO';
+    position: absolute;
+    top: -9px;
+    right: 16px;
+    background: #e63946;
+    color: #fff;
+    font-size: 6.5pt;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 10px;
+    letter-spacing: 0.5px;
+  }
+
+  .tier-number {
+    font-size: 7pt;
+    font-weight: 700;
+    color: #999;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+
+  .tier-name {
+    font-size: 12pt;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 2px;
+  }
+
+  .tier-desc {
+    font-size: 7.5pt;
+    color: #888;
+    margin-bottom: 10px;
+  }
+
+  .tier-price {
+    font-size: 14pt;
+    font-weight: 800;
+    color: #e63946;
+    margin-bottom: 2px;
+  }
+
+  .tier-price-note {
+    font-size: 7.5pt;
+    color: #999;
+    margin-bottom: 12px;
+  }
+
+  .tier ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .tier li {
+    font-size: 8.5pt;
+    color: #444;
+    padding: 3px 0;
+    padding-left: 16px;
+    position: relative;
+  }
+
+  .tier li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: #e63946;
+    font-weight: 700;
+    font-size: 8pt;
+  }
+
+  .section-title {
+    font-size: 13pt;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 14px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #e63946;
+    display: inline-block;
+  }
+
+  .features-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 24px;
+    font-size: 8.5pt;
+  }
+
+  .features-table th {
+    background: #1a1a2e;
+    color: #fff;
+    font-weight: 600;
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 8pt;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .features-table th:first-child {
+    border-radius: 6px 0 0 0;
+  }
+
+  .features-table th:last-child {
+    border-radius: 0 6px 0 0;
+  }
+
+  .features-table td {
+    padding: 7px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #333;
+  }
+
+  .features-table tr:nth-child(even) td {
+    background: #fafafa;
+  }
+
+  .features-table td:first-child {
+    font-weight: 600;
+    color: #1a1a2e;
+    white-space: nowrap;
+  }
+
+  .contract-box {
+    background: #f8f8fa;
+    border-left: 3px solid #1a1a2e;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    border-radius: 0 8px 8px 0;
+  }
+
+  .contract-box p {
+    font-size: 8pt;
+    color: #555;
+    line-height: 1.6;
+  }
+
+  .contract-box .label {
+    font-size: 7pt;
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .projections-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 24px;
+    font-size: 8.5pt;
+  }
+
+  .projections-table th {
+    background: #e63946;
+    color: #fff;
+    font-weight: 600;
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 8pt;
+    letter-spacing: 0.5px;
+  }
+
+  .projections-table th:first-child {
+    border-radius: 6px 0 0 0;
+  }
+
+  .projections-table th:last-child {
+    border-radius: 0 6px 0 0;
+    text-align: right;
+  }
+
+  .projections-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #333;
+  }
+
+  .projections-table td:last-child {
+    text-align: right;
+    font-weight: 700;
+    color: #e63946;
+  }
+
+  .projections-table tr:nth-child(even) td {
+    background: #fff5f5;
+  }
+
+  .footer {
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid #e8e8e8;
+    margin-top: 10px;
+  }
+
+  .footer p {
+    font-size: 8pt;
+    color: #999;
+    letter-spacing: 1px;
+  }
+
+  .footer .brand {
+    font-weight: 700;
+    color: #1a1a2e;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="logo-text">Ink <span>&</span> Soul</div>
+    <div class="subtitle">Modelo de Precios</div>
+  </div>
+
+  <p class="intro">
+    Plataforma completa para estudios de tatuaje: portafolio, tienda, agenda, chat con clientes, visualizador corporal, diseñador de tatuajes, cursos, analíticas y administración.
+  </p>
+
+  <div class="tiers">
+
+    <div class="tier featured">
+      <div class="tier-number">Nivel 1</div>
+      <div class="tier-name">Llave en Mano</div>
+      <div class="tier-desc">Configuración completa</div>
+      <div class="tier-price">$350 – $500</div>
+      <div class="tier-price-note">USD · Pago único · ₡180k – ₡260k</div>
+      <ul>
+        <li>Proyecto Firebase + despliegue en Vercel</li>
+        <li>Marca personalizada (logo, colores, bio)</li>
+        <li>Carga inicial de contenido</li>
+        <li>PWA instalable desde el navegador</li>
+        <li>1 sesión de capacitación (~1 hr)</li>
+        <li>30 días de soporte post-entrega</li>
+      </ul>
+    </div>
+
+    <div class="tier">
+      <div class="tier-number">Nivel 2</div>
+      <div class="tier-name">App Nativa</div>
+      <div class="tier-desc">Complemento</div>
+      <div class="tier-price">+$150 – $250</div>
+      <div class="tier-price-note">USD · Pago único</div>
+      <ul>
+        <li>APK Android + asistencia en Google Play</li>
+        <li>iOS TestFlight + guía para App Store</li>
+        <li>Ícono y splash screen personalizados</li>
+      </ul>
+    </div>
+
+    <div class="tier">
+      <div class="tier-number">Nivel 3</div>
+      <div class="tier-name">Soporte Mensual</div>
+      <div class="tier-desc">Mantenimiento</div>
+      <div class="tier-price">$40 – $60</div>
+      <div class="tier-price-note">USD/mes · ₡20k – ₡30k</div>
+      <ul>
+        <li>Corrección de errores (hasta 2 hrs/mes)</li>
+        <li>Monitoreo de Firebase (alertas de uso)</li>
+        <li>Actualización de dependencias trimestral</li>
+        <li>Soporte prioritario WhatsApp/Telegram</li>
+      </ul>
+    </div>
+
+    <div class="tier">
+      <div class="tier-number">Nivel 4</div>
+      <div class="tier-name">Funciones Extra</div>
+      <div class="tier-desc">Desarrollo a medida</div>
+      <div class="tier-price">$50 – $80</div>
+      <div class="tier-price-note">USD/hora</div>
+      <ul>
+        <li>Integración de pagos (Sinpe, Stripe)</li>
+        <li>Notificaciones personalizadas</li>
+        <li>Páginas o funcionalidades nuevas</li>
+        <li>Soporte multi-artista en un estudio</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="section-title">¿Qué obtiene el cliente?</div>
+
+  <table class="features-table">
+    <thead>
+      <tr><th>Funcionalidad</th><th>Descripción</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Portafolio</td><td>Galería de trabajos con filtros por estilo</td></tr>
+      <tr><td>Tienda</td><td>Catálogo de productos con carrito de compras</td></tr>
+      <tr><td>Agenda</td><td>Sistema de citas con recordatorios automáticos</td></tr>
+      <tr><td>Chat</td><td>Mensajería en tiempo real + asistente FAQ</td></tr>
+      <tr><td>Diseñador</td><td>Herramienta de diseño en canvas para crear ideas</td></tr>
+      <tr><td>Visualizador</td><td>Mapa SVG del cuerpo para ubicar tatuajes</td></tr>
+      <tr><td>Cursos</td><td>Listado y reservación de cursos y talleres</td></tr>
+      <tr><td>Panel Admin</td><td>Gestión completa del estudio desde /studio</td></tr>
+      <tr><td>Analíticas</td><td>Dashboard con métricas de citas, ventas y metas</td></tr>
+      <tr><td>PWA</td><td>Se instala como app desde el navegador, sin tienda</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">Proyección de Ingresos</div>
+
+  <table class="projections-table">
+    <thead>
+      <tr><th>Escenario</th><th>Año 1</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>6 configs @ $400 + 3 mantenimientos @ $50/mes</td><td>$4,200 USD</td></tr>
+      <tr><td>12 configs @ $450 + 6 mantenimientos @ $50/mes</td><td>$9,000 USD</td></tr>
+      <tr><td>12 configs + 4 apps nativas + 8 mantenimientos</td><td>$12,600+ USD</td></tr>
+    </tbody>
+  </table>
+
+  <div class="contract-box">
+    <div class="label">Cláusula Clave del Contrato</div>
+    <p>Este acuerdo cubre la configuración inicial, personalización y entrega de la plataforma. El soporte post-entrega se limita a 30 días calendario únicamente para corrección de defectos. El mantenimiento continuo, actualizaciones y soporte técnico requieren un acuerdo mensual por separado (Nivel 3). El cliente asume la titularidad de todas las cuentas de infraestructura (Firebase, Vercel, dominio) y es responsable de los costos asociados.</p>
+  </div>
+
+  <div class="footer">
+    <p><span class="brand">Ink & Soul</span> · Tecnología para artistas del tatuaje</p>
+  </div>
+
+</div>
+</body>
+</html>
