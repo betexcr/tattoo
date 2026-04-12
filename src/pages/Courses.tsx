@@ -144,14 +144,14 @@ export default function Courses() {
         )}
 
         {/* Course cards */}
-        <div className="space-y-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {courses.map((course) => (
             <motion.article
               key={course.id}
               variants={cardVariants}
-              className="w-full rounded-2xl overflow-hidden border border-white/5 bg-ink-light hover:border-gold/20 transition-colors"
+              className="w-full rounded-2xl overflow-hidden border border-white/5 bg-ink-light hover:border-gold/20 transition-colors flex flex-col"
             >
-              <div className="relative aspect-[16/9] overflow-hidden">
+              <div className="relative h-40 sm:h-44 shrink-0 overflow-hidden">
                 <img
                   src={course.image_url}
                   alt={course.title}

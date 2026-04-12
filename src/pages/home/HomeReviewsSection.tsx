@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Star, Plus } from 'lucide-react'
 import { useReviews } from '../../hooks/useReviews'
@@ -12,8 +13,9 @@ interface Props {
 }
 
 export default function HomeReviewsSection({ tattooStyles, staticReviews }: Props) {
+  const navigate = useNavigate()
   const { reviews: dbReviews, create: createReview, loading: loadingReviews, error: reviewsError } = useReviews()
-  const { profile } = useAuth()
+  const { profile, user, loading: authLoading } = useAuth()
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [reviewForm, setReviewForm] = useState({ name: '', text: '', rating: 5, style: '' })
   const [reviewSubmitted, setReviewSubmitted] = useState(false)
@@ -31,6 +33,10 @@ export default function HomeReviewsSection({ tattooStyles, staticReviews }: Prop
   const reviews = allReviews.slice(0, 6)
 
   const handleReviewSubmit = async () => {
+    if (!user) {
+      navigate(`/login?returnTo=${encodeURIComponent('/')}`)
+      return
+    }
     if (!reviewForm.text.trim() || !reviewForm.name.trim() || reviewSubmitting) return
     setReviewSubmitting(true)
     try {
@@ -62,7 +68,15 @@ export default function HomeReviewsSection({ tattooStyles, staticReviews }: Prop
         <h2 className="font-serif text-xl text-cream">Lo que dicen nuestros clientes</h2>
         <button
           type="button"
-          onClick={() => { setShowReviewForm(true); if (profile) setReviewForm(f => ({ ...f, name: profile.full_name })) }}
+          onClick={() => {
+            if (authLoading) return
+            if (!user) {
+              navigate(`/login?returnTo=${encodeURIComponent('/')}`)
+              return
+            }
+            setShowReviewForm(true)
+            if (profile) setReviewForm(f => ({ ...f, name: profile.full_name }))
+          }}
           className="flex items-center gap-1 text-xs text-gold hover:text-gold-light transition-colors"
         >
           <Plus size={14} />

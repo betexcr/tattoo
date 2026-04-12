@@ -16,6 +16,7 @@ import { containerVariants, itemVariants, lineVariants, quickActions } from './h
 import FeaturedWorkRow from './home/FeaturedWorkRow'
 import ShopPreviewRow from './home/ShopPreviewRow'
 import HomeReviewsSection from './home/HomeReviewsSection'
+import TattooFlashBackdrop from '../components/TattooFlashBackdrop'
 
 export default function Home() {
   const { config } = useStudioConfig()
@@ -30,7 +31,7 @@ export default function Home() {
 
   const featuredWork = allPortfolioItems.slice(0, 6)
   const featuredProducts = allShopItems.filter((s) => s.in_stock).slice(0, 4)
-  const nextCourse = allCourses[0]
+  const upcomingCourses = allCourses.slice(0, 4)
 
   return (
     <div className="min-h-dvh">
@@ -47,6 +48,7 @@ export default function Home() {
             background: 'linear-gradient(180deg, var(--color-ink) 0%, var(--color-ink-light) 50%, var(--color-gold-dark) 100%)',
           }}
         />
+        <TattooFlashBackdrop variant="hero" />
         <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-gold/5 blur-3xl" />
         <div className="absolute bottom-8 left-0 w-32 h-32 rounded-full bg-gold/3 blur-2xl" />
 
@@ -185,7 +187,7 @@ export default function Home() {
           <div className="h-40 rounded-2xl bg-ink-medium/40 animate-pulse" />
         </div>
       ) : null}
-      {!loadingCourses && nextCourse && (
+      {!loadingCourses && upcomingCourses.length > 0 && (
         <motion.section
           initial="hidden"
           whileInView="visible"
@@ -194,7 +196,9 @@ export default function Home() {
           className="px-5 py-6"
         >
           <motion.div variants={itemVariants} className="flex items-center justify-between mb-4">
-            <h2 className="font-serif text-xl text-cream">Próximo Curso</h2>
+            <h2 className="font-serif text-xl text-cream">
+              {upcomingCourses.length === 1 ? 'Próximo Curso' : 'Próximos Cursos'}
+            </h2>
             <Link
               to="/courses"
               className="text-xs text-gold hover:text-gold-light transition-colors flex items-center gap-1"
@@ -203,31 +207,36 @@ export default function Home() {
               <ChevronRight size={14} />
             </Link>
           </motion.div>
-          <motion.div variants={itemVariants}>
-            <Link to="/courses" className="block group">
-              <div className="relative rounded-2xl overflow-hidden border border-white/5 group-hover:border-gold/20 transition-all">
-                <img
-                  src={nextCourse.image_url}
-                  alt={nextCourse.title}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-40 object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/60 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <p className="font-serif text-cream text-lg">{nextCourse.title}</p>
-                  <div className="flex items-center gap-3 mt-1.5 text-xs text-subtle">
-                    <span>{new Date(nextCourse.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}</span>
-                    <span>·</span>
-                    <span>{nextCourse.duration}</span>
-                    <span>·</span>
-                    <span className="text-gold font-medium">€{nextCourse.price}</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {upcomingCourses.map((course) => (
+              <motion.div key={course.id} variants={itemVariants} className="min-w-0">
+                <Link to="/courses" className="block group h-full">
+                  <div className="relative h-full min-h-[168px] rounded-2xl overflow-hidden border border-white/5 bg-ink-light group-hover:border-gold/20 transition-all">
+                    <img
+                      src={course.image_url}
+                      alt={course.title}
+                      loading="lazy"
+                      decoding="async"
+                      className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                    />
+                    <TattooFlashBackdrop className="z-[1] mix-blend-soft-light" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/75 to-ink/20 z-[2]" />
+                    <div className="absolute bottom-0 left-0 right-0 p-3.5 z-[3]">
+                      <p className="font-serif text-cream text-base leading-snug line-clamp-2">{course.title}</p>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1.5 text-[11px] text-subtle">
+                        <span>{new Date(course.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
+                        <span>·</span>
+                        <span>{course.duration}</span>
+                        <span>·</span>
+                        <span className="text-gold font-medium">€{course.price}</span>
+                      </div>
+                      <p className="text-cream-dark/70 text-[11px] mt-1">{course.spots} plazas</p>
+                    </div>
                   </div>
-                  <p className="text-cream-dark/70 text-xs mt-1.5">{nextCourse.spots} plazas disponibles</p>
-                </div>
-              </div>
-            </Link>
-          </motion.div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
         </motion.section>
       )}
 

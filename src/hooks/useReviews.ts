@@ -4,6 +4,13 @@ import { db, auth } from '../lib/firebase'
 import type { Review } from '../types'
 import { mapFirestoreError } from '../utils/mapFirestoreError'
 
+function firestoreErrorCode(e: unknown): string {
+  if (e && typeof e === 'object' && 'code' in e) {
+    return String((e as { code: string }).code).replace(/^firestore\//, '')
+  }
+  return ''
+}
+
 export function useReviews() {
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
@@ -22,7 +29,13 @@ export function useReviews() {
       setLoading(false)
     } catch (e: unknown) {
       if (fetchIdRef.current !== id) return
-      setError(mapFirestoreError(e))
+      // Public read should succeed; if rules/App Check block guests, avoid a misleading "log in" banner — fall back to empty list (e.g. static reviews on Home).
+      if (firestoreErrorCode(e) === 'permission-denied') {
+        setReviews([])
+        setError(null)
+      } else {
+        setError(mapFirestoreError(e))
+      }
       setLoading(false)
     }
   }, [])

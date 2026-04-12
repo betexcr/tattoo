@@ -61,13 +61,13 @@ const ShopProductCard = memo(function ShopProductCard({ item, onClick }: { item:
       aria-label={`${item.title} — €${item.price}`}
       className={`cursor-pointer group ${!item.in_stock ? 'opacity-50' : ''}`}
     >
-      <div className="relative overflow-hidden rounded-2xl border border-white/5 hover:border-gold/20 transition-all">
+      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-white/5 hover:border-gold/20 transition-all">
         <img
           src={item.image_url}
           alt={item.title}
           loading="lazy"
           decoding="async"
-          className="w-full aspect-[4/5] object-cover transition-transform duration-500 group-hover:scale-105"
+          className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent" />
         <div className="absolute top-2.5 left-2.5">
@@ -89,11 +89,11 @@ const ShopProductCard = memo(function ShopProductCard({ item, onClick }: { item:
             </span>
           </div>
         )}
-        <div className="absolute bottom-0 left-0 right-0 p-3">
-          <h3 className="font-serif text-cream text-sm font-medium line-clamp-2 leading-snug mb-1">
+        <div className="absolute bottom-0 left-0 right-0 p-2.5 sm:p-3">
+          <h3 className="font-serif text-cream text-xs sm:text-sm font-medium line-clamp-2 leading-snug mb-0.5">
             {item.title}
           </h3>
-          <span className="text-gold font-semibold text-base">€{item.price}</span>
+          <span className="text-gold font-semibold text-sm sm:text-base">€{item.price}</span>
         </div>
       </div>
     </motion.article>
@@ -351,7 +351,7 @@ export default function Shop() {
         initial="hidden"
         animate="visible"
         variants={containerVariants}
-        className="grid grid-cols-2 gap-3 px-5"
+        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 px-5 max-w-6xl mx-auto w-full"
       >
         {filteredItems.map((item) => (
           <ShopProductCard key={item.id} item={item} onClick={openDetail} />
