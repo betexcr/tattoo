@@ -543,7 +543,7 @@ export default function Shop() {
               role="dialog"
               aria-modal="true"
               aria-label="Detalle del producto"
-              className="pointer-events-auto flex max-h-[min(92dvh,720px)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-white/10 bg-ink-light shadow-2xl focus:outline-none"
+              className="pointer-events-auto flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-white/10 bg-ink-light shadow-2xl focus:outline-none"
             >
               <div className="flex justify-center pt-2.5 pb-1 shrink-0">
                 <div className="h-1 w-10 rounded-full bg-white/15" aria-hidden />
@@ -573,13 +573,13 @@ export default function Shop() {
               <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                 {/* Image “stage” — rounded tray + contain, similar to reference PDPs */}
                 <div className="px-4 pb-2 sm:px-5">
-                  <div className="flex min-h-[200px] items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.07] to-ink-medium/90 p-5 sm:min-h-[240px] sm:p-7">
+                  <div className="flex min-h-[180px] items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.07] to-ink-medium/90 p-5 sm:p-6">
                     <ImageWithPlaceholder
                       id={selectedItem.id}
                       src={selectedItem.image_url}
                       variant="shop"
                       alt={selectedItem.title}
-                      className="max-h-[min(48dvh,380px)] w-full object-contain object-center drop-shadow-lg"
+                      className="max-h-[min(36dvh,320px)] w-full object-contain object-center drop-shadow-lg"
                     />
                   </div>
                   <div className="mt-3 flex justify-center" aria-hidden>
