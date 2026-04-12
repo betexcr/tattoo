@@ -5,6 +5,7 @@ import { useScrollLock } from '../hooks/useScrollLock'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
+import ImageWithPlaceholder from '../components/ImageWithPlaceholder'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { usePortfolio } from '../hooks/usePortfolio'
 import type { PortfolioItem } from '../types'
@@ -34,11 +35,11 @@ const PortfolioCard = memo(function PortfolioCard({ item, onClick }: { item: Por
       className="break-inside-avoid mb-3 cursor-pointer group"
     >
       <div className="relative overflow-hidden rounded-xl border border-white/5 hover:border-gold/30 transition-colors">
-        <img
+        <ImageWithPlaceholder
+          id={item.id}
           src={item.image_url}
+          variant="portfolio"
           alt={item.title}
-          loading="lazy"
-          decoding="async"
           className="w-full aspect-[4/5] object-cover transition-transform duration-300 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent opacity-80" />
@@ -182,11 +183,11 @@ export default function Portfolio() {
               className="w-full max-w-md bg-ink-light rounded-2xl overflow-hidden border border-white/10 shadow-2xl focus:outline-none"
             >
               <div className="relative">
-                <img
+                <ImageWithPlaceholder
+                  id={selectedItem.id}
                   src={selectedItem.image_url}
+                  variant="portfolio"
                   alt={selectedItem.title}
-                  loading="lazy"
-                  decoding="async"
                   className="w-full aspect-[4/5] object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent opacity-60" />

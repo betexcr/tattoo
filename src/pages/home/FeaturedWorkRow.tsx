@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from './constants'
+import ImageWithPlaceholder from '../../components/ImageWithPlaceholder'
 import type { PortfolioItem } from '../../types'
 
 interface Props {
@@ -46,11 +47,11 @@ export default memo(function FeaturedWorkRow({ items, loading }: Props) {
             className="shrink-0 w-36 group"
           >
             <div className="relative w-36 h-48 rounded-xl overflow-hidden border border-white/5 group-hover:border-gold/30 transition-all">
-              <img
+              <ImageWithPlaceholder
+                id={item.id}
                 src={item.image_url}
+                variant="portfolio"
                 alt={item.title}
-                loading="lazy"
-                decoding="async"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent" />

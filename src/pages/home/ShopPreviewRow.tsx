@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from './constants'
+import ImageWithPlaceholder from '../../components/ImageWithPlaceholder'
 import type { ShopItem } from '../../types'
 
 interface Props {
@@ -44,11 +45,11 @@ export default memo(function ShopPreviewRow({ items, loading }: Props) {
             items.map((item) => (
               <Link key={item.id} to="/shop" className="group min-w-0">
                 <div className="relative aspect-square rounded-xl overflow-hidden border border-white/5 group-hover:border-gold/30 transition-all">
-                  <img
+                  <ImageWithPlaceholder
+                    id={item.id}
                     src={item.image_url}
+                    variant="shop"
                     alt={item.title}
-                    loading="lazy"
-                    decoding="async"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/30 to-transparent" />

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react'
+import { createPortal } from 'react-dom'
 import { useScrollLock } from '../hooks/useScrollLock'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -6,6 +7,7 @@ import { ShoppingCart, X, Frame, Shirt, Footprints, Watch, Trash2, Search, Chevr
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import PageHeader from '../components/PageHeader'
+import ImageWithPlaceholder from '../components/ImageWithPlaceholder'
 import { useShop } from '../hooks/useShop'
 import { useOrders } from '../hooks/useOrders'
 import { useRequireAuth } from '../hooks/useRequireAuth'
@@ -62,11 +64,11 @@ const ShopProductCard = memo(function ShopProductCard({ item, onClick }: { item:
       className={`cursor-pointer group ${!item.in_stock ? 'opacity-50' : ''}`}
     >
       <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-white/5 hover:border-gold/20 transition-all">
-        <img
+        <ImageWithPlaceholder
+          id={item.id}
           src={item.image_url}
+          variant="shop"
           alt={item.title}
-          loading="lazy"
-          decoding="async"
           className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent" />
@@ -364,7 +366,9 @@ export default function Shop() {
         </div>
       )}
 
-      {/* Cart drawer */}
+      {/* Cart + product modals: portal to body so they stack above Layout bottom nav (z-50) */}
+      {createPortal(
+        <>
       <AnimatePresence>
         {showCart && (
           <>
@@ -373,7 +377,7 @@ export default function Shop() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={closeCartDrawer}
-              className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-sm"
+              className="fixed inset-0 z-[100] bg-ink/80 backdrop-blur-sm"
             />
             <motion.div
               ref={cartPanelRef}
@@ -385,7 +389,7 @@ export default function Shop() {
               role="dialog"
               aria-modal="true"
               aria-label="Carrito de compras"
-              className="fixed bottom-0 left-0 right-0 z-50 max-h-[90dvh] bg-ink-light rounded-t-3xl overflow-hidden border-t border-white/10 shadow-2xl flex flex-col focus:outline-none"
+              className="fixed bottom-0 left-0 right-0 z-[100] max-h-[90dvh] bg-ink-light rounded-t-3xl overflow-hidden border-t border-white/10 shadow-2xl flex flex-col focus:outline-none"
             >
               <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 rounded-full bg-white/10" />
@@ -469,11 +473,11 @@ export default function Shop() {
                           key={`${line.item.id}-${line.size}-${line.color}-${i}`}
                           className="flex gap-3 p-3 rounded-xl bg-ink border border-white/5"
                         >
-                          <img
+                          <ImageWithPlaceholder
+                            id={line.item.id}
                             src={line.item.image_url}
+                            variant="shop"
                             alt={line.item.title}
-                            loading="lazy"
-                            decoding="async"
                             className="w-14 h-14 rounded-lg object-cover shrink-0"
                           />
                           <div className="flex-1 min-w-0">
@@ -516,7 +520,6 @@ export default function Shop() {
         )}
       </AnimatePresence>
 
-      {/* Detail modal */}
       <AnimatePresence>
         {selectedItem && (
           <>
@@ -525,7 +528,7 @@ export default function Shop() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => { setSelectedItem(null); setSelectedSize(''); setSelectedColor('') }}
-              className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-sm"
+              className="fixed inset-0 z-[100] bg-ink/80 backdrop-blur-sm"
             />
             <motion.div
               ref={detailPanelRef}
@@ -537,7 +540,7 @@ export default function Shop() {
               role="dialog"
               aria-modal="true"
               aria-label="Detalle del producto"
-              className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[92dvh] flex-col bg-ink-light rounded-t-3xl border-t border-white/10 shadow-2xl focus:outline-none sm:left-1/2 sm:max-w-md sm:-translate-x-1/2 sm:rounded-2xl"
+              className="fixed inset-x-0 bottom-0 z-[100] flex max-h-[92dvh] flex-col bg-ink-light rounded-t-3xl border-t border-white/10 shadow-2xl focus:outline-none sm:inset-x-auto sm:left-1/2 sm:max-w-md sm:-translate-x-1/2 sm:rounded-2xl"
             >
               <div className="flex justify-center pt-2.5 pb-1 shrink-0">
                 <div className="h-1 w-10 rounded-full bg-white/15" aria-hidden />
@@ -568,11 +571,11 @@ export default function Shop() {
                 {/* Image “stage” — rounded tray + contain, similar to reference PDPs */}
                 <div className="px-4 pb-2 sm:px-5">
                   <div className="flex min-h-[200px] items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.07] to-ink-medium/90 p-5 sm:min-h-[240px] sm:p-7">
-                    <img
+                    <ImageWithPlaceholder
+                      id={selectedItem.id}
                       src={selectedItem.image_url}
+                      variant="shop"
                       alt={selectedItem.title}
-                      loading="lazy"
-                      decoding="async"
                       className="max-h-[min(48dvh,380px)] w-full object-contain object-center drop-shadow-lg"
                     />
                   </div>
@@ -725,6 +728,9 @@ export default function Shop() {
           </>
         )}
       </AnimatePresence>
+        </>,
+        document.body,
+      )}
     </div>
   )
 }
