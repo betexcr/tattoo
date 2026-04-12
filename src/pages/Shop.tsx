@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react'
 import { useScrollLock } from '../hooks/useScrollLock'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShoppingCart, X, Frame, Shirt, Footprints, Watch, Trash2, Search } from 'lucide-react'
+import { ShoppingCart, X, Frame, Shirt, Footprints, Watch, Trash2, Search, ChevronLeft } from 'lucide-react'
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import PageHeader from '../components/PageHeader'
@@ -345,13 +345,13 @@ export default function Shop() {
         </motion.div>
       )}
 
-      {/* Product grid */}
+      {/* Product grid — auto-fill minmax so columns use full width (same band as search), not fixed skinny cols */}
       <motion.div
         key={categoryFilter}
         initial="hidden"
         animate="visible"
         variants={containerVariants}
-        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 px-5 max-w-6xl mx-auto w-full"
+        className="grid w-full gap-3 sm:gap-4 px-5 [grid-template-columns:repeat(auto-fill,minmax(min(100%,158px),1fr))]"
       >
         {filteredItems.map((item) => (
           <ShopProductCard key={item.id} item={item} onClick={openDetail} />
@@ -537,54 +537,86 @@ export default function Shop() {
               role="dialog"
               aria-modal="true"
               aria-label="Detalle del producto"
-              className="fixed bottom-0 left-0 right-0 z-50 max-h-[90dvh] bg-ink-light rounded-t-3xl overflow-hidden border-t border-white/10 shadow-2xl flex flex-col focus:outline-none"
+              className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[92dvh] flex-col bg-ink-light rounded-t-3xl border-t border-white/10 shadow-2xl focus:outline-none sm:left-1/2 sm:max-w-md sm:-translate-x-1/2 sm:rounded-2xl"
             >
-              {/* Close handle */}
-              <div className="flex justify-center pt-3 pb-1">
-                <div className="w-10 h-1 rounded-full bg-white/10" />
+              <div className="flex justify-center pt-2.5 pb-1 shrink-0">
+                <div className="h-1 w-10 rounded-full bg-white/15" aria-hidden />
               </div>
 
-              <div className="flex-1 overflow-y-auto">
-                {/* Image — bounded frame so the sheet is not one giant square */}
-                <div className="px-5 pt-1 pb-3 flex flex-col items-center">
-                  <div className="relative w-full max-w-[300px] h-[min(32vh,240px)] sm:h-[min(34vh,280px)] rounded-2xl overflow-hidden border border-white/10 bg-ink ring-1 ring-white/5 shadow-inner flex items-center justify-center p-2 sm:p-3">
+              {/* Top bar — like reference app headers */}
+              <div className="flex shrink-0 items-center justify-between px-4 pb-2 pt-1 sm:px-5">
+                <button
+                  type="button"
+                  onClick={() => { setSelectedItem(null); setSelectedSize(''); setSelectedColor('') }}
+                  aria-label="Volver a la tienda"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-ink text-cream transition-colors hover:border-gold/30 hover:bg-ink-medium"
+                >
+                  <ChevronLeft size={20} strokeWidth={1.5} />
+                </button>
+                <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-subtle">Producto</span>
+                <button
+                  type="button"
+                  onClick={() => { setSelectedItem(null); setSelectedSize(''); setSelectedColor('') }}
+                  aria-label="Cerrar"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-ink text-cream transition-colors hover:border-gold/30"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                {/* Image “stage” — rounded tray + contain, similar to reference PDPs */}
+                <div className="px-4 pb-2 sm:px-5">
+                  <div className="flex min-h-[200px] items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.07] to-ink-medium/90 p-5 sm:min-h-[240px] sm:p-7">
                     <img
                       src={selectedItem.image_url}
                       alt={selectedItem.title}
                       loading="lazy"
                       decoding="async"
-                      className="max-w-full max-h-full w-auto h-auto object-contain object-center rounded-lg"
+                      className="max-h-[min(48dvh,380px)] w-full object-contain object-center drop-shadow-lg"
                     />
-                    <div className="absolute top-2.5 left-2.5 z-[1]">
-                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-medium uppercase tracking-wider shadow-sm ${CATEGORY_COLORS[selectedItem.category]}`}>
-                        {CATEGORY_LABELS[selectedItem.category]}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => { setSelectedItem(null); setSelectedSize(''); setSelectedColor('') }}
-                      aria-label="Cerrar detalle de producto"
-                      className="absolute top-2.5 right-2.5 z-[1] w-9 h-9 rounded-full bg-ink/85 backdrop-blur-sm border border-white/10 flex items-center justify-center text-cream hover:bg-ink transition-colors"
-                    >
-                      <X size={15} />
-                    </button>
+                  </div>
+                  <div className="mt-3 flex justify-center" aria-hidden>
+                    <span className="h-1 w-8 rounded-full bg-gold/70" />
                   </div>
                 </div>
 
-                <div className="px-5 pb-5 space-y-4">
-                  {/* Title & price */}
+                <div className="space-y-5 px-4 pb-6 pt-2 sm:px-5">
                   <div>
-                    <h2 className="font-serif text-xl text-cream mb-1">{selectedItem.title}</h2>
-                    <span className="text-gold font-serif text-2xl">€{selectedItem.price}</span>
+                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gold/90">
+                      {CATEGORY_LABELS[selectedItem.category]}
+                    </p>
+                    <h2 className="font-serif text-[1.35rem] leading-snug tracking-tight text-cream sm:text-2xl">
+                      {selectedItem.title}
+                    </h2>
+                    <p className="mt-3 font-sans text-3xl font-semibold tracking-tight text-gold sm:text-[2rem]">
+                      €{selectedItem.price}
+                    </p>
                   </div>
 
-                  {/* Description */}
-                  <p className="text-cream-dark text-sm leading-relaxed">{selectedItem.description}</p>
+                  <p className="text-sm leading-relaxed text-cream-dark/95">{selectedItem.description}</p>
 
-                  {/* Size selector */}
+                  <div className="flex flex-wrap gap-2">
+                    <span
+                      className={`rounded-full border px-3 py-1.5 text-[11px] font-medium ${
+                        selectedItem.in_stock
+                          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                          : 'border-red-500/25 bg-red-500/10 text-red-400'
+                      }`}
+                    >
+                      {selectedItem.in_stock ? 'En stock' : 'Agotado'}
+                    </span>
+                    <span className="rounded-full border border-white/10 bg-ink px-3 py-1.5 text-[11px] text-cream-dark">
+                      Envío acordado al confirmar
+                    </span>
+                  </div>
+
                   {selectedItem.sizes && selectedItem.sizes.length > 0 && (
                     <div>
-                      <p className="text-xs text-subtle mb-2 font-medium">Talla</p>
+                      <div className="mb-2.5 flex items-center justify-between">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-cream">Talla</p>
+                        <span className="text-[10px] text-subtle">Elige una</span>
+                      </div>
                       <div className="flex flex-wrap gap-2">
                         {selectedItem.sizes.map((size) => (
                           <button
@@ -592,10 +624,10 @@ export default function Shop() {
                             key={size}
                             onClick={() => setSelectedSize(size)}
                             aria-pressed={selectedSize === size}
-                            className={`min-w-[42px] h-10 px-3 rounded-xl border text-sm font-medium transition-all ${
+                            className={`min-h-[44px] min-w-[48px] rounded-xl border px-4 text-sm font-medium transition-all ${
                               selectedSize === size
-                                ? 'border-gold bg-gold/10 text-gold'
-                                : 'border-white/10 bg-ink text-cream hover:border-white/20'
+                                ? 'border-gold bg-gold/15 text-gold shadow-sm shadow-gold/10'
+                                : 'border-white/12 bg-ink text-cream hover:border-white/25'
                             }`}
                           >
                             {size}
@@ -605,11 +637,13 @@ export default function Shop() {
                     </div>
                   )}
 
-                  {/* Color selector */}
                   {selectedItem.colors && selectedItem.colors.length > 0 && (
                     <div>
-                      <p className="text-xs text-subtle mb-2 font-medium">Color: <span className="text-cream">{selectedColor}</span></p>
-                      <div className="flex gap-2">
+                      <div className="mb-2.5 flex items-center justify-between">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-cream">Color</p>
+                        <span className="text-[11px] text-cream-dark">{selectedColor || '—'}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
                         {selectedItem.colors.map((color) => (
                           <button
                             key={color}
@@ -617,10 +651,10 @@ export default function Shop() {
                             onClick={() => setSelectedColor(color)}
                             aria-label={color}
                             aria-pressed={selectedColor === color}
-                            className={`px-4 py-2 rounded-xl border text-xs font-medium transition-all ${
+                            className={`rounded-xl border px-4 py-2.5 text-xs font-medium transition-all ${
                               selectedColor === color
-                                ? 'border-gold bg-gold/10 text-gold'
-                                : 'border-white/10 bg-ink text-cream-dark hover:border-white/20'
+                                ? 'border-gold bg-gold/15 text-gold'
+                                : 'border-white/12 bg-ink text-cream-dark hover:border-white/25'
                             }`}
                           >
                             {color}
@@ -631,31 +665,33 @@ export default function Shop() {
                   )}
 
                   {!selectedItem.in_stock && (
-                    <div className="p-3 rounded-xl bg-red-500/5 border border-red-500/10 space-y-2">
+                    <div className="space-y-3 rounded-2xl border border-red-500/15 bg-red-500/[0.06] p-4">
                       {notifiedItems.has(selectedItem.id) ? (
-                        <p className="text-gold text-xs font-medium">Te avisaremos cuando esté disponible.</p>
+                        <p className="text-sm font-medium text-gold">Te avisaremos cuando esté disponible.</p>
                       ) : (
                         <>
-                          <p className="text-red-400 text-xs font-medium">Este producto está agotado. Déjanos tu correo y te avisamos cuando vuelva.</p>
-                          <div className="flex gap-2 mt-2">
+                          <p className="text-sm leading-snug text-red-400/95">
+                            Agotado. Déjanos tu correo y te avisamos cuando vuelva.
+                          </p>
+                          <div className="flex flex-col gap-2 sm:flex-row">
                             <input
                               type="email"
                               placeholder="tu@email.com"
                               aria-label="Correo electrónico para notificación de stock"
                               value={notifyEmail}
                               onChange={(e) => setNotifyEmail(e.target.value)}
-                              className="flex-1 px-3 py-2 rounded-lg bg-ink border border-white/10 text-cream placeholder:text-subtle text-xs"
+                              className="min-h-[44px] flex-1 rounded-xl border border-white/10 bg-ink px-3 text-sm text-cream placeholder:text-subtle"
                             />
                             <button
                               type="button"
                               onClick={handleNotifyStock}
                               disabled={!notifyEmail.trim() || notifyLoading}
-                              className="px-4 py-2 rounded-lg bg-gold text-ink text-xs font-medium hover:bg-gold-light disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                              className="min-h-[44px] shrink-0 rounded-xl bg-gold px-5 text-sm font-medium text-ink hover:bg-gold-light disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {notifyLoading ? 'Enviando...' : 'Notificarme'}
                             </button>
                           </div>
-                          {notifyError && <p className="text-red-400 text-xs mt-1">{notifyError}</p>}
+                          {notifyError && <p className="text-xs text-red-400">{notifyError}</p>}
                         </>
                       )}
                     </div>
@@ -663,20 +699,27 @@ export default function Shop() {
                 </div>
               </div>
 
-              {/* Action */}
-              <div className="p-5 pt-3 pb-[max(2rem,env(safe-area-inset-bottom))] border-t border-white/5">
-                <button
-                  type="button"
-                  onClick={handleAddToCart}
-                  disabled={!selectedItem.in_stock}
-                  className={`w-full py-3.5 rounded-2xl font-medium transition-all text-sm ${
-                    selectedItem.in_stock
-                      ? 'bg-gold text-ink hover:bg-gold-light active:scale-[0.98] shadow-lg shadow-gold/20'
-                      : 'bg-ink-medium text-subtle cursor-not-allowed'
-                  }`}
-                >
-                  {selectedItem.in_stock ? `Añadir al Carrito · €${selectedItem.price}` : 'Agotado'}
-                </button>
+              {/* Sticky-style bar — price + primary CTA like reference footers */}
+              <div className="shrink-0 border-t border-white/10 bg-ink-light/95 px-4 py-3 backdrop-blur-md sm:px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                <div className="flex items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] uppercase tracking-wider text-subtle">Precio</p>
+                    <p className="truncate font-semibold text-gold text-xl">€{selectedItem.price}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddToCart}
+                    disabled={!selectedItem.in_stock}
+                    className={`flex min-h-[48px] flex-[1.4] items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-all ${
+                      selectedItem.in_stock
+                        ? 'bg-gold text-ink shadow-lg shadow-gold/25 hover:bg-gold-light active:scale-[0.99]'
+                        : 'cursor-not-allowed bg-ink-medium text-subtle'
+                    }`}
+                  >
+                    <ShoppingCart size={18} strokeWidth={1.75} />
+                    {selectedItem.in_stock ? 'Añadir al carrito' : 'Agotado'}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </>
