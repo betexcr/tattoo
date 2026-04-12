@@ -545,31 +545,33 @@ export default function Shop() {
               </div>
 
               <div className="flex-1 overflow-y-auto">
-                {/* Image */}
-                <div className="relative mx-4 rounded-2xl overflow-hidden">
-                  <img
-                    src={selectedItem.image_url}
-                    alt={selectedItem.title}
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full aspect-square object-cover"
-                  />
-                  <div className="absolute top-3 left-3">
-                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-medium uppercase tracking-wider ${CATEGORY_COLORS[selectedItem.category]}`}>
-                      {CATEGORY_LABELS[selectedItem.category]}
-                    </span>
+                {/* Image — bounded frame so the sheet is not one giant square */}
+                <div className="px-5 pt-1 pb-3 flex flex-col items-center">
+                  <div className="relative w-full max-w-[300px] h-[min(32vh,240px)] sm:h-[min(34vh,280px)] rounded-2xl overflow-hidden border border-white/10 bg-ink ring-1 ring-white/5 shadow-inner flex items-center justify-center p-2 sm:p-3">
+                    <img
+                      src={selectedItem.image_url}
+                      alt={selectedItem.title}
+                      loading="lazy"
+                      decoding="async"
+                      className="max-w-full max-h-full w-auto h-auto object-contain object-center rounded-lg"
+                    />
+                    <div className="absolute top-2.5 left-2.5 z-[1]">
+                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-medium uppercase tracking-wider shadow-sm ${CATEGORY_COLORS[selectedItem.category]}`}>
+                        {CATEGORY_LABELS[selectedItem.category]}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedItem(null); setSelectedSize(''); setSelectedColor('') }}
+                      aria-label="Cerrar detalle de producto"
+                      className="absolute top-2.5 right-2.5 z-[1] w-9 h-9 rounded-full bg-ink/85 backdrop-blur-sm border border-white/10 flex items-center justify-center text-cream hover:bg-ink transition-colors"
+                    >
+                      <X size={15} />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => { setSelectedItem(null); setSelectedSize(''); setSelectedColor('') }}
-                    aria-label="Cerrar detalle de producto"
-                    className="absolute top-3 right-3 w-10 h-10 rounded-full bg-ink/70 backdrop-blur-sm flex items-center justify-center text-cream"
-                  >
-                    <X size={16} />
-                  </button>
                 </div>
 
-                <div className="p-5 space-y-4">
+                <div className="px-5 pb-5 space-y-4">
                   {/* Title & price */}
                   <div>
                     <h2 className="font-serif text-xl text-cream mb-1">{selectedItem.title}</h2>

@@ -1,5 +1,5 @@
 const firestoreErrorMessages: Record<string, string> = {
-  'permission-denied': 'Inicia sesión para realizar esta acción',
+  'permission-denied': 'No se pudo cargar el contenido.',
   'not-found': 'No se encontró el recurso solicitado',
   unavailable: 'Servicio no disponible. Inténtalo de nuevo más tarde',
   'deadline-exceeded': 'La operación tardó demasiado. Inténtalo de nuevo',

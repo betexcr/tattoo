@@ -14,7 +14,7 @@ interface Props {
 
 export default function HomeReviewsSection({ tattooStyles, staticReviews }: Props) {
   const navigate = useNavigate()
-  const { reviews: dbReviews, create: createReview, loading: loadingReviews, error: reviewsError } = useReviews()
+  const { reviews: dbReviews, create: createReview, loading: loadingReviews } = useReviews()
   const { profile, user, loading: authLoading } = useAuth()
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [reviewForm, setReviewForm] = useState({ name: '', text: '', rating: 5, style: '' })
@@ -144,9 +144,6 @@ export default function HomeReviewsSection({ tattooStyles, staticReviews }: Prop
       </AnimatePresence>
 
       <div className="space-y-3">
-        {reviewsError && (
-          <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{reviewsError}</div>
-        )}
         {loadingReviews ? (
           Array.from({ length: 2 }).map((_, i) => (
             <div key={i} className="h-24 rounded-xl bg-ink-medium/40 animate-pulse" />

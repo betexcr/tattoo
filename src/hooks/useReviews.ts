@@ -4,11 +4,25 @@ import { db, auth } from '../lib/firebase'
 import type { Review } from '../types'
 import { mapFirestoreError } from '../utils/mapFirestoreError'
 
-function firestoreErrorCode(e: unknown): string {
-  if (e && typeof e === 'object' && 'code' in e) {
-    return String((e as { code: string }).code).replace(/^firestore\//, '')
+const ACCESS_DENIED_CODES = new Set(['permission-denied', 'unauthenticated'])
+
+/** Normalize Firestore / Firebase client errors (incl. wrapped `cause`). */
+function isFirestoreAccessDenied(e: unknown): boolean {
+  let cur: unknown = e
+  for (let depth = 0; depth < 4 && cur != null; depth++) {
+    if (typeof cur === 'object' && cur !== null && 'code' in cur) {
+      const raw = String((cur as { code: string }).code).replace(/^firestore\//, '')
+      if (ACCESS_DENIED_CODES.has(raw)) return true
+    }
+    if (typeof cur === 'object' && cur !== null && 'cause' in cur) {
+      cur = (cur as { cause: unknown }).cause
+      continue
+    }
+    break
   }
-  return ''
+  const msg = e instanceof Error ? e.message.toLowerCase() : ''
+  if (msg.includes('permission') && (msg.includes('denied') || msg.includes('insufficient'))) return true
+  return false
 }
 
 export function useReviews() {
@@ -29,8 +43,8 @@ export function useReviews() {
       setLoading(false)
     } catch (e: unknown) {
       if (fetchIdRef.current !== id) return
-      // Public read should succeed; if rules/App Check block guests, avoid a misleading "log in" banner — fall back to empty list (e.g. static reviews on Home).
-      if (firestoreErrorCode(e) === 'permission-denied') {
+      // If rules / App Check block reads, fail quietly: static reviews on Home still show; no error banner.
+      if (isFirestoreAccessDenied(e)) {
         setReviews([])
         setError(null)
       } else {
