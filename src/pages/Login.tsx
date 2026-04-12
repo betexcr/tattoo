@@ -1,26 +1,18 @@
-import { useState, useEffect } from 'react'
-import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom'
+import { useState } from 'react'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
 
 export default function Login() {
-  const { signIn, signUp, resetPassword } = useAuth()
+  const { signIn, resetPassword } = useAuth()
   const { config } = useStudioConfig()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const location = useLocation()
-  const [mode, setMode] = useState<'login' | 'signup' | 'reset'>(
-    location.hash === '#signup' ? 'signup' : 'login'
-  )
-
-  useEffect(() => {
-    if (location.hash === '#signup') setMode('signup')
-  }, [location.hash])
+  const [mode, setMode] = useState<'login' | 'reset'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [fullName, setFullName] = useState('')
   const [showPw, setShowPw] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -47,24 +39,11 @@ export default function Login() {
         }
         return
       }
-      if (mode === 'login') {
-        const { error: err } = await signIn(email, password)
-        if (err) {
-          setError(err)
-        } else {
-          navigate(getSafeReturnTo())
-        }
+      const { error: err } = await signIn(email, password)
+      if (err) {
+        setError(err)
       } else {
-        if (!fullName.trim()) {
-          setError('Ingresa tu nombre completo')
-          return
-        }
-        const { error: err } = await signUp(email, password, fullName)
-        if (err) {
-          setError(err)
-        } else {
-          navigate(getSafeReturnTo())
-        }
+        navigate(getSafeReturnTo())
       }
     } finally {
       setLoading(false)
@@ -84,31 +63,15 @@ export default function Login() {
         </Link>
 
         <h1 className="font-serif text-3xl text-cream mb-2">
-          {mode === 'login' ? 'Iniciar Sesión' : mode === 'signup' ? 'Crear Cuenta' : 'Recuperar Contraseña'}
+          {mode === 'login' ? 'Iniciar Sesión' : 'Recuperar Contraseña'}
         </h1>
         <p className="text-cream/50 mb-8 text-sm">
           {mode === 'login'
             ? `Accede a tu cuenta de ${config.studio_name}`
-            : mode === 'signup'
-              ? 'Únete para reservar citas y más'
-              : 'Ingresa tu correo y te enviaremos un enlace'}
+            : 'Ingresa tu correo y te enviaremos un enlace'}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {mode === 'signup' && (
-            <div>
-              <label htmlFor="login-fullname" className="text-cream/60 text-xs block mb-1">Nombre completo</label>
-              <input
-                id="login-fullname"
-                type="text"
-                value={fullName}
-                onChange={e => setFullName(e.target.value)}
-                className="w-full bg-ink-light border border-gold/20 rounded-xl px-4 py-3 text-cream focus:border-gold/60 outline-none transition-colors"
-                placeholder="Tu nombre"
-              />
-            </div>
-          )}
-
           <div>
             <label htmlFor="login-email" className="text-cream/60 text-xs block mb-1">Correo electrónico</label>
             <input
@@ -177,27 +140,15 @@ export default function Login() {
             className="w-full bg-gold text-ink font-semibold py-3 rounded-xl hover:bg-gold/90 transition-colors disabled:opacity-50"
           >
             {loading
-              ? mode === 'login' ? 'Entrando...' : mode === 'signup' ? 'Creando cuenta...' : 'Enviando enlace...'
-              : mode === 'login' ? 'Entrar' : mode === 'signup' ? 'Crear cuenta' : 'Enviar enlace'}
+              ? mode === 'login' ? 'Entrando...' : 'Enviando enlace...'
+              : mode === 'login' ? 'Entrar' : 'Enviar enlace'}
           </button>
         </form>
 
         <div className="text-cream/40 text-sm text-center mt-6 space-y-2">
           {mode === 'login' && (
-            <>
-              <p>
-                ¿No tienes cuenta?{' '}
-                <button type="button" onClick={() => { setMode('signup'); setError(''); setSuccess('') }} className="text-gold hover:underline">Regístrate</button>
-              </p>
-              <p>
-                <button type="button" onClick={() => { setMode('reset'); setError(''); setSuccess('') }} className="text-gold/70 hover:text-gold hover:underline">¿Olvidaste tu contraseña?</button>
-              </p>
-            </>
-          )}
-          {mode === 'signup' && (
             <p>
-              ¿Ya tienes cuenta?{' '}
-              <button type="button" onClick={() => { setMode('login'); setError(''); setSuccess('') }} className="text-gold hover:underline">Inicia sesión</button>
+              <button type="button" onClick={() => { setMode('reset'); setError(''); setSuccess('') }} className="text-gold/70 hover:text-gold hover:underline">¿Olvidaste tu contraseña?</button>
             </p>
           )}
           {mode === 'reset' && (

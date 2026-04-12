@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, CalendarPlus, Check, Phone, MessageCircle, CheckCheck, AlertTriangle, LogIn, UserPlus } from 'lucide-react'
+import { Plus, X, CalendarPlus, Check, Phone, MessageCircle, CheckCheck, AlertTriangle, LogIn } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
@@ -179,7 +179,7 @@ export default function Agenda() {
           </div>
           <h2 className="font-serif text-xl text-cream mb-2">Tus citas en un solo lugar</h2>
           <p className="text-cream-dark text-sm leading-relaxed max-w-xs mb-8">
-            Crea una cuenta para reservar citas, ver su estado y recibir actualizaciones del estudio.
+            Inicia sesión para reservar citas, ver su estado y recibir actualizaciones del estudio.
           </p>
           <div className="flex flex-col gap-3 w-full max-w-xs">
             <Link
@@ -189,15 +189,7 @@ export default function Agenda() {
               <LogIn size={16} />
               Iniciar sesión
             </Link>
-            <Link
-              to={`/login?returnTo=${encodeURIComponent('/agenda')}#signup`}
-              className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl border border-gold/30 text-gold font-medium text-sm hover:bg-gold/5 transition-colors"
-            >
-              <UserPlus size={16} />
-              Crear cuenta
-            </Link>
           </div>
-          <p className="text-subtle text-[11px] mt-4">Es rápido y gratuito</p>
         </div>
       </div>
     )

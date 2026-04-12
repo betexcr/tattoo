@@ -29,6 +29,7 @@ const BookAppointment = lazy(() => import('./pages/BookAppointment'))
 const Chat = lazy(() => import('./pages/Chat'))
 const MyAccount = lazy(() => import('./pages/MyAccount'))
 const Login = lazy(() => import('./pages/Login'))
+const Demo = lazy(() => import('./pages/Demo'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 function ScrollToTop() {
@@ -63,6 +64,7 @@ export default function App() {
       </Route>
       <Route path="/book" element={<RouteErrorBoundary section="booking"><BookAppointment /></RouteErrorBoundary>} />
       <Route path="/login" element={<RouteErrorBoundary section="login"><Login /></RouteErrorBoundary>} />
+      <Route path="/demo" element={<RouteErrorBoundary section="public"><Demo /></RouteErrorBoundary>} />
       <Route element={<RequireArtist />}>
         <Route element={<StudioLayout />}>
           <Route path="/studio" element={<RouteErrorBoundary section="studio"><Dashboard /></RouteErrorBoundary>} />

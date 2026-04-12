@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { LogIn, UserPlus, X } from 'lucide-react'
+import { LogIn, X } from 'lucide-react'
 import { useScrollLock } from '../hooks/useScrollLock'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
@@ -55,31 +55,17 @@ export default function AuthPromptModal({ returnTo, onClose }: Props) {
         </div>
 
         <p className="text-cream-dark/70 text-sm mb-6 leading-relaxed">
-          Inicia sesión o crea una cuenta para reservar citas, guardar diseños, comprar en la tienda y más.
+          Inicia sesión para reservar citas, guardar diseños, comprar en la tienda y más.
         </p>
 
-        <div className="space-y-3">
-          <Link
-            to={`/login${qs}`}
-            onClick={onClose}
-            className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gold text-ink font-medium text-sm hover:bg-gold-light transition-colors active:scale-[0.98]"
-          >
-            <LogIn size={16} />
-            Iniciar sesión
-          </Link>
-          <Link
-            to={`/login${qs}#signup`}
-            onClick={onClose}
-            className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl border border-gold/30 text-gold font-medium text-sm hover:bg-gold/5 transition-colors active:scale-[0.98]"
-          >
-            <UserPlus size={16} />
-            Crear cuenta
-          </Link>
-        </div>
-
-        <p className="text-subtle text-[11px] text-center mt-4">
-          Es rápido y gratuito
-        </p>
+        <Link
+          to={`/login${qs}`}
+          onClick={onClose}
+          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gold text-ink font-medium text-sm hover:bg-gold-light transition-colors active:scale-[0.98]"
+        >
+          <LogIn size={16} />
+          Iniciar sesión
+        </Link>
       </motion.div>
     </motion.div>
   )

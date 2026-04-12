@@ -141,7 +141,7 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                     <LogIn size={18} strokeWidth={1.5} />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Iniciar Sesión / Registrarse</p>
+                    <p className="text-sm font-medium">Iniciar Sesión</p>
                     <p className="text-xs text-gold/60">Para citas, chat y más</p>
                   </div>
                 </NavLink>
