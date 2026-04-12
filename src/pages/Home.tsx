@@ -30,7 +30,7 @@ export default function Home() {
   )
 
   const featuredWork = useMemo(() => allPortfolioItems.slice(0, 12), [allPortfolioItems])
-  const featuredProducts = useMemo(() => allShopItems.filter((s) => s.in_stock).slice(0, 4), [allShopItems])
+  const featuredProducts = useMemo(() => allShopItems.filter((s) => s.in_stock).slice(0, 10), [allShopItems])
   const upcomingCourses = useMemo(() => allCourses.slice(0, 4), [allCourses])
 
   return (
