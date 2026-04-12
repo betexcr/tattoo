@@ -75,10 +75,11 @@ export default function Chat() {
     designProcessedRef.current = true
     setSearchParams({}, { replace: true })
     setActiveTab('artist')
+    let cancelled = false
     ;(async () => {
       try {
         const snap = await getDoc(doc(db, 'design_shares', designId))
-        if (!snap.exists()) return
+        if (cancelled || !snap.exists()) return
         const d = snap.data()
         const parts: string[] = []
         if (d.style) parts.push(`Estilo: ${d.style}`)
@@ -91,11 +92,13 @@ export default function Chat() {
         if (userRef.current) {
           await sendRef.current(text, 'client')
         } else {
+          if (cancelled) return
           const msg = { id: `design-${Date.now()}`, from: 'user' as const, text, timestamp: new Date().toISOString(), read: false }
           setMessages((prev) => [...prev, msg])
         }
       } catch { /* design not found, ignore */ }
     })()
+    return () => { cancelled = true }
   }, [searchParams, setSearchParams, setActiveTab])
 
   const handleSendToArtist = async () => {

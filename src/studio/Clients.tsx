@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, ArrowLeft, MessageCircle, CalendarPlus, Phone, Mail, UserCheck, Users } from 'lucide-react'
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore'
+import { collection, getDocs, doc, setDoc, query, limit } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { mapFirestoreError } from '../utils/mapFirestoreError'
 import { useAppointments } from '../hooks/useAppointments'
@@ -129,7 +129,7 @@ export default function Clients() {
 
   useEffect(() => {
     let cancelled = false
-    getDocs(collection(db, 'client_notes')).then(snap => {
+    getDocs(query(collection(db, 'client_notes'), limit(500))).then(snap => {
       if (cancelled) return
       const notes: Record<string, string> = {}
       snap.docs.forEach(d => { notes[d.id] = (d.data().text as string) ?? '' })

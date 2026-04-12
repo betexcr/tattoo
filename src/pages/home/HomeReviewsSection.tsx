@@ -37,7 +37,11 @@ export default function HomeReviewsSection({ tattooStyles, staticReviews }: Prop
       navigate(`/login?returnTo=${encodeURIComponent('/')}`)
       return
     }
-    if (!reviewForm.text.trim() || !reviewForm.name.trim() || reviewSubmitting) return
+    if (reviewSubmitting) return
+    if (!reviewForm.text.trim() || !reviewForm.name.trim()) {
+      setReviewError('Completa tu nombre y experiencia')
+      return
+    }
     setReviewSubmitting(true)
     try {
       const { error } = await createReview(reviewForm)
@@ -117,7 +121,7 @@ export default function HomeReviewsSection({ tattooStyles, staticReviews }: Prop
                 <div className="flex items-center gap-4">
                   <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map(n => (
-                      <button type="button" key={n} onClick={() => setReviewForm(f => ({ ...f, rating: n }))} aria-label={`Valorar ${n} estrella${n > 1 ? 's' : ''}`}>
+                      <button type="button" key={n} onClick={() => setReviewForm(f => ({ ...f, rating: n }))} aria-label={`Valorar ${n} estrella${n > 1 ? 's' : ''}`} className="min-h-11 min-w-11 inline-flex items-center justify-center">
                         <Star size={18} className={n <= reviewForm.rating ? 'text-gold fill-gold' : 'text-subtle'} />
                       </button>
                     ))}

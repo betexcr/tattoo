@@ -75,7 +75,7 @@ export default function App() {
           <Route path="/studio/settings" element={<RouteErrorBoundary section="studio"><StudioSettings /></RouteErrorBoundary>} />
         </Route>
       </Route>
-      <Route path="*" element={<NotFound />} />
+      <Route path="*" element={<RouteErrorBoundary section="public"><NotFound /></RouteErrorBoundary>} />
     </Routes>
     </Suspense>
     </>

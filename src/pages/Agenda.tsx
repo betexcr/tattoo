@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, CalendarPlus, Check, Phone, MessageCircle, CheckCheck, AlertTriangle } from 'lucide-react'
+import { Plus, X, CalendarPlus, Check, Phone, MessageCircle, CheckCheck, AlertTriangle, LogIn, UserPlus } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
@@ -70,8 +70,11 @@ type TabKey = 'pending' | 'confirmed' | 'completed'
 
 export default function Agenda() {
   const { config } = useStudioConfig()
-  const { user, isArtist } = useAuth()
-  const { appointments, create, updateStatus, loading, error } = useAppointments(isArtist ? undefined : user?.uid)
+  const { user, isArtist, loading: authLoading } = useAuth()
+  const { appointments, create, updateStatus, loading, error } = useAppointments(
+    isArtist ? undefined : user?.uid,
+    { skip: !authLoading && !user },
+  )
   const [activeTab, setActiveTab] = useState<TabKey>('pending')
   const [statusError, setStatusError] = useState<string | null>(null)
   const [updatingApptId, setUpdatingApptId] = useState<string | null>(null)
@@ -125,7 +128,11 @@ export default function Agenda() {
   const [saving, setSaving] = useState(false)
 
   const handleSave = async () => {
-    if (!form.client || !form.date || !form.time || saving) return
+    if (saving) return
+    if (!form.client || !form.date || !form.time) {
+      setSaveError('Completa todos los campos obligatorios')
+      return
+    }
     setSaving(true)
     try {
       const result = await create({
@@ -162,10 +169,48 @@ export default function Agenda() {
     { key: 'completed', label: 'Completadas' },
   ]
 
+  if (!authLoading && !user) {
+    return (
+      <div className="min-h-dvh bg-ink">
+        <PageHeader title="Agenda" subtitle="Gestiona tus citas" />
+        <div className="px-5 pt-8 pb-28 flex flex-col items-center text-center">
+          <div className="w-16 h-16 rounded-2xl bg-gold/10 flex items-center justify-center mb-5">
+            <CalendarPlus className="w-8 h-8 text-gold" />
+          </div>
+          <h2 className="font-serif text-xl text-cream mb-2">Tus citas en un solo lugar</h2>
+          <p className="text-cream-dark text-sm leading-relaxed max-w-xs mb-8">
+            Crea una cuenta para reservar citas, ver su estado y recibir actualizaciones del estudio.
+          </p>
+          <div className="flex flex-col gap-3 w-full max-w-xs">
+            <Link
+              to={`/login?returnTo=${encodeURIComponent('/agenda')}`}
+              className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gold text-ink font-medium text-sm hover:bg-gold-light transition-colors"
+            >
+              <LogIn size={16} />
+              Iniciar sesión
+            </Link>
+            <Link
+              to={`/login?returnTo=${encodeURIComponent('/agenda')}#signup`}
+              className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl border border-gold/30 text-gold font-medium text-sm hover:bg-gold/5 transition-colors"
+            >
+              <UserPlus size={16} />
+              Crear cuenta
+            </Link>
+          </div>
+          <p className="text-subtle text-[11px] mt-4">Es rápido y gratuito</p>
+        </div>
+      </div>
+    )
+  }
+
   if (loading) {
     return (
-      <div className="min-h-dvh flex items-center justify-center">
-        <p className="text-subtle text-sm">Cargando...</p>
+      <div className="min-h-dvh bg-ink">
+        <div className="space-y-3 px-5">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-20 rounded-xl bg-ink-medium/40 animate-pulse" />
+          ))}
+        </div>
       </div>
     )
   }
@@ -293,14 +338,14 @@ export default function Agenda() {
                                   type="button"
                                   onClick={() => handleStatusUpdate(apt.id, 'rejected')}
                                   disabled={updatingApptId === apt.id}
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/20 text-red-400 text-xs border border-red-500/30 hover:bg-red-500/30 transition-colors disabled:opacity-50"
+                                  className="inline-flex items-center justify-center gap-1 min-h-[44px] px-3 py-2 rounded-lg bg-red-500/20 text-red-400 text-xs border border-red-500/30 hover:bg-red-500/30 transition-colors disabled:opacity-50"
                                 >
                                   {updatingApptId === apt.id ? 'Rechazando...' : 'Sí, rechazar'}
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => setRejectConfirmId(null)}
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 text-subtle text-xs hover:bg-white/10 transition-colors"
+                                  className="inline-flex items-center justify-center gap-1 min-h-[44px] px-3 py-2 rounded-lg bg-white/5 text-subtle text-xs hover:bg-white/10 transition-colors"
                                 >
                                   Cancelar
                                 </button>
@@ -317,7 +362,7 @@ export default function Agenda() {
                                   type="button"
                                   onClick={() => handleStatusUpdate(apt.id, 'confirmed')}
                                   disabled={updatingApptId === apt.id}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-medium hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
+                                  className="inline-flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-medium hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
                                 >
                                   <Check size={14} />
                                   {updatingApptId === apt.id ? 'Confirmando...' : 'Confirmar'}
@@ -325,7 +370,7 @@ export default function Agenda() {
                                 <button
                                   type="button"
                                   onClick={() => setRejectConfirmId(apt.id)}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-medium hover:bg-red-500/20 transition-colors"
+                                  className="inline-flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-medium hover:bg-red-500/20 transition-colors"
                                 >
                                   <X size={14} />
                                   Rechazar
@@ -341,7 +386,7 @@ export default function Agenda() {
                           type="button"
                           onClick={() => handleStatusUpdate(apt.id, 'completed')}
                           disabled={updatingApptId === apt.id}
-                          className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 text-subtle text-xs hover:bg-white/10 hover:text-cream transition-colors disabled:opacity-50"
+                          className="ml-auto inline-flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-lg bg-white/5 text-subtle text-xs hover:bg-white/10 hover:text-cream transition-colors disabled:opacity-50"
                         >
                           <CheckCheck size={14} />
                           Marcar como completada
@@ -386,7 +431,7 @@ export default function Agenda() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowModal(false)}
-              className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-sm"
+              className="fixed inset-0 z-[60] bg-ink/80 backdrop-blur-sm"
             />
             <motion.div
               ref={sheetRef}
@@ -398,7 +443,7 @@ export default function Agenda() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-50 max-h-[85dvh] overflow-y-auto rounded-t-2xl bg-ink-light border-t border-white/10 outline-none"
+              className="fixed bottom-0 left-0 right-0 z-[60] max-h-[85dvh] overflow-y-auto rounded-t-2xl bg-ink-light border-t border-white/10 outline-none"
             >
               <div className="sticky top-0 bg-ink-light/95 backdrop-blur flex items-center justify-between px-5 py-4 border-b border-white/5">
                 <h2 className="font-serif text-lg text-cream">Nueva cita</h2>

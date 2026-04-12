@@ -10,7 +10,7 @@ import { formatRelativeTime } from '../utils/formatRelativeTime'
 
 export default function NotificationBell() {
   const { user } = useAuth()
-  const { notifications, unreadCount, markRead, markAllRead } = useNotifications(user?.uid)
+  const { notifications, unreadCount, markRead, markAllRead, loading, error } = useNotifications(user?.uid)
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
   useScrollLock(open)
@@ -96,7 +96,15 @@ export default function NotificationBell() {
               </div>
 
               <div className="overflow-y-auto max-h-72">
-                {notifications.length === 0 ? (
+                {loading ? (
+                  <div className="p-6 flex justify-center">
+                    <div className="w-5 h-5 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+                  </div>
+                ) : error ? (
+                  <div className="p-4 text-center">
+                    <p className="text-red-400 text-xs">No se pudieron cargar las notificaciones</p>
+                  </div>
+                ) : notifications.length === 0 ? (
                   <div className="p-6 text-center">
                     <Bell className="w-8 h-8 text-subtle mx-auto mb-2 opacity-50" />
                     <p className="text-subtle text-xs">Sin notificaciones</p>

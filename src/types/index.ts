@@ -56,6 +56,7 @@ export interface ChatConversation {
 
 export interface Reminder {
   id: string
+  user_id: string
   title: string
   date: string
   time: string

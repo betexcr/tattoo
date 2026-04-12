@@ -451,15 +451,15 @@ export default function BookAppointment() {
                   <label className="block text-xs text-subtle mb-2">Imágenes de referencia (opcional)</label>
                   <div className="flex gap-3 flex-wrap">
                     {referenceImages.map((img, i) => (
-                      <div key={img} className="relative w-20 h-20 rounded-xl overflow-hidden border border-white/10">
-                        <img src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                      <div key={img} className="relative w-20 h-20 rounded-xl overflow-visible border border-white/10">
+                        <img src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover rounded-xl" />
                         <button
                           type="button"
                           onClick={() => setReferenceImages((prev) => prev.filter((_, idx) => idx !== i))}
                           aria-label="Eliminar imagen de referencia"
-                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-ink/80 flex items-center justify-center"
+                          className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-ink/80 flex items-center justify-center shadow-sm border border-white/10"
                         >
-                          <X size={10} className="text-cream" />
+                          <X size={14} className="text-cream" />
                         </button>
                       </div>
                     ))}
@@ -546,7 +546,7 @@ export default function BookAppointment() {
                         year: v.month === 0 ? v.year - 1 : v.year,
                       }))}
                       aria-label="Mes anterior"
-                      className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
+                      className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
                     >
                       <ChevronLeft size={16} />
                     </button>
@@ -561,7 +561,7 @@ export default function BookAppointment() {
                         year: v.month === 11 ? v.year + 1 : v.year,
                       }))}
                       aria-label="Mes siguiente"
-                      className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
+                      className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
                     >
                       <ChevronRight size={16} />
                     </button>
@@ -582,6 +582,9 @@ export default function BookAppointment() {
                       const isToday = cell.date === today
                       const isSelected = cell.date === selectedDate
 
+                      const fullDate = new Date(cell.date + 'T12:00:00')
+                      const dateLabel = fullDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+
                       return (
                         <button
                           key={cell.date}
@@ -593,6 +596,8 @@ export default function BookAppointment() {
                             }
                           }}
                           disabled={!cell.isSelectable}
+                          aria-label={dateLabel}
+                          aria-selected={isSelected}
                           className={`
                             aspect-square rounded-lg text-sm font-medium transition-all
                             ${!cell.isCurrentMonth ? 'text-subtle/40' : ''}

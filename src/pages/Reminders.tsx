@@ -1,9 +1,11 @@
 import { useState, useMemo, useRef, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, Check } from 'lucide-react'
+import { Plus, X, Check, Bell, LogIn, UserPlus } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useReminders } from '../hooks/useReminders'
+import { useAuth } from '../contexts/AuthContext'
 import type { Reminder } from '../types'
 
 const containerVariants = {
@@ -62,7 +64,8 @@ const initialFormState = {
 }
 
 export default function Reminders() {
-  const { reminders, create, toggleComplete, loading, error } = useReminders()
+  const { user, loading: authLoading } = useAuth()
+  const { reminders, create, toggleComplete, loading, error } = useReminders(user?.uid)
   const [showSheet, setShowSheet] = useState(false)
   const [form, setForm] = useState(initialFormState)
   const [mutationError, setMutationError] = useState<string | null>(null)
@@ -102,6 +105,7 @@ export default function Reminders() {
     setMutationError(null)
     try {
       const result = await create({
+        user_id: user?.uid ?? '',
         title: form.title,
         date: form.date,
         time: form.time,
@@ -148,13 +152,13 @@ export default function Reminders() {
           onClick={() => handleToggle(reminder.id)}
           disabled={togglingId === reminder.id}
           aria-label={reminder.completed ? 'Marcar como pendiente' : 'Marcar como completado'}
-          className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors disabled:opacity-50 ${
+          className={`shrink-0 w-9 h-9 rounded-full border-2 flex items-center justify-center transition-colors disabled:opacity-50 ${
             reminder.completed
               ? 'bg-gold/30 border-gold text-gold'
               : 'border-subtle/50 hover:border-gold/50 text-transparent'
           }`}
         >
-          {reminder.completed && <Check size={14} strokeWidth={2.5} />}
+          {reminder.completed && <Check size={18} strokeWidth={2.5} />}
         </button>
         <div className="flex-1 min-w-0">
           <h3
@@ -179,10 +183,48 @@ export default function Reminders() {
     )
   }
 
+  if (!authLoading && !user) {
+    return (
+      <div className="min-h-dvh bg-ink">
+        <PageHeader title="Recordatorios" subtitle="No olvides nada" />
+        <div className="px-5 pt-8 pb-28 flex flex-col items-center text-center">
+          <div className="w-16 h-16 rounded-2xl bg-gold/10 flex items-center justify-center mb-5">
+            <Bell className="w-8 h-8 text-gold" />
+          </div>
+          <h2 className="font-serif text-xl text-cream mb-2">Tus recordatorios personales</h2>
+          <p className="text-cream-dark text-sm leading-relaxed max-w-xs mb-8">
+            Crea una cuenta para guardar recordatorios de citas, seguimientos y notas personales.
+          </p>
+          <div className="flex flex-col gap-3 w-full max-w-xs">
+            <Link
+              to={`/login?returnTo=${encodeURIComponent('/reminders')}`}
+              className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gold text-ink font-medium text-sm hover:bg-gold-light transition-colors"
+            >
+              <LogIn size={16} />
+              Iniciar sesión
+            </Link>
+            <Link
+              to={`/login?returnTo=${encodeURIComponent('/reminders')}#signup`}
+              className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl border border-gold/30 text-gold font-medium text-sm hover:bg-gold/5 transition-colors"
+            >
+              <UserPlus size={16} />
+              Crear cuenta
+            </Link>
+          </div>
+          <p className="text-subtle text-[11px] mt-4">Es rápido y gratuito</p>
+        </div>
+      </div>
+    )
+  }
+
   if (loading) {
     return (
-      <div className="min-h-dvh flex items-center justify-center">
-        <p className="text-subtle text-sm">Cargando...</p>
+      <div className="min-h-dvh bg-ink">
+        <div className="space-y-3 px-5">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-16 rounded-xl bg-ink-medium/40 animate-pulse" />
+          ))}
+        </div>
       </div>
     )
   }
@@ -191,8 +233,8 @@ export default function Reminders() {
     <div className="min-h-dvh bg-ink">
       <PageHeader title="Recordatorios" subtitle="No olvides nada" />
 
-      {(error || mutationError) && (
-        <div className="mx-5 mt-4 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{error || mutationError}</div>
+      {error && (
+        <div className="mx-5 mt-4 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{error}</div>
       )}
 
       <div className="px-5 pt-4 pb-28">
@@ -263,7 +305,7 @@ export default function Reminders() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowSheet(false)}
-              className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-sm"
+              className="fixed inset-0 z-[60] bg-ink/80 backdrop-blur-sm"
             />
             <motion.div
               ref={sheetRef}
@@ -275,7 +317,7 @@ export default function Reminders() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-50 max-h-[75dvh] overflow-y-auto rounded-t-2xl bg-ink-light border-t border-white/10 outline-none"
+              className="fixed bottom-0 left-0 right-0 z-[60] max-h-[75dvh] overflow-y-auto rounded-t-2xl bg-ink-light border-t border-white/10 outline-none"
             >
               <div className="sticky top-0 bg-ink-light/95 backdrop-blur flex items-center justify-between px-5 py-4 border-b border-white/5">
                 <h2 className="font-serif text-lg text-cream">Nuevo recordatorio</h2>
@@ -343,6 +385,9 @@ export default function Reminders() {
                     <option value="custom">Personalizado</option>
                   </select>
                 </div>
+                {mutationError && (
+                  <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{mutationError}</div>
+                )}
                 <button
                   type="submit"
                   disabled={saving}

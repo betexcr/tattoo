@@ -94,6 +94,9 @@ export default function BodyVisualizer() {
         <div className="mb-6">
           <h3 className="text-xs text-subtle uppercase tracking-wider mb-3">Estilos de referencia</h3>
           <div className="flex gap-3 overflow-x-auto pb-2 -mx-1">
+            {previewItems.length === 0 && (
+              <p className="text-subtle text-xs py-2">No hay diseños de referencia disponibles</p>
+            )}
             {previewItems.map((item) => (
               <motion.button
                 type="button"

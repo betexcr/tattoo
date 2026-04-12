@@ -5,7 +5,7 @@ const navItems = [
   { to: '/', icon: Home, label: 'Inicio' },
   { to: '/portfolio', icon: Image, label: 'Portafolio' },
   { to: '/agenda', icon: CalendarDays, label: 'Agenda' },
-  { to: '/chat', icon: MessageCircle, label: 'Chat' },
+  { to: '/chat', icon: MessageCircle, label: 'Mensajes' },
 ]
 
 interface BottomNavProps {
@@ -22,7 +22,7 @@ export default function BottomNav({ onMenuToggle, menuOpen }: BottomNavProps) {
             key={to}
             to={to}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-300 ${
+              `flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 min-h-[44px] rounded-xl transition-all duration-300 ${
                 isActive
                   ? 'text-gold scale-105'
                   : 'text-subtle hover:text-cream-dark'
@@ -38,7 +38,7 @@ export default function BottomNav({ onMenuToggle, menuOpen }: BottomNavProps) {
           onClick={onMenuToggle}
           aria-label="Más opciones"
           aria-expanded={menuOpen}
-          className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-subtle hover:text-cream-dark transition-all duration-300"
+          className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 min-h-[44px] rounded-xl text-subtle hover:text-cream-dark transition-all duration-300"
         >
           <Menu size={20} strokeWidth={1.5} />
           <span className="text-[10px] font-medium tracking-wide">Más</span>

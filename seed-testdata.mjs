@@ -303,6 +303,32 @@ async function seed() {
   })
   console.log('  + Studio settings configured\n')
 
+  // --- Portfolio Items ---
+  console.log('Creating portfolio items...')
+  const portfolioItems = [
+    { title: 'Serpiente Botánica', style: 'Línea Fina', description: 'Serpiente enroscada entre ramas de olivo, líneas delicadas de una sola pasada en el antebrazo.', image_url: 'https://images.unsplash.com/photo-1562962230-16e4623d36e6?w=600&h=800&fit=crop', published: true, sort_order: 0 },
+    { title: 'Eclipse Total', style: 'Blackwork', description: 'Sol y luna fusionados en negro sólido con texturas y degradados, pieza de espalda completa.', image_url: 'https://images.unsplash.com/photo-1759247943688-5d47a84dd615?w=600&h=800&fit=crop', published: true, sort_order: 1 },
+    { title: 'Golondrina Clásica', style: 'Tradicional', description: 'Golondrina old school con rosas y banner, colores saturados y línea gruesa en el pecho.', image_url: 'https://images.unsplash.com/photo-1503470439160-b5796c5ec510?w=600&h=800&fit=crop', published: true, sort_order: 2 },
+    { title: 'Fénix Renacido', style: 'Neo Tradicional', description: 'Fénix con alas desplegadas, paleta de naranjas y dorados, detalles ornamentales modernos.', image_url: 'https://images.unsplash.com/photo-1645071735512-f4d48d453ad3?w=600&h=800&fit=crop', published: true, sort_order: 3 },
+    { title: 'Dragón Imperial', style: 'Japonés', description: 'Dragón tradicional japonés con nubes y olas, estilo irezumi en media manga.', image_url: 'https://images.unsplash.com/photo-1624253053783-04c8e6c8afc5?w=600&h=800&fit=crop', published: true, sort_order: 4 },
+    { title: 'Cubo Imposible', style: 'Geométrico', description: 'Formas geométricas imposibles entrelazadas con líneas de precisión matemática en el antebrazo.', image_url: 'https://images.unsplash.com/photo-1519822356-4853be4346a8?w=600&h=800&fit=crop', published: true, sort_order: 5 },
+    { title: 'Lobo Cósmico', style: 'Puntillismo', description: 'Retrato de lobo creado enteramente con puntos, degradados suaves y textura única en el hombro.', image_url: 'https://images.unsplash.com/photo-1515369867962-4661872b6366?w=600&h=800&fit=crop', published: true, sort_order: 6 },
+    { title: 'Mariposa Etérea', style: 'Acuarela', description: 'Mariposa con alas en efecto acuarela, splash de azules y violetas sin contorno definido.', image_url: 'https://images.unsplash.com/photo-1707390588496-6c50ad954935?w=600&h=800&fit=crop', published: true, sort_order: 7 },
+    { title: 'Ojo del Alma', style: 'Realismo', description: 'Ojo humano hiperrealista con reflejo de paisaje, sombreado fotográfico en el brazo.', image_url: 'https://images.unsplash.com/photo-1568515045052-f9a854d70bfd?w=600&h=800&fit=crop', published: true, sort_order: 8 },
+    { title: 'Guerrero Ancestral', style: 'Tribal', description: 'Diseño tribal polinesio que fluye desde el hombro hasta el codo, patrones de identidad y fuerza.', image_url: 'https://images.unsplash.com/photo-1479767574301-a01c78234a0c?w=600&h=800&fit=crop', published: true, sort_order: 9 },
+    { title: 'Carpe Diem', style: 'Lettering', description: 'Tipografía caligráfica cursiva con ornamentos florales delicados, costado del torso.', image_url: 'https://images.unsplash.com/photo-1523346889551-06a8879f5c71?w=600&h=800&fit=crop', published: true, sort_order: 10 },
+    { title: 'Mandala Lunar', style: 'Mandala', description: 'Mandala simétrico con fases lunares integradas, puntillismo y línea fina en el esternón.', image_url: 'https://images.unsplash.com/photo-1564809391512-91833191326b?w=600&h=800&fit=crop', published: true, sort_order: 11 },
+    { title: 'Constelación Orión', style: 'Minimalista', description: 'Puntos conectados formando la constelación de Orión, trazo ultra fino en la clavícula.', image_url: 'https://images.unsplash.com/photo-1675621992781-991ec29f9131?w=600&h=800&fit=crop', published: true, sort_order: 12 },
+    { title: 'Corona de Filigrana', style: 'Ornamental', description: 'Diseño ornamental tipo filigrana con detalles barrocos, brazalete completo en el antebrazo.', image_url: 'https://images.unsplash.com/photo-1501939387519-cf9c35d4f4eb?w=600&h=800&fit=crop', published: true, sort_order: 13 },
+    { title: 'Retrato Sketch', style: 'Sketch', description: 'Retrato femenino estilo boceto artístico con líneas sueltas y trazos de carboncillo en el muslo.', image_url: 'https://images.unsplash.com/photo-1699270065530-eb99dbf1d77e?w=600&h=800&fit=crop', published: true, sort_order: 14 },
+    { title: 'Reloj Derretido', style: 'Surrealismo', description: 'Reloj derretido estilo Dalí con mariposas emergiendo, fusión de realidad y sueño en el brazo.', image_url: 'https://images.unsplash.com/photo-1543244128-30d70d41e2a9?w=600&h=800&fit=crop', published: true, sort_order: 15 },
+  ]
+
+  for (const item of portfolioItems) {
+    await addDoc('portfolio_items', { ...item, created_at: new Date().toISOString() })
+  }
+  console.log(`  + ${portfolioItems.length} portfolio items (one per style)\n`)
+
   // --- Appointments ---
   console.log('Creating appointments...')
   const appointments = [

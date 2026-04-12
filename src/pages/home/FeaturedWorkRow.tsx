@@ -35,8 +35,8 @@ export default memo(function FeaturedWorkRow({ items, loading }: Props) {
         className="flex gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         {loading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="shrink-0 w-36 h-48 rounded-xl bg-ink-medium/40 animate-pulse" />
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="shrink-0 w-40 sm:w-48 lg:w-56 aspect-[3/4] rounded-xl bg-ink-medium/40 animate-pulse" />
           ))
         ) : items.length === 0 ? (
           <p className="text-subtle text-sm px-1">No hay trabajos disponibles aún</p>
@@ -44,9 +44,9 @@ export default memo(function FeaturedWorkRow({ items, loading }: Props) {
           <Link
             key={item.id}
             to="/portfolio"
-            className="shrink-0 w-36 group"
+            className="shrink-0 w-40 sm:w-48 lg:w-56 group"
           >
-            <div className="relative w-36 h-48 rounded-xl overflow-hidden border border-white/5 group-hover:border-gold/30 transition-all">
+            <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-white/5 group-hover:border-gold/30 transition-all">
               <ImageWithPlaceholder
                 id={item.id}
                 src={item.image_url}

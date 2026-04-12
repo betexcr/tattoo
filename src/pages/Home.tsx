@@ -29,9 +29,9 @@ export default function Home() {
     [config.suggestions]
   )
 
-  const featuredWork = allPortfolioItems.slice(0, 6)
-  const featuredProducts = allShopItems.filter((s) => s.in_stock).slice(0, 4)
-  const upcomingCourses = allCourses.slice(0, 4)
+  const featuredWork = useMemo(() => allPortfolioItems.slice(0, 12), [allPortfolioItems])
+  const featuredProducts = useMemo(() => allShopItems.filter((s) => s.in_stock).slice(0, 4), [allShopItems])
+  const upcomingCourses = useMemo(() => allCourses.slice(0, 4), [allCourses])
 
   return (
     <div className="min-h-dvh">

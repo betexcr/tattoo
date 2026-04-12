@@ -46,6 +46,7 @@ export default class RouteErrorBoundary extends Component<Props, State> {
               >
                 Reintentar
               </button>
+              {/* Intentional full reload to reset all app state after error */}
               <a
                 href="/"
                 className="px-5 py-2.5 rounded-full border border-white/20 text-cream text-sm font-medium hover:bg-white/5 transition-colors"

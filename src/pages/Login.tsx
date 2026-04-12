@@ -123,26 +123,28 @@ export default function Login() {
           </div>
 
           {mode !== 'reset' && (
-            <div className="relative">
+            <div>
               <label htmlFor="login-password" className="text-cream/60 text-xs block mb-1">Contraseña</label>
-              <input
-                id="login-password"
-                type={showPw ? 'text' : 'password'}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="w-full bg-ink-light border border-gold/20 rounded-xl px-4 py-3 pr-12 text-cream focus:border-gold/60 outline-none transition-colors"
-                placeholder="Mínimo 6 caracteres"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPw(!showPw)}
-                aria-label={showPw ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                className="absolute right-3 top-8 text-cream/40 hover:text-cream/70"
-              >
-                {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+              <div className="relative">
+                <input
+                  id="login-password"
+                  type={showPw ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="w-full bg-ink-light border border-gold/20 rounded-xl px-4 py-3 pr-14 text-cream focus:border-gold/60 outline-none transition-colors"
+                  placeholder="Mínimo 6 caracteres"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  aria-label={showPw ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 min-w-11 min-h-11 flex items-center justify-center text-cream/40 hover:text-cream/70"
+                >
+                  {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
           )}
 
@@ -174,7 +176,9 @@ export default function Login() {
             disabled={loading}
             className="w-full bg-gold text-ink font-semibold py-3 rounded-xl hover:bg-gold/90 transition-colors disabled:opacity-50"
           >
-            {loading ? 'Cargando...' : mode === 'login' ? 'Entrar' : mode === 'signup' ? 'Crear cuenta' : 'Enviar enlace'}
+            {loading
+              ? mode === 'login' ? 'Entrando...' : mode === 'signup' ? 'Creando cuenta...' : 'Enviando enlace...'
+              : mode === 'login' ? 'Entrar' : mode === 'signup' ? 'Crear cuenta' : 'Enviar enlace'}
           </button>
         </form>
 

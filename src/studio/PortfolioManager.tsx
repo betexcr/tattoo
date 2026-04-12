@@ -31,7 +31,7 @@ const itemVariants = {
 
 export default function PortfolioManager() {
   const { config } = useStudioConfig()
-  const { items: portfolio, loading, error, create, update, remove } = usePortfolio(false)
+  const { items: portfolio, loading, error, create, update, remove, swapOrder } = usePortfolio(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null)
   const [formData, setFormData] = useState<Partial<PortfolioItem>>({
@@ -88,7 +88,11 @@ export default function PortfolioManager() {
   }
 
   const handleSave = async () => {
-    if (!formData.title || !formData.style || !formData.image_url || saving) return
+    if (saving) return
+    if (!formData.title || !formData.style || !formData.image_url) {
+      setMutationError('Completa el título, estilo e imagen')
+      return
+    }
     setMutationError(null)
     setSaving(true)
     try {
@@ -131,12 +135,10 @@ export default function PortfolioManager() {
     const targetIdx = idx + dir
     if (targetIdx < 0 || targetIdx >= portfolio.length) return
     setMutationError(null)
-    const targetItem = portfolio[targetIdx]
     const currentItem = portfolio[idx]
-    const r1 = await update(id, { sort_order: targetItem.sort_order })
-    if (r1?.error) { setMutationError(r1.error); return }
-    const r2 = await update(targetItem.id, { sort_order: currentItem.sort_order })
-    if (r2?.error) setMutationError(r2.error)
+    const targetItem = portfolio[targetIdx]
+    const result = await swapOrder(currentItem.id, currentItem.sort_order, targetItem.id, targetItem.sort_order)
+    if (result?.error) setMutationError(result.error)
   }
 
   const togglePublished = async (item: PortfolioItem) => {
@@ -196,6 +198,12 @@ export default function PortfolioManager() {
 
       {/* Grid */}
       <motion.section variants={itemVariants}>
+        {portfolio.length === 0 && (
+          <div className="rounded-xl bg-ink-light border border-white/5 p-8 text-center mb-4">
+            <p className="text-cream-dark text-sm mb-2">Tu portafolio está vacío</p>
+            <p className="text-subtle text-xs">Añade tu primer trabajo con el botón +</p>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3">
           {portfolio.map((item) => (
             <motion.div
@@ -226,17 +234,17 @@ export default function PortfolioManager() {
                   type="button"
                   onClick={(e) => { e.stopPropagation(); moveItem(item.id, -1) }}
                   aria-label="Subir en la lista"
-                  className="w-6 h-6 rounded-md bg-black/50 flex items-center justify-center text-cream hover:bg-black/70 transition-colors"
+                  className="w-9 h-9 rounded-md bg-black/50 flex items-center justify-center text-cream hover:bg-black/70 transition-colors"
                 >
-                  <ChevronUp size={12} />
+                  <ChevronUp size={16} />
                 </button>
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); moveItem(item.id, 1) }}
                   aria-label="Bajar en la lista"
-                  className="w-6 h-6 rounded-md bg-black/50 flex items-center justify-center text-cream hover:bg-black/70 transition-colors"
+                  className="w-9 h-9 rounded-md bg-black/50 flex items-center justify-center text-cream hover:bg-black/70 transition-colors"
                 >
-                  <ChevronDown size={12} />
+                  <ChevronDown size={16} />
                 </button>
               </div>
 
@@ -244,40 +252,40 @@ export default function PortfolioManager() {
               <button
                 type="button"
                 onClick={() => togglePublished(item)}
-                className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center hover:bg-black/60 transition-colors"
+                className="absolute top-2 right-2 w-10 h-10 rounded-full bg-black/40 flex items-center justify-center hover:bg-black/60 transition-colors"
                 title={item.published ? 'Publicado' : 'Borrador'}
                 aria-label={item.published ? 'Marcado como publicado' : 'Marcado como borrador'}
               >
                 {item.published ? (
-                  <Eye size={14} className="text-emerald-400" />
+                  <Eye size={18} className="text-emerald-400" />
                 ) : (
-                  <EyeOff size={14} className="text-subtle" />
+                  <EyeOff size={18} className="text-subtle" />
                 )}
               </button>
 
-              {/* Actions overlay */}
-              <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity bg-black/50">
+              {/* Actions */}
+              <div className="absolute bottom-10 right-2 flex gap-1">
                 <button
                   type="button"
-                  onClick={() => handleEdit(item)}
+                  onClick={(e) => { e.stopPropagation(); handleEdit(item) }}
                   aria-label="Editar trabajo"
-                  className="w-10 h-10 rounded-full bg-gold/80 text-ink flex items-center justify-center hover:bg-gold transition-colors"
+                  className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-sm text-cream flex items-center justify-center hover:bg-gold/80 hover:text-ink transition-colors"
                 >
-                  <Pencil size={18} />
+                  <Pencil size={14} />
                 </button>
                 {deleteConfirmId === item.id ? (
-                  <div className="flex gap-2">
+                  <div className="flex gap-1">
                     <button
                       type="button"
-                      onClick={() => handleDelete(item.id)}
-                      className="px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-medium"
+                      onClick={(e) => { e.stopPropagation(); handleDelete(item.id) }}
+                      className="h-9 px-2.5 rounded-full bg-red-500 text-white text-xs font-medium flex items-center"
                     >
                       Sí
                     </button>
                     <button
                       type="button"
-                      onClick={() => setDeleteConfirmId(null)}
-                      className="px-3 py-1.5 rounded-lg bg-ink-medium text-cream text-xs"
+                      onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(null) }}
+                      className="h-9 px-2.5 rounded-full bg-black/60 text-cream text-xs flex items-center"
                     >
                       No
                     </button>
@@ -285,11 +293,11 @@ export default function PortfolioManager() {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => setDeleteConfirmId(item.id)}
+                    onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(item.id) }}
                     aria-label="Eliminar trabajo"
-                    className="w-10 h-10 rounded-full bg-red-500/80 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
+                    className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-sm text-cream flex items-center justify-center hover:bg-red-500/80 transition-colors"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={14} />
                   </button>
                 )}
               </div>

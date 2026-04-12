@@ -1,23 +1,24 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
-  collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, doc, limit,
+  collection, query, where, orderBy, getDocs, addDoc, updateDoc, deleteDoc, doc, limit,
 } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import type { Reminder } from '../types'
 import { mapFirestoreError } from '../utils/mapFirestoreError'
 
-export function useReminders() {
+export function useReminders(userId?: string | null) {
   const [reminders, setReminders] = useState<Reminder[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const fetchIdRef = useRef(0)
 
   const fetch = useCallback(async () => {
+    if (!userId) { setReminders([]); setError(null); setLoading(false); return }
     const id = ++fetchIdRef.current
     setLoading(true)
     setError(null)
     try {
-      const q = query(collection(db, 'reminders'), orderBy('date', 'asc'), limit(200))
+      const q = query(collection(db, 'reminders'), where('user_id', '==', userId), orderBy('date', 'asc'), limit(200))
       const snap = await getDocs(q)
       if (fetchIdRef.current !== id) return
       setReminders(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Reminder))
@@ -27,7 +28,7 @@ export function useReminders() {
       setError(mapFirestoreError(e))
       setLoading(false)
     }
-  }, [])
+  }, [userId])
 
   useEffect(() => { fetch() }, [fetch])
 

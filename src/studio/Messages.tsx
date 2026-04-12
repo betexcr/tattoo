@@ -123,7 +123,7 @@ export default function Messages() {
                 type="button"
                 onClick={() => setActiveClientId(null)}
                 aria-label="Volver a conversaciones"
-                className="w-10 h-10 rounded-full flex items-center justify-center text-subtle hover:text-cream transition-colors"
+                className="w-11 h-11 rounded-full flex items-center justify-center text-subtle hover:text-cream transition-colors"
               >
                 <ArrowLeft size={20} />
               </button>
@@ -146,6 +146,11 @@ export default function Messages() {
               )}
               {chatLoading && messages.length === 0 ? (
                 <LoadingSpinner />
+              ) : !chatLoading && messages.length === 0 ? (
+                <div className="py-12 text-center">
+                  <p className="text-subtle text-sm">No hay mensajes aún</p>
+                  <p className="text-subtle text-xs mt-1">Envía el primer mensaje a este cliente</p>
+                </div>
               ) : messages.map((msg, i) => {
                 const prev = messages[i - 1]
                 const showTimestamp =
@@ -182,7 +187,7 @@ export default function Messages() {
               {!(chatLoading && messages.length === 0) && <div ref={messagesEndRef} />}
             </div>
 
-            <div className="p-4 border-t border-white/5 bg-ink shrink-0 space-y-2">
+            <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-white/5 bg-ink shrink-0 space-y-2">
               <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                 {quickReplies.map((text) => (
                   <button
@@ -211,7 +216,7 @@ export default function Messages() {
                   onClick={handleSend}
                   disabled={!inputText.trim() || sending}
                   aria-label="Enviar mensaje"
-                  className="w-10 h-10 rounded-xl bg-gold text-ink flex items-center justify-center shrink-0 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gold-light transition-colors"
+                  className="w-11 h-11 rounded-xl bg-gold text-ink flex items-center justify-center shrink-0 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gold-light transition-colors"
                 >
                   <Send size={18} strokeWidth={2} />
                 </button>

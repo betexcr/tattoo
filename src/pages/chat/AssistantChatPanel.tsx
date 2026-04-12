@@ -49,7 +49,7 @@ export default function AssistantChatPanel({
               whileTap={{ scale: 0.96 }}
               onClick={() => onQuickReply(label, key)}
               disabled={isTyping}
-              className="px-3 py-2 rounded-full bg-ink-medium border border-white/5 text-cream text-xs hover:border-gold/30 hover:bg-ink-medium/80 transition-colors disabled:opacity-50"
+              className="px-3 py-2.5 min-h-[44px] rounded-full bg-ink-medium border border-white/5 text-cream text-xs hover:border-gold/30 hover:bg-ink-medium/80 transition-colors disabled:opacity-50 inline-flex items-center"
             >
               {label}
             </motion.button>

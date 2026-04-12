@@ -1,6 +1,7 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import { useState, useRef, useCallback } from 'react'
 import { useFocusTrap } from '../hooks/useFocusTrap'
+import { useScrollLock } from '../hooks/useScrollLock'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -37,6 +38,7 @@ export default function StudioLayout() {
   const drawerRef = useRef<HTMLDivElement>(null)
   const closeDrawer = useCallback(() => setDrawerOpen(false), [])
   useFocusTrap(drawerRef, drawerOpen, closeDrawer)
+  useScrollLock(drawerOpen)
   const location = useLocation()
   const { config } = useStudioConfig()
   const initials = config.studio_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
@@ -94,7 +96,7 @@ export default function StudioLayout() {
               to={to}
               end={'end' in rest}
               className={({ isActive }) =>
-                `flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-300 ${
+                `flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 min-h-[44px] rounded-xl transition-all duration-300 ${
                   isActive
                     ? 'text-gold scale-105'
                     : 'text-subtle hover:text-cream-dark'
@@ -110,7 +112,7 @@ export default function StudioLayout() {
             aria-label="Más opciones"
             aria-expanded={drawerOpen}
             onClick={() => setDrawerOpen(true)}
-            className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-subtle hover:text-cream-dark transition-all duration-300"
+            className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 min-h-[44px] rounded-xl text-subtle hover:text-cream-dark transition-all duration-300"
           >
             <Settings size={20} strokeWidth={1.5} />
             <span className="text-[10px] font-medium tracking-wide">Más</span>

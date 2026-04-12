@@ -68,7 +68,7 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
             role="dialog"
             aria-modal="true"
             aria-label="Menú"
-            className="fixed bottom-0 left-0 right-0 z-50 bg-ink-light rounded-t-3xl max-h-[85dvh] overflow-y-auto"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-ink-light rounded-t-3xl max-h-[85dvh] overflow-y-auto overscroll-contain"
           >
             <div className="flex items-center justify-between p-5 border-b border-white/5">
               <div className="flex items-center gap-3">

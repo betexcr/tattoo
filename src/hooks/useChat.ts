@@ -30,12 +30,12 @@ export function useChat(clientId?: string) {
       const q = query(
         collection(db, 'chat_messages'),
         where('client_id', '==', clientId),
-        orderBy('created_at', 'asc'),
+        orderBy('created_at', 'desc'),
         limit(100),
       )
       const snap = await getDocs(q)
       if (fetchIdRef.current !== id) return
-      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() }) as ChatMessage))
+      setMessages(snap.docs.reverse().map(d => ({ id: d.id, ...d.data() }) as ChatMessage))
       setLoading(false)
     } catch (e: unknown) {
       if (fetchIdRef.current !== id) return
@@ -49,7 +49,7 @@ export function useChat(clientId?: string) {
   }, [fetchMessages])
 
   useEffect(() => {
-    return () => { unsubRef.current?.() }
+    return () => { unsubRef.current?.(); unsubRef.current = null }
   }, [clientId])
 
   const subscribe = useCallback(() => {
@@ -58,11 +58,11 @@ export function useChat(clientId?: string) {
     const q = query(
       collection(db, 'chat_messages'),
       where('client_id', '==', clientId),
-      orderBy('created_at', 'asc'),
+      orderBy('created_at', 'desc'),
       limit(100),
     )
     const unsub = onSnapshot(q, (snap) => {
-      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() }) as ChatMessage))
+      setMessages(snap.docs.reverse().map(d => ({ id: d.id, ...d.data() }) as ChatMessage))
     }, (e) => {
       setError(mapFirestoreError(e))
     })

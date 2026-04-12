@@ -322,6 +322,9 @@ export default function Analytics() {
         <div className="mt-4 rounded-xl bg-ink-light border border-white/5 p-4">
           <p className="text-sm text-subtle mb-3">Estilos más populares</p>
           <div className="space-y-3">
+            {stats.styleRanked.length === 0 && (
+              <p className="text-subtle text-xs text-center py-2">Sin datos de estilos</p>
+            )}
             {stats.styleRanked.map(([style, count], i) => (
               <div key={style} className="flex items-center gap-3">
                 <span className="text-subtle text-xs w-5">{i + 1}</span>
@@ -345,6 +348,9 @@ export default function Analytics() {
         <div className="mt-4 rounded-xl bg-ink-light border border-white/5 p-4">
           <p className="text-sm text-subtle mb-3">Zonas más populares</p>
           <div className="space-y-3">
+            {stats.bodyRanked.length === 0 && (
+              <p className="text-subtle text-xs text-center py-2">Sin datos de zonas</p>
+            )}
             {stats.bodyRanked.map(([part, count], i) => (
               <div key={part} className="flex items-center gap-3">
                 <span className="text-subtle text-xs w-5">{i + 1}</span>

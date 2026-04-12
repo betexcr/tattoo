@@ -46,12 +46,15 @@ export default function Suggestions() {
 
   useEffect(() => {
     if (!user) return
+    let cancelled = false
     getDoc(doc(db, 'user_likes', user.uid)).then(snap => {
+      if (cancelled) return
       if (snap.exists()) {
         const data = snap.data()
         if (Array.isArray(data.liked_ids)) setLikedIds(new Set(data.liked_ids))
       }
     }).catch(() => { /* Non-critical: liked state is cosmetic */ })
+    return () => { cancelled = true }
   }, [user])
 
   const persistLikes = useCallback((ids: Set<string>) => {
@@ -167,14 +170,14 @@ export default function Suggestions() {
                     onClick={() => toggleLike(suggestion.id)}
                     aria-label="Me gusta"
                     aria-pressed={likedIds.has(suggestion.id)}
-                    className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+                    className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition-colors"
                     style={{
                       backgroundColor: likedIds.has(suggestion.id) ? 'var(--color-rose)' : 'rgba(255,255,255,0.05)',
                       color: likedIds.has(suggestion.id) ? 'white' : 'var(--color-subtle)',
                     }}
                   >
                     <Heart
-                      size={18}
+                      size={20}
                       fill={likedIds.has(suggestion.id) ? 'currentColor' : 'none'}
                       strokeWidth={2}
                     />
@@ -245,7 +248,7 @@ export default function Suggestions() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleCloseQuiz}
-            className="fixed inset-0 z-50 bg-ink/95 backdrop-blur-sm flex items-center justify-center p-5"
+            className="fixed inset-0 z-[60] bg-ink/95 backdrop-blur-sm flex items-center justify-center p-5"
           >
             <motion.div
               ref={quizDialogRef}

@@ -100,7 +100,7 @@ const itemVariants = {
 const TABS = [
   { id: 'perfil', label: 'Perfil', icon: User },
   { id: 'catalogo', label: 'Catálogo', icon: BookOpen },
-  { id: 'sugerencias', label: 'Sugerencias y Quiz', icon: Lightbulb },
+  { id: 'sugerencias', label: 'Sugerencias y Cuestionario', icon: Lightbulb },
   { id: 'contenido', label: 'Contenido', icon: FileText },
   { id: 'chat', label: 'Mensajes', icon: MessageCircle },
   { id: 'notificaciones', label: 'Notificaciones', icon: Bell },
@@ -619,8 +619,9 @@ export default function StudioSettings() {
                   </div>
                   <div className="flex-1 space-y-3">
                     <div>
-                      <label className={labelClass}>Nombre del estudio</label>
+                      <label htmlFor="settings-studio-name" className={labelClass}>Nombre del estudio</label>
                       <input
+                        id="settings-studio-name"
                         type="text"
                         value={studioName}
                         onChange={(e) => setStudioName(e.target.value)}
@@ -628,8 +629,9 @@ export default function StudioSettings() {
                       />
                     </div>
                     <div>
-                      <label className={labelClass}>Nombre del artista</label>
+                      <label htmlFor="settings-artist-name" className={labelClass}>Nombre del artista</label>
                       <input
+                        id="settings-artist-name"
                         type="text"
                         value={artistName}
                         onChange={(e) => setArtistName(e.target.value)}
@@ -639,8 +641,9 @@ export default function StudioSettings() {
                   </div>
                 </div>
                 <div>
-                  <label className={labelClass}>Bio</label>
+                  <label htmlFor="settings-bio" className={labelClass}>Bio</label>
                   <textarea
+                    id="settings-bio"
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
                     rows={3}
@@ -650,8 +653,9 @@ export default function StudioSettings() {
                 </div>
                 <div className="grid grid-cols-1 gap-3">
                   <div>
-                    <label className={labelClass}>Teléfono</label>
+                    <label htmlFor="settings-phone" className={labelClass}>Teléfono</label>
                     <input
+                      id="settings-phone"
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
@@ -659,8 +663,9 @@ export default function StudioSettings() {
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>Correo electrónico</label>
+                    <label htmlFor="settings-email" className={labelClass}>Correo electrónico</label>
                     <input
+                      id="settings-email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -668,8 +673,9 @@ export default function StudioSettings() {
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>Dirección</label>
+                    <label htmlFor="settings-address" className={labelClass}>Dirección</label>
                     <input
+                      id="settings-address"
                       type="text"
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
@@ -775,8 +781,9 @@ export default function StudioSettings() {
               <h2 className="font-serif text-lg text-cream mb-3">Redes Sociales</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-3">
                 <div>
-                  <label className={labelClass}>Instagram</label>
+                  <label htmlFor="settings-instagram" className={labelClass}>Instagram</label>
                   <input
+                    id="settings-instagram"
                     type="url"
                     value={instagram}
                     onChange={(e) => setInstagram(e.target.value)}
@@ -785,8 +792,9 @@ export default function StudioSettings() {
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>TikTok</label>
+                  <label htmlFor="settings-tiktok" className={labelClass}>TikTok</label>
                   <input
+                    id="settings-tiktok"
                     type="url"
                     value={tiktok}
                     onChange={(e) => setTiktok(e.target.value)}
@@ -795,8 +803,9 @@ export default function StudioSettings() {
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>Sitio web</label>
+                  <label htmlFor="settings-website" className={labelClass}>Sitio web</label>
                   <input
+                    id="settings-website"
                     type="url"
                     value={website}
                     onChange={(e) => setWebsite(e.target.value)}
@@ -838,7 +847,7 @@ export default function StudioSettings() {
                       <button
                         type="button"
                         onClick={() => removeStyle(style)}
-                        className="p-0.5 rounded hover:bg-white/10 text-subtle hover:text-cream"
+                        className="p-1.5 rounded hover:bg-white/10 text-subtle hover:text-cream inline-flex items-center justify-center min-w-[44px] min-h-[44px]"
                       >
                         <X size={14} />
                       </button>
@@ -879,7 +888,7 @@ export default function StudioSettings() {
                       <button
                         type="button"
                         onClick={() => removeBodyPart(bp)}
-                        className="p-0.5 rounded hover:bg-white/10 text-subtle hover:text-cream"
+                        className="p-1.5 rounded hover:bg-white/10 text-subtle hover:text-cream inline-flex items-center justify-center min-w-[44px] min-h-[44px]"
                       >
                         <X size={14} />
                       </button>
@@ -1341,7 +1350,7 @@ export default function StudioSettings() {
                         <button
                           type="button"
                           onClick={() => removeSpecialty(sp)}
-                          className="p-0.5 rounded hover:bg-white/10 text-subtle hover:text-cream"
+                          className="p-1.5 rounded hover:bg-white/10 text-subtle hover:text-cream inline-flex items-center justify-center min-w-[44px] min-h-[44px]"
                         >
                           <X size={14} />
                         </button>

@@ -21,13 +21,15 @@ interface CreateOrderInput {
   }>
 }
 
-export function useOrders(clientId?: string | null) {
+export function useOrders(clientId?: string | null, opts?: { skip?: boolean }) {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const fetchIdRef = useRef(0)
+  const skip = opts?.skip ?? false
 
   const fetch = useCallback(async () => {
+    if (skip) { setOrders([]); setError(null); setLoading(false); return }
     const id = ++fetchIdRef.current
     setLoading(true)
     setError(null)
@@ -67,7 +69,7 @@ export function useOrders(clientId?: string | null) {
       setError(mapFirestoreError(e))
       setLoading(false)
     }
-  }, [clientId])
+  }, [clientId, skip])
 
   useEffect(() => { fetch() }, [fetch])
 

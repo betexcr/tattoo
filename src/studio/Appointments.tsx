@@ -280,6 +280,7 @@ export default function Appointments() {
   const [rejectConfirmId, setRejectConfirmId] = useState<string | null>(null)
   const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null)
   const [updatingApptId, setUpdatingApptId] = useState<string | null>(null)
+  const [statusError, setStatusError] = useState<string | null>(null)
   const modalPanelRef = useRef<HTMLDivElement>(null)
   const closeModal = useCallback(() => setModalOpen(false), [])
 
@@ -394,11 +395,12 @@ export default function Appointments() {
   const handleUpdateStatus = async (id: string, status: Appointment['status']) => {
     if (updatingApptId) return
     setUpdatingApptId(id)
+    setStatusError(null)
     try {
       const result = await hookUpdateStatus(id, status)
       setRejectConfirmId(null)
       setCancelConfirmId(null)
-      if (result?.error) return
+      if (result?.error) { setStatusError(result.error); return }
       const apt = appointments.find(a => a.id === id)
       if (apt?.client_id) {
         const statusLabels: Record<string, string> = { confirmed: 'confirmada', rejected: 'rechazada', completed: 'completada' }
@@ -419,7 +421,11 @@ export default function Appointments() {
   const [modalSaving, setModalSaving] = useState(false)
 
   const handleSave = async () => {
-    if (!form.client.trim() || !form.date || !form.time || modalSaving) return
+    if (modalSaving) return
+    if (!form.client.trim() || !form.date || !form.time) {
+      setModalSaveError('Completa los campos de cliente, fecha y hora')
+      return
+    }
     setModalSaveError(null)
     setModalSaving(true)
     try {
@@ -463,8 +469,8 @@ export default function Appointments() {
   return (
     <div className="min-h-dvh bg-ink">
       <div className="px-4 pt-4 pb-28">
-        {hookError && (
-          <div className="mb-4 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{hookError}</div>
+        {(hookError || statusError) && (
+          <div className="mb-4 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{hookError || statusError}</div>
         )}
         {/* View toggle */}
         <motion.div

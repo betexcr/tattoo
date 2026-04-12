@@ -4,7 +4,7 @@ import { useScrollLock } from '../hooks/useScrollLock'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ShoppingCart, X, Frame, Shirt, Footprints, Watch, Trash2, Search, ChevronLeft } from 'lucide-react'
-import { collection, addDoc, query, where, getDocs } from 'firebase/firestore'
+import { collection, addDoc, query, where, getDocs, limit } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import PageHeader from '../components/PageHeader'
 import ImageWithPlaceholder from '../components/ImageWithPlaceholder'
@@ -104,7 +104,7 @@ const ShopProductCard = memo(function ShopProductCard({ item, onClick }: { item:
 
 export default function Shop() {
   const { items: shopItems, loading, error: shopError } = useShop()
-  const { create: createOrder } = useOrders()
+  const { create: createOrder } = useOrders(undefined, { skip: true })
   const { user, requireAuth, authPrompt } = useRequireAuth()
   const [categoryFilter, setCategoryFilter] = useState<Category>('')
   const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null)
@@ -132,10 +132,13 @@ export default function Shop() {
 
   useEffect(() => {
     if (!user) return
-    const q = query(collection(db, 'stock_notifications'), where('user_id', '==', user.uid))
+    let cancelled = false
+    const q = query(collection(db, 'stock_notifications'), where('user_id', '==', user.uid), limit(100))
     getDocs(q).then(snap => {
+      if (cancelled) return
       setNotifiedItems(new Set(snap.docs.map(d => d.data().item_id as string)))
     }).catch((e) => { console.warn('Error cargando preferencias de stock:', e) })
+    return () => { cancelled = true }
   }, [user])
 
   const cartCount = cart.reduce((sum, c) => sum + c.qty, 0)
@@ -246,8 +249,13 @@ export default function Shop() {
 
   if (loading) {
     return (
-      <div className="min-h-dvh pb-6 flex items-center justify-center">
-        <p className="text-subtle text-sm">Cargando...</p>
+      <div className="min-h-dvh pb-6">
+        <div className="h-20 bg-ink-light/50 animate-pulse" />
+        <div className="grid grid-cols-2 gap-3 px-5 pt-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="aspect-[4/5] rounded-2xl bg-ink-medium/40 animate-pulse" />
+          ))}
+        </div>
       </div>
     )
   }
@@ -395,7 +403,7 @@ export default function Shop() {
               <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 rounded-full bg-white/10" />
               </div>
-              <div className="flex-1 overflow-y-auto p-5 pb-[max(2rem,env(safe-area-inset-bottom))]">
+              <div className="flex-1 overflow-y-auto overscroll-contain p-5 pb-[max(2rem,env(safe-area-inset-bottom))]">
                 <h3 className="font-serif text-cream text-lg mb-4">Carrito</h3>
                 {checkoutStep === 'success' ? (
                   <div className="py-8 text-center">
@@ -494,7 +502,7 @@ export default function Shop() {
                             type="button"
                             onClick={() => removeFromCart(i)}
                             aria-label="Eliminar del carrito"
-                            className="p-2 rounded-lg text-subtle hover:text-rose hover:bg-rose/10 transition-colors shrink-0"
+                            className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-subtle hover:text-rose hover:bg-rose/10 transition-colors shrink-0"
                           >
                             <Trash2 size={16} />
                           </button>

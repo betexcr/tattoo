@@ -129,7 +129,7 @@ export default function Dashboard() {
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now)
       d.setDate(d.getDate() - i)
-      const dateStr = d.toISOString().slice(0, 10)
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
       const dayTotal = localAppointments
         .filter((a) => {
           if (a.status !== 'confirmed' && a.status !== 'completed') return false
@@ -145,6 +145,7 @@ export default function Dashboard() {
 
   const [statusError, setStatusError] = useState<string | null>(null)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [rejectConfirmId, setRejectConfirmId] = useState<string | null>(null)
 
   const handleConfirm = async (id: string) => {
     if (updatingId) return
@@ -165,6 +166,7 @@ export default function Dashboard() {
     try {
       const result = await updateStatus(id, 'rejected')
       if (result?.error) setStatusError(result.error)
+      setRejectConfirmId(null)
     } finally {
       setUpdatingId(null)
     }
@@ -231,7 +233,7 @@ export default function Dashboard() {
         <div className="rounded-xl bg-ink-light border border-white/5 p-4 relative overflow-hidden">
           <Euro className="absolute top-3 right-3 w-5 h-5 text-emerald-400/70" />
           <p className="text-2xl font-serif font-semibold text-cream">
-            €{monthlyRevenue}
+            €{new Intl.NumberFormat('es-ES').format(monthlyRevenue)}
           </p>
           <p className="text-xs text-subtle mt-0.5">Ingresos Mes</p>
           <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-400/40" />
@@ -284,15 +286,35 @@ export default function Dashboard() {
                     >
                       <Check size={16} />
                     </button>
-                    <button
-                      type="button"
-                      aria-label="Rechazar cita"
-                      onClick={() => handleReject(apt.id)}
-                      disabled={updatingId === apt.id}
-                      className="w-11 h-11 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <X size={16} />
-                    </button>
+                    {rejectConfirmId === apt.id ? (
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleReject(apt.id)}
+                          disabled={updatingId === apt.id}
+                          className="h-11 px-3 rounded-full bg-red-500 text-white text-xs font-medium flex items-center disabled:opacity-50"
+                        >
+                          Sí
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRejectConfirmId(null)}
+                          className="h-11 px-3 rounded-full bg-ink-medium text-cream text-xs flex items-center"
+                        >
+                          No
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        aria-label="Rechazar cita"
+                        onClick={() => setRejectConfirmId(apt.id)}
+                        disabled={updatingId === apt.id}
+                        className="w-11 h-11 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -428,20 +450,25 @@ export default function Dashboard() {
         <h2 className="font-serif text-lg text-cream mb-3">Ingresos (7 días)</h2>
         <div className="rounded-xl bg-ink-light border border-white/5 p-4">
           <div className="flex items-end justify-between gap-2 h-20">
-            {dailyRevenue.map((val, i) => (
-              <div
-                key={i}
-                className="flex-1 flex flex-col justify-end items-center h-full"
-              >
+            {dailyRevenue.map((val, i) => {
+              const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+              return (
                 <div
-                  className="w-full rounded-t bg-gradient-to-t from-gold-dark to-gold transition-all duration-500"
-                  style={{
-                    height:
-                      val > 0 ? `${(val / maxRevenue) * 100}%` : '4px',
-                  }}
-                />
-              </div>
-            ))}
+                  key={i}
+                  className="flex-1 flex flex-col justify-end items-center h-full"
+                >
+                  <div
+                    role="img"
+                    aria-label={`${dayNames[i]}: €${val}`}
+                    className="w-full rounded-t bg-gradient-to-t from-gold-dark to-gold transition-all duration-500"
+                    style={{
+                      height:
+                        val > 0 ? `${(val / maxRevenue) * 100}%` : '4px',
+                    }}
+                  />
+                </div>
+              )
+            })}
           </div>
           <div className="flex justify-between mt-2 text-[10px] text-subtle">
             <span>L</span>

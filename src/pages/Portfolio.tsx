@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useScrollLock } from '../hooks/useScrollLock'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import ImageWithPlaceholder from '../components/ImageWithPlaceholder'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
@@ -32,15 +32,15 @@ const PortfolioCard = memo(function PortfolioCard({ item, onClick }: { item: Por
       onClick={() => onClick(item)}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(item) } }}
       aria-label={`${item.title} — ${item.style}`}
-      className="break-inside-avoid mb-3 cursor-pointer group"
+      className="cursor-pointer group"
     >
-      <div className="relative overflow-hidden rounded-xl border border-white/5 hover:border-gold/30 transition-colors">
+      <div className="relative h-full overflow-hidden rounded-xl border border-white/5 hover:border-gold/30 transition-colors">
         <ImageWithPlaceholder
           id={item.id}
           src={item.image_url}
           variant="portfolio"
           alt={item.title}
-          className="w-full aspect-[4/5] object-cover transition-transform duration-300 group-hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent opacity-80" />
         <div className="absolute bottom-0 left-0 right-0 p-3">
@@ -91,8 +91,13 @@ export default function Portfolio() {
 
   if (loading) {
     return (
-      <div className="min-h-dvh pb-6 flex items-center justify-center">
-        <p className="text-subtle text-sm">Cargando...</p>
+      <div className="min-h-dvh pb-6">
+        <div className="h-20 bg-ink-light/50 animate-pulse" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 px-5 pt-6">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="rounded-xl bg-ink-medium/40 animate-pulse aspect-[3/4]" />
+          ))}
+        </div>
       </div>
     )
   }
@@ -141,12 +146,12 @@ export default function Portfolio() {
         </div>
       </div>
 
-      {/* Masonry grid */}
+      {/* Grid */}
       <motion.div
         initial="hidden"
         animate="visible"
         variants={containerVariants}
-        className="columns-2 gap-3 px-5"
+        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 px-5 auto-rows-[minmax(0,calc(100dvh-14rem))]"
       >
         {filteredItems.map((item) => (
           <PortfolioCard key={item.id} item={item} onClick={handleCardClick} />
@@ -167,7 +172,7 @@ export default function Portfolio() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setSelectedItem(null)}
-            className="fixed inset-0 z-50 bg-ink/95 backdrop-blur-sm flex items-center justify-center p-5"
+            className="fixed inset-0 z-[60] bg-ink/95 backdrop-blur-sm flex items-center justify-center p-5"
           >
             <motion.div
               ref={detailPanelRef}
@@ -180,9 +185,17 @@ export default function Portfolio() {
               role="dialog"
               aria-modal="true"
               aria-label="Detalle de la obra"
-              className="w-full max-w-md bg-ink-light rounded-2xl overflow-hidden border border-white/10 shadow-2xl focus:outline-none"
+              className="w-full max-w-md bg-ink-light rounded-2xl overflow-hidden overflow-y-auto overscroll-contain border border-white/10 shadow-2xl focus:outline-none"
             >
               <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setSelectedItem(null)}
+                  aria-label="Cerrar"
+                  className="absolute top-3 right-3 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-ink/80 text-cream backdrop-blur-sm transition-colors hover:bg-ink hover:text-cream"
+                >
+                  <X size={20} strokeWidth={2} />
+                </button>
                 <ImageWithPlaceholder
                   id={selectedItem.id}
                   src={selectedItem.image_url}

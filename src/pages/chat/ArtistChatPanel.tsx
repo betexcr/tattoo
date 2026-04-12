@@ -38,8 +38,10 @@ export default function ArtistChatPanel({
         <div className="mx-4 mt-2 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{chatError}</div>
       )}
       {chatLoading && (
-        <div className="flex items-center justify-center py-4">
-          <p className="text-subtle text-sm">Cargando mensajes...</p>
+        <div className="px-4 py-4 space-y-3">
+          <div className="flex justify-start"><div className="h-12 w-48 rounded-2xl rounded-bl-md bg-ink-medium/40 animate-pulse" /></div>
+          <div className="flex justify-end"><div className="h-10 w-36 rounded-2xl rounded-br-md bg-gold/10 animate-pulse" /></div>
+          <div className="flex justify-start"><div className="h-14 w-52 rounded-2xl rounded-bl-md bg-ink-medium/40 animate-pulse" /></div>
         </div>
       )}
       <div className="px-4 py-2.5 border-b border-white/5 flex items-center gap-3">

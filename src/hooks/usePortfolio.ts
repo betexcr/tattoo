@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
-  collection, query, orderBy, where, getDocs, addDoc, updateDoc, deleteDoc, doc, limit,
+  collection, query, orderBy, where, getDocs, addDoc, updateDoc, deleteDoc, doc, limit, writeBatch,
 } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import type { PortfolioItem } from '../types'
@@ -76,5 +76,22 @@ export function usePortfolio(publishedOnly = true) {
     }
   }
 
-  return { items, loading, error, refetch: fetch, create, update, remove, reorder }
+  const swapOrder = async (idA: string, orderA: number, idB: string, orderB: number) => {
+    try {
+      const batch = writeBatch(db)
+      batch.update(doc(db, 'portfolio_items', idA), { sort_order: orderB })
+      batch.update(doc(db, 'portfolio_items', idB), { sort_order: orderA })
+      await batch.commit()
+      setItems(prev => prev.map(i => {
+        if (i.id === idA) return { ...i, sort_order: orderB }
+        if (i.id === idB) return { ...i, sort_order: orderA }
+        return i
+      }).sort((a, b) => a.sort_order - b.sort_order))
+      return { error: null }
+    } catch (e: unknown) {
+      return { error: mapFirestoreError(e) }
+    }
+  }
+
+  return { items, loading, error, refetch: fetch, create, update, remove, reorder, swapOrder }
 }

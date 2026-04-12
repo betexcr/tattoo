@@ -98,9 +98,14 @@ service cloud.firestore {
         || (isSignedIn() && resource.data.client_id == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']));
     }
 
-    // Reminders: artists only
+    // Reminders: users read/write own, artists full access
     match /reminders/{remId} {
-      allow read, write: if isArtist();
+      allow read: if isArtist() || (isSignedIn() && resource.data.user_id == request.auth.uid);
+      allow create: if isArtist() || (isSignedIn() && request.resource.data.user_id == request.auth.uid
+        && request.resource.data.keys().hasOnly(['user_id', 'title', 'date', 'time', 'type', 'completed', 'created_at']));
+      allow update: if isArtist() || (isSignedIn() && resource.data.user_id == request.auth.uid
+        && request.resource.data.user_id == resource.data.user_id);
+      allow delete: if isArtist() || (isSignedIn() && resource.data.user_id == request.auth.uid);
     }
 
     // Contact submissions: anyone can create (with field constraints), artists can read

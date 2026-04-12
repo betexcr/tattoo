@@ -48,7 +48,7 @@ export default function AuthPromptModal({ returnTo, onClose }: Props) {
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-white/5 text-subtle hover:text-cream transition-colors"
+            className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-white/5 text-subtle hover:text-cream transition-colors"
           >
             <X size={18} />
           </button>
