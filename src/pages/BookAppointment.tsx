@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -17,6 +17,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage } from '../lib/firebase'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
+import { defaultTattooStyles, defaultBodyParts } from '../data/defaults'
 import { useAppointments } from '../hooks/useAppointments'
 import { useRequireAuth } from '../hooks/useRequireAuth'
 import { mapFirestoreError } from '../utils/mapFirestoreError'
@@ -28,6 +29,7 @@ const STEP_IDS = ['style', 'design', 'body', 'size', 'datetime', 'contact', 'con
 
 const WEEKDAY_SLOTS = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00']
 const SATURDAY_SLOTS = ['10:00', '11:00', '12:00', '13:00', '14:00']
+const BOOKING_STORAGE_KEY = 'booking-draft'
 
 function formatDateKey(year: number, month: number, day: number): string {
   const m = String(month + 1).padStart(2, '0')
@@ -47,6 +49,7 @@ const slideVariants = {
 
 export default function BookAppointment() {
   const { t, i18n: i18nInstance } = useTranslation('booking')
+  const { t: tDefaults } = useTranslation('defaults')
   const navigate = useNavigate()
   const { config } = useStudioConfig()
   const { create, getOccupiedSlots } = useAppointments()
@@ -72,6 +75,18 @@ export default function BookAppointment() {
   const WEEKDAY_LABELS = t('weekdays', { returnObjects: true }) as string[]
   const monthNames = t('monthNames', { returnObjects: true }) as string[]
 
+  const translateStyle = useMemo(() => {
+    const translated = tDefaults('tattooStyles', { returnObjects: true }) as string[]
+    const map = new Map(defaultTattooStyles.map((s, i) => [s, translated[i]]))
+    return (key: string) => map.get(key) ?? key
+  }, [tDefaults])
+
+  const translateBodyPart = useMemo(() => {
+    const translated = tDefaults('bodyParts', { returnObjects: true }) as string[]
+    const map = new Map(defaultBodyParts.map((p, i) => [p, translated[i]]))
+    return (key: string) => map.get(key) ?? key
+  }, [tDefaults])
+
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState(1)
 
@@ -95,6 +110,34 @@ export default function BookAppointment() {
     return { year: now.getFullYear(), month: now.getMonth() }
   })
 
+  const timeSlotsRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(BOOKING_STORAGE_KEY)
+      if (!saved) return
+      const s = JSON.parse(saved)
+      if (s.selectedStyle) setSelectedStyle(s.selectedStyle)
+      if (s.description) setDescription(s.description)
+      if (s.referenceImages) setReferenceImages(s.referenceImages)
+      if (s.selectedBodyPart) setSelectedBodyPart(s.selectedBodyPart)
+      if (s.selectedSize) setSelectedSize(s.selectedSize)
+      if (s.selectedDate) setSelectedDate(s.selectedDate)
+      if (s.selectedTime) setSelectedTime(s.selectedTime)
+      if (s.contact) setContact(s.contact)
+      if (typeof s.step === 'number') setStep(s.step)
+      sessionStorage.removeItem(BOOKING_STORAGE_KEY)
+    } catch { /* ignore corrupt data */ }
+  }, [])
+
+  useEffect(() => {
+    if (selectedDate && timeSlotsRef.current) {
+      setTimeout(() => {
+        timeSlotsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 150)
+    }
+  }, [selectedDate])
+
   const currentStep = STEPS[step]
 
   const canProceed = () => {
@@ -115,7 +158,15 @@ export default function BookAppointment() {
 
   const goNext = async () => {
     if (step === STEPS.length - 1) {
-      if (!requireAuth('/book') || submitting) return
+      if (!user) {
+        sessionStorage.setItem(BOOKING_STORAGE_KEY, JSON.stringify({
+          selectedStyle, description, referenceImages, selectedBodyPart,
+          selectedSize, selectedDate, selectedTime, contact, step,
+        }))
+        requireAuth('/book')
+        return
+      }
+      if (submitting) return
       setBookingError('')
       setSubmitting(true)
       try {
@@ -148,6 +199,7 @@ export default function BookAppointment() {
             link: '/agenda',
           })
         } catch { /* notification is best-effort */ }
+        sessionStorage.removeItem(BOOKING_STORAGE_KEY)
         setBooked(true)
         return
       } catch (e: unknown) {
@@ -252,6 +304,19 @@ export default function BookAppointment() {
     return cells
   }, [calendarView, today, occupiedSlots])
 
+  const filteredCalendarDays = useMemo(() => {
+    const weeks: typeof calendarDays[number][][] = []
+    for (let i = 0; i < calendarDays.length; i += 7) {
+      weeks.push(calendarDays.slice(i, i + 7))
+    }
+    let startIdx = 0
+    for (const week of weeks) {
+      if (week.every(cell => cell.isPast)) startIdx++
+      else break
+    }
+    return weeks.slice(startIdx).flat()
+  }, [calendarDays])
+
   const timeSlotsForDate = useMemo(() => {
     if (!selectedDate) return []
     const [y, m, d] = selectedDate.split('-').map(Number)
@@ -310,11 +375,11 @@ export default function BookAppointment() {
         >
           <div className="flex justify-between text-sm">
             <span className="text-subtle">{t('summary.style')}</span>
-            <span className="text-cream">{selectedStyle}</span>
+            <span className="text-cream">{translateStyle(selectedStyle)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-subtle">{t('summary.zone')}</span>
-            <span className="text-cream">{selectedBodyPart}</span>
+            <span className="text-cream">{translateBodyPart(selectedBodyPart)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-subtle">{t('summary.size')}</span>
@@ -396,7 +461,7 @@ export default function BookAppointment() {
       </header>
 
       {/* Step content */}
-      <div className="flex-1 overflow-hidden relative">
+      <div className="flex-1 overflow-x-hidden relative">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={step}
@@ -425,7 +490,7 @@ export default function BookAppointment() {
                         : 'border-white/5 bg-ink-light text-cream hover:border-white/10'
                     }`}
                   >
-                    <span className="text-sm font-medium">{style}</span>
+                    <span className="text-sm font-medium">{translateStyle(style)}</span>
                   </button>
                 ))}
               </div>
@@ -493,7 +558,7 @@ export default function BookAppointment() {
                         : 'border-white/5 bg-ink-light text-cream hover:border-white/10'
                     }`}
                   >
-                    <span className="text-xs font-medium">{part}</span>
+                    <span className="text-xs font-medium">{translateBodyPart(part)}</span>
                   </button>
                 ))}
               </div>
@@ -580,7 +645,7 @@ export default function BookAppointment() {
 
                   {/* Calendar grid */}
                   <div className="grid grid-cols-7 gap-1">
-                    {calendarDays.map((cell) => {
+                    {filteredCalendarDays.map((cell) => {
                       const isToday = cell.date === today
                       const isSelected = cell.date === selectedDate
 
@@ -601,7 +666,7 @@ export default function BookAppointment() {
                           aria-label={dateLabel}
                           aria-selected={isSelected}
                           className={`
-                            aspect-square rounded-lg text-sm font-medium transition-all
+                            h-10 rounded-lg text-sm font-medium transition-all
                             ${!cell.isCurrentMonth ? 'text-subtle/40' : ''}
                             ${cell.isPast ? 'opacity-40 cursor-not-allowed' : ''}
                             ${cell.isSunday ? 'opacity-30 cursor-not-allowed' : ''}
@@ -621,6 +686,7 @@ export default function BookAppointment() {
 
                 {selectedDate && (
                   <motion.div
+                    ref={timeSlotsRef}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
@@ -725,11 +791,11 @@ export default function BookAppointment() {
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm">
                       <span className="text-subtle">{t('summary.style')}</span>
-                      <span className="text-cream font-medium">{selectedStyle}</span>
+                      <span className="text-cream font-medium">{translateStyle(selectedStyle)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-subtle">{t('summary.zone')}</span>
-                      <span className="text-cream font-medium">{selectedBodyPart}</span>
+                      <span className="text-cream font-medium">{translateBodyPart(selectedBodyPart)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-subtle">{t('summary.size')}</span>
