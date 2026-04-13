@@ -78,14 +78,17 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                 <Palette size={20} className="text-gold" />
                 <h2 className="font-serif text-lg text-cream">{t('menu.explore')}</h2>
               </div>
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label={t('menu.closeMenu')}
-                className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
-              >
-                <X size={18} />
-              </button>
+              <div className="flex items-center gap-2">
+                <LanguageSwitcher />
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label={t('menu.closeMenu')}
+                  className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
 
             {/* Account section */}
@@ -149,10 +152,6 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                   </div>
                 </NavLink>
               )}
-            </div>
-
-            <div className="px-4 pt-3 flex justify-end">
-              <LanguageSwitcher />
             </div>
 
             <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-1">
