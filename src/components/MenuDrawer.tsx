@@ -78,17 +78,18 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                 <Palette size={20} className="text-gold" />
                 <h2 className="font-serif text-lg text-cream">{t('menu.explore')}</h2>
               </div>
-              <div className="flex items-center gap-2">
-                <LanguageSwitcher />
-                <button
-                  type="button"
-                  onClick={onClose}
-                  aria-label={t('menu.closeMenu')}
-                  className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
-                >
-                  <X size={18} />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label={t('menu.closeMenu')}
+                className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="px-5 py-3 border-b border-white/5">
+              <LanguageSwitcher className="justify-center" />
             </div>
 
             {/* Account section */}
