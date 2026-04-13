@@ -13,6 +13,7 @@ import { useShop } from '../hooks/useShop'
 import { useOrders } from '../hooks/useOrders'
 import { useRequireAuth } from '../hooks/useRequireAuth'
 import type { ShopItem } from '../types'
+import { tf } from '../utils/translate'
 
 type Category = ShopItem['category'] | ''
 type CartLine = { item: ShopItem; size: string; color: string; qty: number }
@@ -45,8 +46,9 @@ const cardVariants = {
   visible: { opacity: 1, y: 0 },
 }
 
-const ShopProductCard = memo(function ShopProductCard({ item, onClick }: { item: ShopItem; onClick: (item: ShopItem) => void }) {
+const ShopProductCard = memo(function ShopProductCard({ item, lang, onClick }: { item: ShopItem; lang: string; onClick: (item: ShopItem) => void }) {
   const { t } = useTranslation('shop')
+  const title = tf(item._translations, lang, 'title', item.title)
   return (
     <motion.article
       variants={cardVariants}
@@ -55,7 +57,7 @@ const ShopProductCard = memo(function ShopProductCard({ item, onClick }: { item:
       tabIndex={0}
       onClick={() => onClick(item)}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(item) } }}
-      aria-label={`${item.title} — €${item.price}`}
+      aria-label={`${title} — €${item.price}`}
       className={`cursor-pointer group ${!item.in_stock ? 'opacity-50' : ''}`}
     >
       <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-white/5 hover:border-gold/20 transition-all">
@@ -63,7 +65,7 @@ const ShopProductCard = memo(function ShopProductCard({ item, onClick }: { item:
           id={item.id}
           src={item.image_url}
           variant="shop"
-          alt={item.title}
+          alt={title}
           className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent" />
@@ -88,7 +90,7 @@ const ShopProductCard = memo(function ShopProductCard({ item, onClick }: { item:
         )}
         <div className="absolute bottom-0 left-0 right-0 p-2.5 sm:p-3">
           <h3 className="font-serif text-cream text-xs sm:text-sm font-medium line-clamp-2 leading-snug mb-0.5">
-            {item.title}
+            {title}
           </h3>
           <span className="text-gold font-semibold text-sm sm:text-base">€{item.price}</span>
         </div>
@@ -98,7 +100,7 @@ const ShopProductCard = memo(function ShopProductCard({ item, onClick }: { item:
 })
 
 export default function Shop() {
-  const { t } = useTranslation('shop')
+  const { t, i18n } = useTranslation('shop')
   const { t: tc } = useTranslation()
   const { items: shopItems, loading, error: shopError } = useShop()
   const { create: createOrder } = useOrders(undefined, { skip: true })
@@ -364,7 +366,7 @@ export default function Shop() {
         className="grid w-full gap-3 sm:gap-4 px-5 [grid-template-columns:repeat(auto-fill,minmax(min(100%,158px),1fr))]"
       >
         {filteredItems.map((item) => (
-          <ShopProductCard key={item.id} item={item} onClick={openDetail} />
+          <ShopProductCard key={item.id} item={item} lang={i18n.language} onClick={openDetail} />
         ))}
       </motion.div>
 
@@ -486,11 +488,11 @@ export default function Shop() {
                             id={line.item.id}
                             src={line.item.image_url}
                             variant="shop"
-                            alt={line.item.title}
+                            alt={tf(line.item._translations, i18n.language, 'title', line.item.title)}
                             className="w-14 h-14 rounded-lg object-cover shrink-0"
                           />
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-cream text-sm line-clamp-2">{line.item.title}</p>
+                            <p className="font-medium text-cream text-sm line-clamp-2">{tf(line.item._translations, i18n.language, 'title', line.item.title)}</p>
                             <p className="text-subtle text-xs mt-0.5">
                               {line.size && t('size', { size: line.size })}
                               {line.size && line.color && ' · '}
@@ -586,7 +588,7 @@ export default function Shop() {
                       id={selectedItem.id}
                       src={selectedItem.image_url}
                       variant="shop"
-                      alt={selectedItem.title}
+                      alt={tf(selectedItem._translations, i18n.language, 'title', selectedItem.title)}
                       className="max-h-[min(36dvh,320px)] w-full object-contain object-center drop-shadow-lg"
                     />
                   </div>
@@ -601,14 +603,14 @@ export default function Shop() {
                       {t(`categoryLabels.${selectedItem.category}`)}
                     </p>
                     <h2 className="font-serif text-[1.35rem] leading-snug tracking-tight text-cream sm:text-2xl">
-                      {selectedItem.title}
+                      {tf(selectedItem._translations, i18n.language, 'title', selectedItem.title)}
                     </h2>
                     <p className="mt-3 font-sans text-3xl font-semibold tracking-tight text-gold sm:text-[2rem]">
                       €{selectedItem.price}
                     </p>
                   </div>
 
-                  <p className="text-sm leading-relaxed text-cream-dark/95">{selectedItem.description}</p>
+                  <p className="text-sm leading-relaxed text-cream-dark/95">{tf(selectedItem._translations, i18n.language, 'description', selectedItem.description)}</p>
 
                   <div className="flex flex-wrap gap-2">
                     <span

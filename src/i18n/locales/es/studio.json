@@ -249,6 +249,7 @@
       "notifications": "Notificaciones"
     },
     "loading": "Cargando configuración...",
+    "autoTranslationActive": "Traducción automática activa → {{lang}}",
     "profile": {
       "title": "Perfil del Estudio",
       "studioName": "Nombre del estudio",

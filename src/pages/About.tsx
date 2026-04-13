@@ -6,6 +6,7 @@ import { Instagram, Video, LayoutGrid } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { safeHref } from '../utils/safeHref'
+import { createTranslator } from '../utils/translate'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -21,8 +22,9 @@ const itemVariants = {
 }
 
 export default function About() {
-  const { t } = useTranslation('about')
+  const { t, i18n } = useTranslation('about')
   const { config } = useStudioConfig()
+  const tc = createTranslator(config._translations, i18n.language)
 
   const socialLinks = useMemo(() => {
     const links: { label: string; icon: LucideIcon; href: string }[] = []
@@ -78,7 +80,7 @@ export default function About() {
               variants={itemVariants}
               className="text-cream-dark text-sm tracking-wide"
             >
-              {config.about_content.artist_title}
+              {tc('about_content.artist_title', config.about_content.artist_title)}
             </motion.p>
           </div>
         </motion.section>
@@ -95,7 +97,7 @@ export default function About() {
             variants={itemVariants}
             className="text-cream text-[15px] leading-relaxed"
           >
-            {config.about_content.bio}
+            {tc('about_content.bio', config.about_content.bio)}
           </motion.p>
         </motion.section>
 

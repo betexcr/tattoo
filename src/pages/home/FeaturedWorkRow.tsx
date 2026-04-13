@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from './constants'
 import ImageWithPlaceholder from '../../components/ImageWithPlaceholder'
 import type { PortfolioItem } from '../../types'
+import { tf } from '../../utils/translate'
 
 interface Props {
   items: PortfolioItem[]
@@ -13,7 +14,7 @@ interface Props {
 }
 
 export default memo(function FeaturedWorkRow({ items, loading }: Props) {
-  const { t } = useTranslation('home')
+  const { t, i18n } = useTranslation('home')
   return (
     <motion.section
       initial="hidden"
@@ -53,12 +54,12 @@ export default memo(function FeaturedWorkRow({ items, loading }: Props) {
                 id={item.id}
                 src={item.image_url}
                 variant="portfolio"
-                alt={item.title}
+                alt={tf(item._translations, i18n.language, 'title', item.title)}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-2.5">
-                <p className="text-cream text-xs font-medium truncate">{item.title}</p>
+                <p className="text-cream text-xs font-medium truncate">{tf(item._translations, i18n.language, 'title', item.title)}</p>
                 <span className="text-gold/70 text-[10px]">{item.style}</span>
               </div>
             </div>

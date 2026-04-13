@@ -249,6 +249,7 @@
       "notifications": "Notifications"
     },
     "loading": "Loading settings...",
+    "autoTranslationActive": "Auto-translation active → {{lang}}",
     "profile": {
       "title": "Studio Profile",
       "studioName": "Studio name",

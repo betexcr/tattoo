@@ -10,6 +10,7 @@ import ImageWithPlaceholder from '../components/ImageWithPlaceholder'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { usePortfolio } from '../hooks/usePortfolio'
 import type { PortfolioItem } from '../types'
+import { tf } from '../utils/translate'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -24,7 +25,8 @@ const cardVariants = {
   visible: { opacity: 1, y: 0 },
 }
 
-const PortfolioCard = memo(function PortfolioCard({ item, onClick }: { item: PortfolioItem; onClick: (item: PortfolioItem) => void }) {
+const PortfolioCard = memo(function PortfolioCard({ item, lang, onClick }: { item: PortfolioItem; lang: string; onClick: (item: PortfolioItem) => void }) {
+  const title = tf(item._translations, lang, 'title', item.title)
   return (
     <motion.article
       variants={cardVariants}
@@ -32,7 +34,7 @@ const PortfolioCard = memo(function PortfolioCard({ item, onClick }: { item: Por
       tabIndex={0}
       onClick={() => onClick(item)}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(item) } }}
-      aria-label={`${item.title} — ${item.style}`}
+      aria-label={`${title} — ${item.style}`}
       className="cursor-pointer group"
     >
       <div className="relative h-full overflow-hidden rounded-xl border border-white/5 hover:border-gold/30 transition-colors">
@@ -40,12 +42,12 @@ const PortfolioCard = memo(function PortfolioCard({ item, onClick }: { item: Por
           id={item.id}
           src={item.image_url}
           variant="portfolio"
-          alt={item.title}
+          alt={title}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent opacity-80" />
         <div className="absolute bottom-0 left-0 right-0 p-3">
-          <h3 className="font-serif text-cream text-sm font-medium">{item.title}</h3>
+          <h3 className="font-serif text-cream text-sm font-medium">{title}</h3>
           <span className="text-[10px] text-gold/90 uppercase tracking-wider">
             {item.style}
           </span>
@@ -56,7 +58,7 @@ const PortfolioCard = memo(function PortfolioCard({ item, onClick }: { item: Por
 })
 
 export default function Portfolio() {
-  const { t } = useTranslation('portfolio')
+  const { t, i18n } = useTranslation('portfolio')
   const { t: tc } = useTranslation()
   const { config } = useStudioConfig()
   const { items: portfolioItems, loading, error } = usePortfolio()
@@ -157,7 +159,7 @@ export default function Portfolio() {
         className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 px-5 auto-rows-[minmax(0,calc(100dvh-14rem))]"
       >
         {filteredItems.map((item) => (
-          <PortfolioCard key={item.id} item={item} onClick={handleCardClick} />
+          <PortfolioCard key={item.id} item={item} lang={i18n.language} onClick={handleCardClick} />
         ))}
       </motion.div>
 
@@ -208,7 +210,7 @@ export default function Portfolio() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent opacity-60" />
                 <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <h2 className="font-serif text-xl text-cream">{selectedItem.title}</h2>
+                  <h2 className="font-serif text-xl text-cream">{tf(selectedItem._translations, i18n.language, 'title', selectedItem.title)}</h2>
                   <span className="text-xs text-gold uppercase tracking-wider">
                     {selectedItem.style}
                   </span>
@@ -216,7 +218,7 @@ export default function Portfolio() {
               </div>
               <div className="p-4">
                 <p className="text-cream-dark text-sm leading-relaxed">
-                  {selectedItem.description}
+                  {tf(selectedItem._translations, i18n.language, 'description', selectedItem.description)}
                 </p>
               </div>
             </motion.div>

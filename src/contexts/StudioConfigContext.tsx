@@ -8,6 +8,7 @@ import type {
   HomeContent,
   AboutContent,
   QuizConfig,
+  TranslationsMap,
 } from '../types'
 import {
   defaultTattooStyles,
@@ -41,6 +42,8 @@ export interface StudioConfig {
   about_content: AboutContent
   quiz_config: QuizConfig
   monthly_target: number
+  _translations?: TranslationsMap
+  _source_lang?: string
 }
 
 const defaultConfig: StudioConfig = {
@@ -106,6 +109,8 @@ function mergeConfig(raw: StudioSettings): StudioConfig {
       ? { ...defaultQuizConfig, ...raw.quiz_config }
       : defaultQuizConfig,
     monthly_target: raw.monthly_target ?? 2000,
+    _translations: raw._translations,
+    _source_lang: raw._source_lang,
   }
 }
 

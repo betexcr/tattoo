@@ -14,6 +14,7 @@ import { usePortfolio } from '../hooks/usePortfolio'
 import { useShop } from '../hooks/useShop'
 import { useCourses } from '../hooks/useCourses'
 import { containerVariants, itemVariants, lineVariants, quickActions } from './home/constants'
+import { createTranslator } from '../utils/translate'
 import FeaturedWorkRow from './home/FeaturedWorkRow'
 import ShopPreviewRow from './home/ShopPreviewRow'
 import HomeReviewsSection from './home/HomeReviewsSection'
@@ -30,6 +31,8 @@ export default function Home() {
   const { items: allPortfolioItems, loading: loadingPortfolio } = usePortfolio()
   const { items: allShopItems, loading: loadingShop } = useShop()
   const { courses: allCourses, loading: loadingCourses } = useCourses()
+
+  const tc = createTranslator(config._translations, i18n.language)
 
   const topSuggestions = useMemo(
     () => [...config.suggestions].sort((a, b) => b.popularity - a.popularity).slice(0, 3),
@@ -61,13 +64,13 @@ export default function Home() {
 
         <div className="relative z-10 space-y-4">
           <motion.div variants={itemVariants}>
-            <p className="text-gold/70 text-[10px] tracking-[0.35em] uppercase font-sans mb-2">{config.home_content.subtitle}</p>
+            <p className="text-gold/70 text-[10px] tracking-[0.35em] uppercase font-sans mb-2">{tc('home_content.subtitle', config.home_content.subtitle)}</p>
             <h1 className="font-serif text-4xl tracking-[0.15em] text-cream drop-shadow-lg">
               {config.studio_name}
             </h1>
           </motion.div>
           <motion.p variants={itemVariants} className="text-cream-dark/80 text-sm leading-relaxed max-w-[280px]">
-            {config.home_content.tagline}
+            {tc('home_content.tagline', config.home_content.tagline)}
           </motion.p>
           <motion.div
             variants={lineVariants}
@@ -181,7 +184,7 @@ export default function Home() {
                 to="/suggestions"
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-ink-medium/40 border border-white/5 hover:border-gold/30 transition-all"
               >
-                <span className="text-cream text-sm">{s.title}</span>
+                <span className="text-cream text-sm">{tc(`suggestions.${s.id}.title`, s.title)}</span>
                 <span className="w-6 h-6 rounded-full bg-gold/10 flex items-center justify-center text-gold text-[10px] font-bold">
                   {s.popularity}
                 </span>

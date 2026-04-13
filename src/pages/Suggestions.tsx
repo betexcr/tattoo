@@ -10,6 +10,7 @@ import { db } from '../lib/firebase'
 import PageHeader from '../components/PageHeader'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { useAuth } from '../contexts/AuthContext'
+import { createTranslator } from '../utils/translate'
 
 function getStyleRecommendation(
   answers: string[],
@@ -34,8 +35,9 @@ const itemVariants = {
 }
 
 export default function Suggestions() {
-  const { t } = useTranslation('suggestions')
+  const { t, i18n } = useTranslation('suggestions')
   const { config } = useStudioConfig()
+  const tc = createTranslator(config._translations, i18n.language)
   const { user } = useAuth()
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set())
   const [quizOpen, setQuizOpen] = useState(false)
@@ -161,8 +163,8 @@ export default function Suggestions() {
               <div className="p-4 space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-serif text-cream text-base font-medium">{suggestion.title}</h3>
-                    <p className="text-cream-dark text-sm mt-1 leading-relaxed">{suggestion.description}</p>
+                    <h3 className="font-serif text-cream text-base font-medium">{tc(`suggestions.${suggestion.id}.title`, suggestion.title)}</h3>
+                    <p className="text-cream-dark text-sm mt-1 leading-relaxed">{tc(`suggestions.${suggestion.id}.description`, suggestion.description)}</p>
                   </div>
                   <button
                     type="button"

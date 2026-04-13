@@ -13,6 +13,7 @@ import {
   Bell,
   Plus,
   X,
+  Languages,
 } from 'lucide-react'
 import { useStudioSettings } from '../hooks/useStudioSettings'
 import type {
@@ -590,6 +591,16 @@ export default function StudioSettings() {
           ))}
         </div>
       </div>
+
+      {/* Auto-translation status */}
+      {dbSettings?._translations && Object.keys(dbSettings._translations).length > 0 && (
+        <div className="mb-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+          <Languages size={14} className="text-emerald-400 shrink-0" />
+          <p className="text-emerald-400 text-xs">
+            {t('settings.autoTranslationActive', { lang: dbSettings._source_lang === 'es' ? 'English' : 'Español' })}
+          </p>
+        </div>
+      )}
 
       <AnimatePresence mode="wait">
         {activeTab === 'perfil' && (

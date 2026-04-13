@@ -1,3 +1,5 @@
+export type TranslationsMap = Record<string, Record<string, string>>
+
 export interface Profile {
   id: string
   full_name: string
@@ -16,6 +18,8 @@ export interface PortfolioItem {
   published: boolean
   sort_order: number
   created_at: string
+  _translations?: TranslationsMap
+  _source_lang?: string
 }
 
 export interface Appointment {
@@ -76,6 +80,8 @@ export interface ShopItem {
   sizes: string[]
   colors: string[]
   created_at: string
+  _translations?: TranslationsMap
+  _source_lang?: string
 }
 
 export interface Order {
@@ -260,6 +266,8 @@ export interface StudioSettings {
   color_palette?: ColorOption[]
   shop_categories?: ShopCategoryConfig[]
   updated_at: string
+  _translations?: TranslationsMap
+  _source_lang?: string
 }
 
 export interface DesignerElement {

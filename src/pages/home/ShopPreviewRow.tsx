@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from './constants'
 import ImageWithPlaceholder from '../../components/ImageWithPlaceholder'
 import type { ShopItem } from '../../types'
+import { tf } from '../../utils/translate'
 
 interface Props {
   items: ShopItem[]
@@ -13,7 +14,7 @@ interface Props {
 }
 
 export default memo(function ShopPreviewRow({ items, loading }: Props) {
-  const { t } = useTranslation('home')
+  const { t, i18n } = useTranslation('home')
   return (
     <motion.section
       initial="hidden"
@@ -50,12 +51,12 @@ export default memo(function ShopPreviewRow({ items, loading }: Props) {
                   id={item.id}
                   src={item.image_url}
                   variant="shop"
-                  alt={item.title}
+                  alt={tf(item._translations, i18n.language, 'title', item.title)}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/30 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-2.5">
-                  <p className="text-cream text-xs font-medium line-clamp-2 leading-tight">{item.title}</p>
+                  <p className="text-cream text-xs font-medium line-clamp-2 leading-tight">{tf(item._translations, i18n.language, 'title', item.title)}</p>
                   <span className="text-gold font-semibold text-sm">€{item.price}</span>
                 </div>
               </div>
