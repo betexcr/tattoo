@@ -1,10 +1,10 @@
 import {
-  Image,
-  CalendarPlus,
+  Sparkles,
   PenTool,
-  User,
+  Eye,
   ShoppingBag,
   GraduationCap,
+  Lightbulb,
 } from 'lucide-react'
 
 export const containerVariants = {
@@ -30,10 +30,10 @@ export const lineVariants = {
 }
 
 export const quickActions = [
-  { to: '/portfolio', label: 'Portafolio', icon: Image, desc: 'Ver trabajos' },
-  { to: '/book', label: 'Reservar', icon: CalendarPlus, desc: 'Agendar cita' },
-  { to: '/designer', label: 'Diseñador', icon: PenTool, desc: 'Crea tu tatuaje' },
-  { to: '/visualizer', label: 'Visualizar', icon: User, desc: 'En tu cuerpo' },
-  { to: '/shop', label: 'Tienda', icon: ShoppingBag, desc: 'Arte exclusivo' },
-  { to: '/courses', label: 'Cursos', icon: GraduationCap, desc: 'Aprende' },
+  { to: '/book', icon: Sparkles },
+  { to: '/designer', icon: PenTool },
+  { to: '/visualizer', icon: Eye },
+  { to: '/shop', icon: ShoppingBag },
+  { to: '/courses', icon: GraduationCap },
+  { to: '/suggestions', icon: Lightbulb },
 ]

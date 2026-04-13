@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, Bot } from 'lucide-react'
 import type { ChatbotMessage } from './chatUtils'
@@ -18,6 +19,7 @@ export default function AssistantChatPanel({
   studioName, quickReplies, chatbotMessages, isTyping,
   inputText, onInputChange, onSendMessage, onQuickReply,
 }: Props) {
+  const { t } = useTranslation('chat')
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -35,8 +37,7 @@ export default function AssistantChatPanel({
           <div className="flex items-start gap-2">
             <Bot size={16} className="text-gold shrink-0 mt-0.5" />
             <p className="text-cream text-sm leading-relaxed">
-              ¡Hola! Soy el asistente virtual de {studioName}. Puedo ayudarte
-              con preguntas frecuentes. Elige un tema o escríbeme:
+              {t('assistantPanel.intro', { name: studioName })}
             </p>
           </div>
         </motion.div>
@@ -111,15 +112,15 @@ export default function AssistantChatPanel({
                 if (inputText.trim()) onSendMessage(inputText.trim())
               }
             }}
-            placeholder="Escribe tu pregunta..."
-            aria-label="Mensaje"
+            placeholder={t('assistantPanel.placeholder')}
+            aria-label={t('assistantPanel.messageAria')}
             className="flex-1 px-4 py-3 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle/60 focus:outline-none focus:border-gold/50"
           />
           <button
             type="button"
             onClick={() => inputText.trim() && onSendMessage(inputText.trim())}
             disabled={!inputText.trim() || isTyping}
-            aria-label="Enviar mensaje"
+            aria-label={t('assistantPanel.sendAria')}
             className="w-12 h-12 rounded-xl bg-gold text-ink flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gold-light transition-colors"
           >
             <Send size={18} />

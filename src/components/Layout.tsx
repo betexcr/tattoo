@@ -3,15 +3,17 @@ import BottomNav from './BottomNav'
 import MenuDrawer from './MenuDrawer'
 import NotificationBell from './NotificationBell'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function Layout() {
+  const { t } = useTranslation()
   const [menuOpen, setMenuOpen] = useState(false)
   const { user } = useAuth()
 
   return (
     <div className="flex flex-col min-h-dvh bg-ink">
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-gold focus:text-ink focus:rounded-lg focus:text-sm focus:font-medium">Saltar al contenido</a>
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-gold focus:text-ink focus:rounded-lg focus:text-sm focus:font-medium">{t('skipToContent')}</a>
       {user && (
         <div className="fixed top-[max(0.5rem,env(safe-area-inset-top,0.5rem))] right-[max(0.75rem,env(safe-area-inset-right,0.75rem))] z-40">
           <NotificationBell />

@@ -5,6 +5,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { StudioConfigProvider } from './contexts/StudioConfigContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import App from './App'
+import './i18n'
 
 export function mountApp(rootEl: HTMLElement): void {
   createRoot(rootEl).render(

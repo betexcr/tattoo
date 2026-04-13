@@ -1,0 +1,21 @@
+{
+  "title": "Sugerencias",
+  "subtitle": "Encuentra tu inspiración",
+  "intro": "Descubre estilos y diseños que marcan tendencia. Encuentra inspiración para tu próximo tatuaje.",
+  "trending": "Popular ahora",
+  "empty": "No hay sugerencias disponibles",
+  "likeAria": "Me gusta",
+  "popularity": "{{value}}% popularidad",
+  "viewDesigns": "Ver Diseños",
+  "quiz": {
+    "title": "¿No sabes qué estilo elegir?",
+    "description": "Nuestro cuestionario te ayuda a descubrir tu estilo ideal en segundos.",
+    "start": "Comenzar Cuestionario",
+    "dialogAria": "Cuestionario de estilo",
+    "noQuestions": "No hay preguntas disponibles en este momento.",
+    "resultTitle": "Tu estilo ideal",
+    "viewStyleDesigns": "Ver diseños {{style}}",
+    "fallbackStyle": "Línea Fina",
+    "fallbackDescription": "Líneas delicadas y elegantes para cualquier diseño"
+  }
+}

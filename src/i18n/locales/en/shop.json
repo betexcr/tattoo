@@ -1,0 +1,60 @@
+{
+  "title": "Shop",
+  "subtitle": "Art to wear",
+  "categories": {
+    "all": "All",
+    "cuadros": "Paintings",
+    "ropa": "Clothing",
+    "zapatos": "Shoes",
+    "accesorios": "Accessories"
+  },
+  "categoryLabels": {
+    "cuadros": "Painting",
+    "ropa": "Clothing",
+    "zapatos": "Shoes",
+    "accesorios": "Accessory"
+  },
+  "categoryDescriptions": {
+    "cuadros": "Original artworks and limited editions to decorate your space.",
+    "ropa": "Exclusive garments with designs by the artist. Organic cotton and unique pieces.",
+    "zapatos": "Custom handpainted footwear. Each pair is a work of art.",
+    "accesorios": "Unique accessories: jewelry, bags, pins and more with exclusive designs."
+  },
+  "searchPlaceholder": "Search products...",
+  "searchAria": "Search products",
+  "cart": "Cart",
+  "cartTitle": "Shopping cart",
+  "cartEmpty": "Your cart is empty",
+  "removeFromCart": "Remove from cart",
+  "size": "Size {{size}}",
+  "total": "Total",
+  "checkout": "Checkout",
+  "orderConfirmed": "Order confirmed!",
+  "contactSoon": "We'll contact you soon.",
+  "checkoutForm": {
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address"
+  },
+  "processing": "Processing...",
+  "confirmOrder": "Confirm Order",
+  "noProducts": "No products in this category",
+  "productDetail": "Product detail",
+  "backToShop": "Back to shop",
+  "product": "Product",
+  "inStock": "In stock",
+  "outOfStock": "Out of stock",
+  "shippingNote": "Shipping arranged upon confirmation",
+  "sizeLabel": "Size",
+  "chooseOne": "Choose one",
+  "color": "Color",
+  "price": "Price",
+  "addToCart": "Add to cart",
+  "sizesCount": "{{count}} sizes",
+  "notifyAvailable": "We'll notify you when it's available.",
+  "outOfStockNotify": "Out of stock. Leave your email and we'll let you know when it's back.",
+  "stockEmailAria": "Email for stock notification",
+  "notifyMe": "Notify me",
+  "notifyError": "Could not register the notification"
+}

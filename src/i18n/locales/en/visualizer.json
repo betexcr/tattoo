@@ -1,0 +1,12 @@
+{
+  "title": "Body Visualizer",
+  "subtitle": "Visualize your tattoo",
+  "front": "Front",
+  "back": "Back",
+  "selectedZone": "Selected zone:",
+  "none": "—",
+  "referenceStyles": "Reference styles",
+  "noReferences": "No reference designs available",
+  "painLevel": "Pain level",
+  "bookAppointment": "Book Appointment"
+}

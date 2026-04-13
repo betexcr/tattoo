@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, X, CalendarPlus, Check, Phone, MessageCircle, CheckCheck, AlertTriangle, LogIn } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
@@ -7,6 +8,7 @@ import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
 import { useAppointments } from '../hooks/useAppointments'
 import { useAuth } from '../contexts/AuthContext'
+import i18n from '../i18n'
 import type { Appointment } from '../types'
 
 const containerVariants = {
@@ -24,35 +26,19 @@ const itemVariants = {
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr)
-  return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+  return d.toLocaleDateString(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 function getStatusStyles(status: Appointment['status']) {
   switch (status) {
     case 'confirmed':
-      return {
-        border: 'border-l-gold',
-        badge: 'bg-emerald-500/20 text-emerald-400',
-        label: 'Confirmada',
-      }
+      return { border: 'border-l-gold', badge: 'bg-emerald-500/20 text-emerald-400' }
     case 'pending':
-      return {
-        border: 'border-l-amber-500',
-        badge: 'bg-amber-500/20 text-amber-400',
-        label: 'Pendiente',
-      }
+      return { border: 'border-l-amber-500', badge: 'bg-amber-500/20 text-amber-400' }
     case 'completed':
-      return {
-        border: 'border-l-subtle',
-        badge: 'bg-subtle/20 text-subtle',
-        label: 'Completada',
-      }
+      return { border: 'border-l-subtle', badge: 'bg-subtle/20 text-subtle' }
     case 'rejected':
-      return {
-        border: 'border-l-red-500',
-        badge: 'bg-red-500/20 text-red-400',
-        label: 'Rechazada',
-      }
+      return { border: 'border-l-red-500', badge: 'bg-red-500/20 text-red-400' }
   }
 }
 
@@ -69,6 +55,8 @@ const initialFormState = {
 type TabKey = 'pending' | 'confirmed' | 'completed'
 
 export default function Agenda() {
+  const { t } = useTranslation('agenda')
+  const { t: tc } = useTranslation()
   const { config } = useStudioConfig()
   const { user, isArtist, loading: authLoading } = useAuth()
   const { appointments, create, updateStatus, loading, error } = useAppointments(
@@ -130,7 +118,7 @@ export default function Agenda() {
   const handleSave = async () => {
     if (saving) return
     if (!form.client || !form.date || !form.time) {
-      setSaveError('Completa todos los campos obligatorios')
+      setSaveError(tc('errors.requiredFields'))
       return
     }
     setSaving(true)
@@ -164,22 +152,22 @@ export default function Agenda() {
   }
 
   const tabs: { key: TabKey; label: string }[] = [
-    { key: 'pending', label: 'Pendientes' },
-    { key: 'confirmed', label: 'Confirmadas' },
-    { key: 'completed', label: 'Completadas' },
+    { key: 'pending', label: t('tabs.pending') },
+    { key: 'confirmed', label: t('tabs.confirmed') },
+    { key: 'completed', label: t('tabs.completed') },
   ]
 
   if (!authLoading && !user) {
     return (
       <div className="min-h-dvh bg-ink">
-        <PageHeader title="Agenda" subtitle="Gestiona tus citas" />
+        <PageHeader title={t('title')} subtitle={t('subtitle')} />
         <div className="px-5 pt-8 pb-28 flex flex-col items-center text-center">
           <div className="w-16 h-16 rounded-2xl bg-gold/10 flex items-center justify-center mb-5">
             <CalendarPlus className="w-8 h-8 text-gold" />
           </div>
-          <h2 className="font-serif text-xl text-cream mb-2">Tus citas en un solo lugar</h2>
+          <h2 className="font-serif text-xl text-cream mb-2">{t('guest.title')}</h2>
           <p className="text-cream-dark text-sm leading-relaxed max-w-xs mb-8">
-            Inicia sesión para reservar citas, ver su estado y recibir actualizaciones del estudio.
+            {t('guest.description')}
           </p>
           <div className="flex flex-col gap-3 w-full max-w-xs">
             <Link
@@ -187,7 +175,7 @@ export default function Agenda() {
               className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gold text-ink font-medium text-sm hover:bg-gold-light transition-colors"
             >
               <LogIn size={16} />
-              Iniciar sesión
+              {tc('auth.login')}
             </Link>
           </div>
         </div>
@@ -213,15 +201,15 @@ export default function Agenda() {
         <div className="mx-4 mt-4 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{error || statusError}</div>
       )}
       <PageHeader
-        title="Agenda"
-        subtitle="Gestiona tus citas"
+        title={t('title')}
+        subtitle={t('subtitle')}
         action={
           <Link
             to="/book"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gold/10 text-gold text-xs font-medium hover:bg-gold/20 transition-colors"
           >
             <CalendarPlus size={13} />
-            Reservar
+            {t('book')}
           </Link>
         }
       />
@@ -281,7 +269,7 @@ export default function Agenda() {
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <h3 className="font-serif text-cream font-medium">{apt.client_name}</h3>
                       <span className={`text-[10px] px-2 py-1 rounded-full shrink-0 ${styles.badge}`}>
-                        {styles.label}
+                        {t(`status.${apt.status}`)}
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-subtle">
@@ -301,7 +289,7 @@ export default function Agenda() {
                       {apt.style}
                     </span>
                     <p className="text-cream-dark text-sm mt-2 line-clamp-2">{apt.description}</p>
-                    <p className="text-gold text-xs font-medium mt-2">Depósito: €{apt.deposit}</p>
+                    <p className="text-gold text-xs font-medium mt-2">{tc('deposit')}: €{apt.deposit}</p>
 
                     {/* Actions row */}
                     <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-white/5">
@@ -310,7 +298,7 @@ export default function Agenda() {
                         className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 text-subtle text-xs hover:bg-white/10 hover:text-cream transition-colors"
                       >
                         <MessageCircle size={14} />
-                        Mensajes
+                        {t('actions.messages')}
                       </Link>
 
                       {isArtist && apt.status === 'pending' && (
@@ -325,21 +313,21 @@ export default function Agenda() {
                                 className="flex items-center gap-1.5"
                               >
                                 <AlertTriangle size={14} className="text-amber-400 shrink-0" />
-                                <span className="text-xs text-subtle">¿Seguro?</span>
+                                <span className="text-xs text-subtle">{t('actions.areYouSure')}</span>
                                 <button
                                   type="button"
                                   onClick={() => handleStatusUpdate(apt.id, 'rejected')}
                                   disabled={updatingApptId === apt.id}
                                   className="inline-flex items-center justify-center gap-1 min-h-[44px] px-3 py-2 rounded-lg bg-red-500/20 text-red-400 text-xs border border-red-500/30 hover:bg-red-500/30 transition-colors disabled:opacity-50"
                                 >
-                                  {updatingApptId === apt.id ? 'Rechazando...' : 'Sí, rechazar'}
+                                  {updatingApptId === apt.id ? t('actions.rejecting') : t('actions.yesReject')}
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => setRejectConfirmId(null)}
                                   className="inline-flex items-center justify-center gap-1 min-h-[44px] px-3 py-2 rounded-lg bg-white/5 text-subtle text-xs hover:bg-white/10 transition-colors"
                                 >
-                                  Cancelar
+                                  {tc('cancel')}
                                 </button>
                               </motion.div>
                             ) : (
@@ -357,7 +345,7 @@ export default function Agenda() {
                                   className="inline-flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-medium hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
                                 >
                                   <Check size={14} />
-                                  {updatingApptId === apt.id ? 'Confirmando...' : 'Confirmar'}
+                                  {updatingApptId === apt.id ? t('actions.confirming') : tc('confirm')}
                                 </button>
                                 <button
                                   type="button"
@@ -365,7 +353,7 @@ export default function Agenda() {
                                   className="inline-flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-medium hover:bg-red-500/20 transition-colors"
                                 >
                                   <X size={14} />
-                                  Rechazar
+                                  {t('actions.reject')}
                                 </button>
                               </motion.div>
                             )}
@@ -381,7 +369,7 @@ export default function Agenda() {
                           className="ml-auto inline-flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-lg bg-white/5 text-subtle text-xs hover:bg-white/10 hover:text-cream transition-colors disabled:opacity-50"
                         >
                           <CheckCheck size={14} />
-                          Marcar como completada
+                          {t('actions.markCompleted')}
                         </button>
                       )}
                     </div>
@@ -391,9 +379,7 @@ export default function Agenda() {
             })
           ) : (
             <motion.p variants={itemVariants} className="text-subtle text-sm py-8 text-center">
-              {activeTab === 'pending' && 'No hay citas pendientes'}
-              {activeTab === 'confirmed' && 'No hay citas confirmadas'}
-              {activeTab === 'completed' && 'No hay citas completadas'}
+              {t(`empty.${activeTab}`)}
             </motion.p>
           )}
         </motion.div>
@@ -407,7 +393,7 @@ export default function Agenda() {
           animate={{ scale: 1, opacity: 1 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowModal(true)}
-          aria-label="Nueva cita"
+          aria-label={t('newAppointment')}
           className="fixed bottom-24 right-5 z-40 w-14 h-14 rounded-full bg-gold text-ink flex items-center justify-center shadow-lg shadow-gold/25 hover:bg-gold-light transition-colors"
         >
           <Plus size={24} strokeWidth={2.5} />
@@ -430,7 +416,7 @@ export default function Agenda() {
               tabIndex={-1}
               role="dialog"
               aria-modal="true"
-              aria-label="Nueva cita"
+              aria-label={t('newAppointment')}
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
@@ -438,11 +424,11 @@ export default function Agenda() {
               className="fixed bottom-0 left-0 right-0 z-[60] max-h-[85dvh] overflow-y-auto rounded-t-2xl bg-ink-light border-t border-white/10 outline-none"
             >
               <div className="sticky top-0 bg-ink-light/95 backdrop-blur flex items-center justify-between px-5 py-4 border-b border-white/5">
-                <h2 className="font-serif text-lg text-cream">Nueva cita</h2>
+                <h2 className="font-serif text-lg text-cream">{t('newAppointment')}</h2>
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  aria-label="Cerrar"
+                  aria-label={tc('close')}
                   className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream"
                 >
                   <X size={18} />
@@ -450,19 +436,19 @@ export default function Agenda() {
               </div>
               <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="p-5 space-y-4">
                 <div>
-                  <label htmlFor="agenda-client" className="block text-xs text-subtle mb-1.5">Cliente</label>
+                  <label htmlFor="agenda-client" className="block text-xs text-subtle mb-1.5">{t('form.client')}</label>
                   <input
                     id="agenda-client"
                     type="text"
                     value={form.client}
                     onChange={(e) => setForm((f) => ({ ...f, client: e.target.value }))}
-                    placeholder="Nombre del cliente"
+                    placeholder={t('form.clientPlaceholder')}
                     className="w-full px-4 py-3 rounded-xl bg-ink border border-white/5 text-cream placeholder:text-subtle/60 focus:outline-none focus:border-gold/50"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label htmlFor="agenda-date" className="block text-xs text-subtle mb-1.5">Fecha</label>
+                    <label htmlFor="agenda-date" className="block text-xs text-subtle mb-1.5">{t('form.date')}</label>
                     <input
                       id="agenda-date"
                       type="date"
@@ -472,7 +458,7 @@ export default function Agenda() {
                     />
                   </div>
                   <div>
-                    <label htmlFor="agenda-time" className="block text-xs text-subtle mb-1.5">Hora</label>
+                    <label htmlFor="agenda-time" className="block text-xs text-subtle mb-1.5">{t('form.time')}</label>
                     <input
                       id="agenda-time"
                       type="time"
@@ -483,46 +469,46 @@ export default function Agenda() {
                   </div>
                 </div>
                 <div>
-                  <label htmlFor="agenda-description" className="block text-xs text-subtle mb-1.5">Descripción del tatuaje</label>
+                  <label htmlFor="agenda-description" className="block text-xs text-subtle mb-1.5">{t('form.description')}</label>
                   <textarea
                     id="agenda-description"
                     value={form.description}
                     onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                    placeholder="Describe el diseño..."
+                    placeholder={t('form.descriptionPlaceholder')}
                     rows={3}
                     className="w-full px-4 py-3 rounded-xl bg-ink border border-white/5 text-cream placeholder:text-subtle/60 focus:outline-none focus:border-gold/50 resize-none"
                   />
                 </div>
                 <div>
-                  <label htmlFor="agenda-bodypart" className="block text-xs text-subtle mb-1.5">Parte del cuerpo</label>
+                  <label htmlFor="agenda-bodypart" className="block text-xs text-subtle mb-1.5">{t('form.bodyPart')}</label>
                   <select
                     id="agenda-bodypart"
                     value={form.bodyPart}
                     onChange={(e) => setForm((f) => ({ ...f, bodyPart: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl bg-ink border border-white/5 text-cream focus:outline-none focus:border-gold/50"
                   >
-                    <option value="">Seleccionar</option>
+                    <option value="">{tc('select')}</option>
                     {config.body_parts.map((part) => (
                       <option key={part} value={part}>{part}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="agenda-style" className="block text-xs text-subtle mb-1.5">Estilo</label>
+                  <label htmlFor="agenda-style" className="block text-xs text-subtle mb-1.5">{t('form.style')}</label>
                   <select
                     id="agenda-style"
                     value={form.style}
                     onChange={(e) => setForm((f) => ({ ...f, style: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl bg-ink border border-white/5 text-cream focus:outline-none focus:border-gold/50"
                   >
-                    <option value="">Seleccionar</option>
+                    <option value="">{tc('select')}</option>
                     {config.tattoo_styles.map((style) => (
                       <option key={style} value={style}>{style}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="agenda-deposit" className="block text-xs text-subtle mb-1.5">Depósito (€)</label>
+                  <label htmlFor="agenda-deposit" className="block text-xs text-subtle mb-1.5">{t('form.deposit')}</label>
                   <input
                     id="agenda-deposit"
                     type="number"
@@ -530,7 +516,7 @@ export default function Agenda() {
                     step="5"
                     value={form.deposit}
                     onChange={(e) => setForm((f) => ({ ...f, deposit: e.target.value }))}
-                    placeholder="0"
+                    placeholder={t('form.depositPlaceholder')}
                     className="w-full px-4 py-3 rounded-xl bg-ink border border-white/5 text-cream placeholder:text-subtle/60 focus:outline-none focus:border-gold/50"
                   />
                 </div>
@@ -542,7 +528,7 @@ export default function Agenda() {
                   disabled={saving}
                   className="w-full py-3.5 rounded-xl bg-gold text-ink font-medium hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {saving ? 'Guardando...' : 'Guardar'}
+                  {saving ? tc('saving') : tc('save')}
                 </button>
               </form>
             </motion.div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Save,
@@ -48,22 +49,11 @@ interface PriceRange {
   max: number
 }
 
-const DAYS = [
-  { key: 'lunes', label: 'Lunes' },
-  { key: 'martes', label: 'Martes' },
-  { key: 'miercoles', label: 'Miércoles' },
-  { key: 'jueves', label: 'Jueves' },
-  { key: 'viernes', label: 'Viernes' },
-  { key: 'sabado', label: 'Sábado' },
-  { key: 'domingo', label: 'Domingo' },
-] as const
+const DAY_KEYS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'] as const
+const DAY_I18N_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const
 
-const SIZE_LABELS: Record<string, string> = {
-  tiny: 'Diminuto (2-5cm)',
-  small: 'Pequeño (5-10cm)',
-  medium: 'Mediano (10-20cm)',
-  large: 'Grande (20-35cm)',
-  xl: 'XL (35+cm)',
+const SIZE_I18N_MAP: Record<string, string> = {
+  tiny: 'tiny', small: 'small', medium: 'medium', large: 'large', xl: 'xlarge',
 }
 
 const defaultSchedule: Record<string, DaySchedule> = {
@@ -97,22 +87,23 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 }
 
-const TABS = [
-  { id: 'perfil', label: 'Perfil', icon: User },
-  { id: 'catalogo', label: 'Catálogo', icon: BookOpen },
-  { id: 'sugerencias', label: 'Sugerencias y Cuestionario', icon: Lightbulb },
-  { id: 'contenido', label: 'Contenido', icon: FileText },
-  { id: 'chat', label: 'Mensajes', icon: MessageCircle },
-  { id: 'notificaciones', label: 'Notificaciones', icon: Bell },
+const TAB_DEFS = [
+  { id: 'perfil', i18nKey: 'settings.tabs.profile', icon: User },
+  { id: 'catalogo', i18nKey: 'settings.tabs.catalog', icon: BookOpen },
+  { id: 'sugerencias', i18nKey: 'settings.tabs.suggestions', icon: Lightbulb },
+  { id: 'contenido', i18nKey: 'settings.tabs.content', icon: FileText },
+  { id: 'chat', i18nKey: 'settings.tabs.chat', icon: MessageCircle },
+  { id: 'notificaciones', i18nKey: 'settings.tabs.notifications', icon: Bell },
 ] as const
 
-type TabId = (typeof TABS)[number]['id']
+type TabId = (typeof TAB_DEFS)[number]['id']
 
 const inputClass =
   'w-full px-4 py-2.5 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle focus:outline-none focus:border-gold/50'
 const labelClass = 'block text-xs text-subtle mb-1'
 
 export default function StudioSettings() {
+  const { t } = useTranslation('studio')
   const { settings: dbSettings, loading: settingsLoading, error: fetchError, save } = useStudioSettings()
   const [activeTab, setActiveTab] = useState<TabId>('perfil')
   const [savedTab, setSavedTab] = useState<TabId | null>(null)
@@ -564,7 +555,7 @@ export default function StudioSettings() {
   if (settingsLoading) {
     return (
       <div className="p-4 pb-28 flex items-center justify-center min-h-[200px]">
-        <p className="text-subtle">Cargando configuración...</p>
+        <p className="text-subtle">{t('settings.loading')}</p>
       </div>
     )
   }
@@ -582,7 +573,7 @@ export default function StudioSettings() {
       {/* Tab pills */}
       <div className="overflow-x-auto -mx-4 px-4 mb-6 scrollbar-hide">
         <div className="flex gap-2 min-w-max pb-2">
-          {TABS.map(({ id, label, icon: Icon }) => (
+          {TAB_DEFS.map(({ id, i18nKey, icon: Icon }) => (
             <button
               type="button"
               key={id}
@@ -594,7 +585,7 @@ export default function StudioSettings() {
               }`}
             >
               <Icon size={16} />
-              {label}
+              {t(i18nKey)}
             </button>
           ))}
         </div>
@@ -611,7 +602,7 @@ export default function StudioSettings() {
             className="space-y-6"
           >
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Perfil del Estudio</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">{t('settings.profile.title')}</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-4">
                 <div className="flex gap-4">
                   <div className="w-20 h-20 rounded-xl bg-ink-medium border border-white/10 flex items-center justify-center shrink-0">
@@ -619,7 +610,7 @@ export default function StudioSettings() {
                   </div>
                   <div className="flex-1 space-y-3">
                     <div>
-                      <label htmlFor="settings-studio-name" className={labelClass}>Nombre del estudio</label>
+                      <label htmlFor="settings-studio-name" className={labelClass}>{t('settings.profile.studioName')}</label>
                       <input
                         id="settings-studio-name"
                         type="text"
@@ -629,7 +620,7 @@ export default function StudioSettings() {
                       />
                     </div>
                     <div>
-                      <label htmlFor="settings-artist-name" className={labelClass}>Nombre del artista</label>
+                      <label htmlFor="settings-artist-name" className={labelClass}>{t('settings.profile.artistName')}</label>
                       <input
                         id="settings-artist-name"
                         type="text"
@@ -641,7 +632,7 @@ export default function StudioSettings() {
                   </div>
                 </div>
                 <div>
-                  <label htmlFor="settings-bio" className={labelClass}>Bio</label>
+                  <label htmlFor="settings-bio" className={labelClass}>{t('settings.profile.bio')}</label>
                   <textarea
                     id="settings-bio"
                     value={bio}
@@ -653,7 +644,7 @@ export default function StudioSettings() {
                 </div>
                 <div className="grid grid-cols-1 gap-3">
                   <div>
-                    <label htmlFor="settings-phone" className={labelClass}>Teléfono</label>
+                    <label htmlFor="settings-phone" className={labelClass}>{t('settings.profile.phone')}</label>
                     <input
                       id="settings-phone"
                       type="tel"
@@ -663,7 +654,7 @@ export default function StudioSettings() {
                     />
                   </div>
                   <div>
-                    <label htmlFor="settings-email" className={labelClass}>Correo electrónico</label>
+                    <label htmlFor="settings-email" className={labelClass}>{t('settings.profile.email')}</label>
                     <input
                       id="settings-email"
                       type="email"
@@ -673,7 +664,7 @@ export default function StudioSettings() {
                     />
                   </div>
                   <div>
-                    <label htmlFor="settings-address" className={labelClass}>Dirección</label>
+                    <label htmlFor="settings-address" className={labelClass}>{t('settings.profile.address')}</label>
                     <input
                       id="settings-address"
                       type="text"
@@ -687,9 +678,11 @@ export default function StudioSettings() {
             </motion.section>
 
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Horario de Trabajo</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">{t('settings.profile.schedule')}</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-3">
-                {DAYS.map(({ key, label }) => (
+                {DAY_KEYS.map((key, idx) => {
+                  const label = t(`settings.weekdays.${DAY_I18N_KEYS[idx]}`)
+                  return (
                   <div
                     key={key}
                     className="flex items-center gap-4 py-2 border-b border-white/5 last:border-0"
@@ -728,17 +721,19 @@ export default function StudioSettings() {
                         />
                       </div>
                     ) : (
-                      <span className="text-subtle text-sm">Cerrado</span>
+                      <span className="text-subtle text-sm">{t('settings.profile.closed')}</span>
                     )}
                   </div>
-                ))}
+                  )
+                })}
                 <div className="mt-4 rounded-lg bg-ink p-3">
-                  <p className="text-xs text-subtle mb-2">Vista previa</p>
+                  <p className="text-xs text-subtle mb-2">{t('settings.profile.preview')}</p>
                   <p className="text-cream-dark text-sm">
-                    {DAYS.map(({ key, label }) => {
+                    {DAY_KEYS.map((key, idx) => {
+                      const dayLabel = t(`settings.weekdays.${DAY_I18N_KEYS[idx]}`)
                       const s = schedule[key]
-                      const short = label.slice(0, 2)
-                      return s.open ? `${short} ${s.start}-${s.end}` : `${short} Cerrado`
+                      const short = dayLabel.slice(0, 2)
+                      return s.open ? `${short} ${s.start}-${s.end}` : `${short} ${t('settings.profile.closed')}`
                     }).join(' · ')}
                   </p>
                 </div>
@@ -746,14 +741,14 @@ export default function StudioSettings() {
             </motion.section>
 
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Precios Base</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">{t('settings.profile.basePrices')}</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-4">
                 {Object.entries(prices).map(([size, range]) => (
                   <div
                     key={size}
                     className="flex items-center gap-4 py-2 border-b border-white/5 last:border-0"
                   >
-                    <span className="text-cream text-sm w-32">{SIZE_LABELS[size] ?? size}</span>
+                    <span className="text-cream text-sm w-32">{SIZE_I18N_MAP[size] ? t(`settings.sizeLabels.${SIZE_I18N_MAP[size]}`) : size}</span>
                     <div className="flex items-center gap-2 flex-1">
                       <input
                         type="number"
@@ -778,7 +773,7 @@ export default function StudioSettings() {
             </motion.section>
 
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Redes Sociales</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">{t('settings.profile.socialLinks')}</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-3">
                 <div>
                   <label htmlFor="settings-instagram" className={labelClass}>Instagram</label>
@@ -835,7 +830,7 @@ export default function StudioSettings() {
             className="space-y-6"
           >
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Estilos de Tatuaje</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">{t('settings.catalog.tattooStyles')}</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-3">
                 <div className="flex flex-wrap gap-2">
                   {tattooStyles.map((style) => (
@@ -860,7 +855,7 @@ export default function StudioSettings() {
                     value={newStyleInput}
                     onChange={(e) => setNewStyleInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && addStyle()}
-                    placeholder="Nuevo estilo..."
+                    placeholder={t('settings.catalog.newStyle')}
                     className={inputClass}
                   />
                   <button
@@ -876,7 +871,7 @@ export default function StudioSettings() {
             </motion.section>
 
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Partes del Cuerpo</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">{t('settings.catalog.bodyParts')}</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-3">
                 <div className="flex flex-wrap gap-2">
                   {bodyParts.map((bp) => (
@@ -901,7 +896,7 @@ export default function StudioSettings() {
                     value={newBodyPartInput}
                     onChange={(e) => setNewBodyPartInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && addBodyPart()}
-                    placeholder="Nueva parte del cuerpo..."
+                    placeholder={t('settings.catalog.newBodyPart')}
                     className={inputClass}
                   />
                   <button
@@ -935,7 +930,7 @@ export default function StudioSettings() {
             className="space-y-6"
           >
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Sugerencias</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">{t('settings.suggestions.title')}</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-4">
                 {suggestions.map((s) => (
                   <div
@@ -947,7 +942,7 @@ export default function StudioSettings() {
                         type="text"
                         value={s.title}
                         onChange={(e) => updateSuggestion(s.id, { title: e.target.value })}
-                        placeholder="Título"
+                        placeholder={t('settings.suggestions.titlePlaceholder')}
                         className={`${inputClass} flex-1 mr-2`}
                       />
                       <button
@@ -961,13 +956,13 @@ export default function StudioSettings() {
                     <textarea
                       value={s.description}
                       onChange={(e) => updateSuggestion(s.id, { description: e.target.value })}
-                      placeholder="Descripción"
+                      placeholder={t('settings.suggestions.descriptionPlaceholder')}
                       rows={2}
                       className={`${inputClass} resize-none`}
                     />
                     <div className="flex gap-3 flex-wrap">
                       <div className="flex-1 min-w-[120px]">
-                        <label className={labelClass}>Estilo</label>
+                        <label className={labelClass}>{t('settings.content.reviewStyle')}</label>
                         <select
                           value={s.style}
                           onChange={(e) => updateSuggestion(s.id, { style: e.target.value })}
@@ -1004,13 +999,13 @@ export default function StudioSettings() {
                   className="w-full py-3 rounded-xl border border-dashed border-white/20 text-subtle hover:text-cream hover:border-gold/50 flex items-center justify-center gap-2"
                 >
                   <Plus size={18} />
-                  Añadir sugerencia
+                  {t('settings.suggestions.addSuggestion')}
                 </button>
               </div>
             </motion.section>
 
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Preguntas del Quiz</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">{t('settings.suggestions.quizTitle')}</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-4">
                 {quizQuestions.map((q) => (
                   <div
@@ -1022,7 +1017,7 @@ export default function StudioSettings() {
                         type="text"
                         value={q.question}
                         onChange={(e) => updateQuizQuestion(q.id, { question: e.target.value })}
-                        placeholder="Pregunta"
+                        placeholder={t('settings.suggestions.questionPlaceholder')}
                         className={`${inputClass} flex-1`}
                       />
                       <button
@@ -1044,7 +1039,7 @@ export default function StudioSettings() {
                               onChange={(e) =>
                                 updateQuizQuestionOption(q.id, i, e.target.value)
                               }
-                              placeholder={`Opción ${i + 1}`}
+                              placeholder={t('settings.suggestions.optionPlaceholder', { index: i + 1 })}
                               className={inputClass}
                             />
                             <button
@@ -1061,7 +1056,7 @@ export default function StudioSettings() {
                           onClick={() => addQuizQuestionOption(q.id)}
                           className="text-sm text-gold hover:underline"
                         >
-                          + Añadir opción
+                          {t('settings.suggestions.addOption')}
                         </button>
                       </div>
                     </div>
@@ -1073,13 +1068,13 @@ export default function StudioSettings() {
                   className="w-full py-3 rounded-xl border border-dashed border-white/20 text-subtle hover:text-cream hover:border-gold/50 flex items-center justify-center gap-2"
                 >
                   <Plus size={18} />
-                  Añadir pregunta
+                  {t('settings.suggestions.addQuestion')}
                 </button>
               </div>
             </motion.section>
 
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Recomendaciones por Estilo</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">{t('settings.suggestions.recommendations')}</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-4">
                 {Object.entries(styleRecommendations).map(([key, rec]) => (
                   <div
@@ -1136,10 +1131,10 @@ export default function StudioSettings() {
             </motion.section>
 
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Umbral de tendencia</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">{t('settings.suggestions.trendingThreshold')}</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4">
                 <label className={labelClass}>
-                  Popularidad mínima para mostrar como trending (0-100)
+                  {t('settings.suggestions.trendingDescription')}
                 </label>
                 <input
                   type="number"
@@ -1173,10 +1168,10 @@ export default function StudioSettings() {
             className="space-y-6"
           >
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Página de Inicio</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">{t('settings.content.homePage')}</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-3">
                 <div>
-                  <label className={labelClass}>Subtítulo</label>
+                  <label className={labelClass}>{t('settings.content.subtitleLabel')}</label>
                   <input
                     type="text"
                     value={homeSubtitle}
@@ -1185,7 +1180,7 @@ export default function StudioSettings() {
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>Eslogan</label>
+                  <label className={labelClass}>{t('settings.content.tagline')}</label>
                   <input
                     type="text"
                     value={homeTagline}
@@ -1197,7 +1192,7 @@ export default function StudioSettings() {
             </motion.section>
 
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Reseñas</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">{t('settings.content.reviews')}</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-4">
                 {reviews.map((r, idx) => (
                   <div
@@ -1209,7 +1204,7 @@ export default function StudioSettings() {
                         type="text"
                         value={r.name}
                         onChange={(e) => updateReview(idx, { name: e.target.value })}
-                        placeholder="Nombre"
+                        placeholder={t('settings.content.reviewName')}
                         className={`${inputClass} flex-1 mr-2`}
                       />
                       <button
@@ -1223,13 +1218,13 @@ export default function StudioSettings() {
                     <textarea
                       value={r.text}
                       onChange={(e) => updateReview(idx, { text: e.target.value })}
-                      placeholder="Texto de la reseña"
+                      placeholder={t('settings.content.reviewText')}
                       rows={2}
                       className={`${inputClass} resize-none`}
                     />
                     <div className="flex gap-3">
                       <div className="w-24">
-                        <label className={labelClass}>Valoración (1-5)</label>
+                        <label className={labelClass}>{t('settings.content.reviewRating')}</label>
                         <input
                           type="number"
                           min={1}
@@ -1244,7 +1239,7 @@ export default function StudioSettings() {
                         />
                       </div>
                       <div className="flex-1">
-                        <label className={labelClass}>Estilo</label>
+                        <label className={labelClass}>{t('settings.content.reviewStyle')}</label>
                         <select
                           value={r.style}
                           onChange={(e) => updateReview(idx, { style: e.target.value })}
@@ -1266,16 +1261,16 @@ export default function StudioSettings() {
                   className="w-full py-3 rounded-xl border border-dashed border-white/20 text-subtle hover:text-cream hover:border-gold/50 flex items-center justify-center gap-2"
                 >
                   <Plus size={18} />
-                  Añadir reseña
+                  {t('settings.content.addReview')}
                 </button>
               </div>
             </motion.section>
 
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Página Sobre Nosotros</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">{t('settings.content.aboutPage')}</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-4">
                 <div>
-                  <label className={labelClass}>URL imagen hero</label>
+                  <label className={labelClass}>{t('settings.content.heroImage')}</label>
                   <input
                     type="url"
                     value={aboutHeroImage}
@@ -1284,7 +1279,7 @@ export default function StudioSettings() {
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>Título del artista</label>
+                  <label className={labelClass}>{t('settings.content.artistTitle')}</label>
                   <input
                     type="text"
                     value={aboutArtistTitle}
@@ -1293,7 +1288,7 @@ export default function StudioSettings() {
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>Bio</label>
+                  <label className={labelClass}>{t('settings.content.bio')}</label>
                   <textarea
                     value={aboutBio}
                     onChange={(e) => setAboutBio(e.target.value)}
@@ -1302,7 +1297,7 @@ export default function StudioSettings() {
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>Estadísticas</label>
+                  <label className={labelClass}>{t('settings.content.stats')}</label>
                   <div className="space-y-3">
                     {aboutStats.map((st, idx) => (
                       <div key={idx} className="flex gap-2">
@@ -1310,14 +1305,14 @@ export default function StudioSettings() {
                           type="text"
                           value={st.value}
                           onChange={(e) => updateAboutStat(idx, { value: e.target.value })}
-                          placeholder="Valor (ej: 8+)"
+                          placeholder={t('settings.content.statValue')}
                           className={`${inputClass} w-24`}
                         />
                         <input
                           type="text"
                           value={st.label}
                           onChange={(e) => updateAboutStat(idx, { label: e.target.value })}
-                          placeholder="Etiqueta (ej: Años)"
+                          placeholder={t('settings.content.statLabel')}
                           className={`${inputClass} flex-1`}
                         />
                         <button
@@ -1334,12 +1329,12 @@ export default function StudioSettings() {
                       onClick={addAboutStat}
                       className="text-sm text-gold hover:underline"
                     >
-                      + Añadir estadística
+                      {t('settings.content.addStat')}
                     </button>
                   </div>
                 </div>
                 <div>
-                  <label className={labelClass}>Especialidades</label>
+                  <label className={labelClass}>{t('settings.content.specialties')}</label>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {aboutSpecialties.map((sp) => (
                       <span
@@ -1363,7 +1358,7 @@ export default function StudioSettings() {
                       value={newSpecialtyInput}
                       onChange={(e) => setNewSpecialtyInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && addSpecialty()}
-                      placeholder="Nueva especialidad..."
+                      placeholder={t('settings.content.newSpecialty')}
                       className={inputClass}
                     />
                     <button
@@ -1377,7 +1372,7 @@ export default function StudioSettings() {
                   </div>
                 </div>
                 <div>
-                  <label className={labelClass}>Certificaciones</label>
+                  <label className={labelClass}>{t('settings.content.certifications')}</label>
                   <div className="space-y-2 mb-2">
                     {aboutCertifications.map((c) => (
                       <div
@@ -1401,7 +1396,7 @@ export default function StudioSettings() {
                       value={newCertInput}
                       onChange={(e) => setNewCertInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && addCertification()}
-                      placeholder="Nueva certificación..."
+                      placeholder={t('settings.content.newCertification')}
                       className={inputClass}
                     />
                     <button
@@ -1436,11 +1431,11 @@ export default function StudioSettings() {
             className="space-y-6"
           >
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Configuración del Chat</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">{t('settings.chatConfig.title')}</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={labelClass}>Nombre del artista</label>
+                    <label className={labelClass}>{t('settings.chatConfig.artistName')}</label>
                     <input
                       type="text"
                       value={chatArtistName}
@@ -1449,18 +1444,18 @@ export default function StudioSettings() {
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>Iniciales</label>
+                    <label className={labelClass}>{t('settings.chatConfig.initials')}</label>
                     <input
                       type="text"
                       value={chatArtistInitials}
                       onChange={(e) => setChatArtistInitials(e.target.value)}
-                      placeholder="VR"
+                      placeholder={t('settings.chatConfig.initialsDefault')}
                       className={inputClass}
                     />
                   </div>
                 </div>
                 <div>
-                  <label className={labelClass}>Mensaje de bienvenida</label>
+                  <label className={labelClass}>{t('settings.chatConfig.welcomeMessage')}</label>
                   <textarea
                     value={welcomeMessage}
                     onChange={(e) => setWelcomeMessage(e.target.value)}
@@ -1469,12 +1464,12 @@ export default function StudioSettings() {
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>Texto de tiempo de respuesta</label>
+                  <label className={labelClass}>{t('settings.chatConfig.responseTime')}</label>
                   <input
                     type="text"
                     value={responseTimeText}
                     onChange={(e) => setResponseTimeText(e.target.value)}
-                    placeholder="Normalmente responde en menos de 1h"
+                    placeholder={t('settings.chatConfig.responseTimeDefault')}
                     className={inputClass}
                   />
                 </div>
@@ -1482,7 +1477,7 @@ export default function StudioSettings() {
             </motion.section>
 
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Respuestas Rápidas</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">{t('settings.chatConfig.quickReplies')}</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-3">
                 {quickReplies.map((qr, idx) => (
                   <div key={idx} className="flex gap-2">
@@ -1490,14 +1485,14 @@ export default function StudioSettings() {
                       type="text"
                       value={qr.label}
                       onChange={(e) => updateQuickReply(idx, { label: e.target.value })}
-                      placeholder="Etiqueta (ej: Precios)"
+                      placeholder={t('settings.chatConfig.replyLabel')}
                       className={`${inputClass} flex-1`}
                     />
                     <input
                       type="text"
                       value={qr.key}
                       onChange={(e) => updateQuickReply(idx, { key: e.target.value })}
-                      placeholder="Clave (ej: precio)"
+                      placeholder={t('settings.chatConfig.replyKey')}
                       className={`${inputClass} w-32`}
                     />
                     <button
@@ -1515,13 +1510,13 @@ export default function StudioSettings() {
                   className="w-full py-3 rounded-xl border border-dashed border-white/20 text-subtle hover:text-cream hover:border-gold/50 flex items-center justify-center gap-2"
                 >
                   <Plus size={18} />
-                  Añadir respuesta rápida
+                  {t('settings.chatConfig.addQuickReply')}
                 </button>
               </div>
             </motion.section>
 
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Respuestas del Chatbot</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">{t('settings.chatConfig.botResponses')}</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-4">
                 {Object.entries(chatbotResponses).map(([key, value]) => (
                   <div key={key} className="space-y-2">
@@ -1544,18 +1539,18 @@ export default function StudioSettings() {
                   </div>
                 ))}
                 <div className="pt-3 border-t border-white/5 space-y-2">
-                  <label className={labelClass}>Añadir nueva respuesta</label>
+                  <label className={labelClass}>{t('settings.chatConfig.addBotResponse')}</label>
                   <input
                     type="text"
                     value={newChatbotKey}
                     onChange={(e) => setNewChatbotKey(e.target.value)}
-                    placeholder="Clave (ej: precio)"
+                    placeholder={t('settings.chatConfig.botKey')}
                     className={inputClass}
                   />
                   <textarea
                     value={newChatbotValue}
                     onChange={(e) => setNewChatbotValue(e.target.value)}
-                    placeholder="Respuesta (multilínea)"
+                    placeholder={t('settings.chatConfig.botValue')}
                     rows={3}
                     className={`${inputClass} resize-none`}
                   />
@@ -1565,14 +1560,14 @@ export default function StudioSettings() {
                     className="px-4 py-2.5 rounded-xl bg-gold text-ink font-medium flex items-center gap-2 hover:bg-gold-light"
                   >
                     <Plus size={18} />
-                    Añadir respuesta
+                    {t('settings.chatConfig.addBotResponseBtn')}
                   </button>
                 </div>
               </div>
             </motion.section>
 
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Respuestas Predefinidas (sin autenticación)</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">{t('settings.chatConfig.cannedResponses')}</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-3">
                 {cannedResponses.map((c, idx) => (
                   <div key={idx} className="flex gap-2">
@@ -1580,7 +1575,7 @@ export default function StudioSettings() {
                       value={c}
                       onChange={(e) => updateCannedResponse(idx, e.target.value)}
                       rows={2}
-                      placeholder="Respuesta predefinida..."
+                      placeholder={t('settings.chatConfig.cannedPlaceholder')}
                       className={`${inputClass} flex-1 resize-none`}
                     />
                     <button
@@ -1598,16 +1593,16 @@ export default function StudioSettings() {
                   className="w-full py-3 rounded-xl border border-dashed border-white/20 text-subtle hover:text-cream hover:border-gold/50 flex items-center justify-center gap-2"
                 >
                   <Plus size={18} />
-                  Añadir respuesta predefinida
+                  {t('settings.chatConfig.addCanned')}
                 </button>
               </div>
             </motion.section>
 
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Respuesta por Defecto</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">{t('settings.chatConfig.fallbackResponse')}</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4">
                 <label className={labelClass}>
-                  Cuando el chatbot no tiene respuesta específica
+                  {t('settings.chatConfig.fallbackHint')}
                 </label>
                 <textarea
                   value={fallbackResponse}
@@ -1637,34 +1632,34 @@ export default function StudioSettings() {
             className="space-y-6"
           >
             <motion.section variants={itemVariants}>
-              <h2 className="font-serif text-lg text-cream mb-3">Notificaciones</h2>
+              <h2 className="font-serif text-lg text-cream mb-3">{t('settings.tabs.notifications')}</h2>
               <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-4">
                 {[
                   {
                     key: 'newBooking' as const,
-                    label: 'Nueva reserva',
-                    desc: 'Recibir aviso cuando un cliente reserve una cita',
+                    label: t('settings.notificationSettings.newBooking'),
+                    desc: t('settings.notificationSettings.newBookingDesc'),
                     value: newBooking,
                     setter: setNewBooking,
                   },
                   {
                     key: 'messageNotification' as const,
-                    label: 'Nuevo mensaje',
-                    desc: 'Aviso cuando recibas un mensaje en el chat',
+                    label: t('settings.notificationSettings.newMessage'),
+                    desc: t('settings.notificationSettings.newMessageDesc'),
                     value: messageNotification,
                     setter: setMessageNotification,
                   },
                   {
                     key: 'reminderNotification' as const,
-                    label: 'Recordatorios',
-                    desc: 'Recordatorios de citas pendientes',
+                    label: t('settings.notificationSettings.reminders'),
+                    desc: t('settings.notificationSettings.remindersDesc'),
                     value: reminderNotification,
                     setter: setReminderNotification,
                   },
                   {
                     key: 'depositReceived' as const,
-                    label: 'Depósito recibido',
-                    desc: 'Confirmación cuando se reciba un depósito',
+                    label: t('settings.notificationSettings.depositReceived'),
+                    desc: t('settings.notificationSettings.depositReceivedDesc'),
                     value: depositReceived,
                     setter: setDepositReceived,
                   },
@@ -1722,6 +1717,7 @@ function SaveButton({
   disabled: boolean
   error?: string | null
 }) {
+  const { t } = useTranslation('studio')
   return (
     <motion.section variants={itemVariants}>
       <AnimatePresence>
@@ -1733,7 +1729,7 @@ function SaveButton({
             className="mb-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-2"
           >
             <CheckCircle size={16} className="text-emerald-400" />
-            <p className="text-emerald-400 text-sm">Cambios guardados correctamente</p>
+            <p className="text-emerald-400 text-sm">{t('settings.saveButton.saved')}</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1747,7 +1743,7 @@ function SaveButton({
         className="w-full py-4 rounded-xl bg-gold text-ink font-serif font-semibold flex items-center justify-center gap-2 hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Save size={20} />
-        {disabled ? 'Guardando...' : 'Guardar Cambios'}
+        {t('settings.saveButton.saveChanges')}
       </button>
     </motion.section>
   )

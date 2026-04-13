@@ -1,0 +1,60 @@
+{
+  "title": "Tienda",
+  "subtitle": "Arte para llevar",
+  "categories": {
+    "all": "Todos",
+    "cuadros": "Cuadros",
+    "ropa": "Ropa",
+    "zapatos": "Zapatos",
+    "accesorios": "Accesorios"
+  },
+  "categoryLabels": {
+    "cuadros": "Cuadro",
+    "ropa": "Ropa",
+    "zapatos": "Zapatos",
+    "accesorios": "Accesorio"
+  },
+  "categoryDescriptions": {
+    "cuadros": "Obras de arte originales y ediciones limitadas para decorar tu espacio.",
+    "ropa": "Prendas exclusivas con diseños de la artista. Algodón orgánico y piezas únicas.",
+    "zapatos": "Calzado personalizado y pintado a mano. Cada par es una obra de arte.",
+    "accesorios": "Complementos únicos: joyería, bolsos, pins y más con diseños exclusivos."
+  },
+  "searchPlaceholder": "Buscar productos...",
+  "searchAria": "Buscar productos",
+  "cart": "Carrito",
+  "cartTitle": "Carrito de compras",
+  "cartEmpty": "Tu carrito está vacío",
+  "removeFromCart": "Eliminar del carrito",
+  "size": "Talla {{size}}",
+  "total": "Total",
+  "checkout": "Finalizar Compra",
+  "orderConfirmed": "¡Pedido confirmado!",
+  "contactSoon": "Te contactaremos pronto.",
+  "checkoutForm": {
+    "name": "Nombre",
+    "email": "Correo electrónico",
+    "phone": "Teléfono",
+    "address": "Dirección"
+  },
+  "processing": "Procesando...",
+  "confirmOrder": "Confirmar Pedido",
+  "noProducts": "No hay productos en esta categoría",
+  "productDetail": "Detalle del producto",
+  "backToShop": "Volver a la tienda",
+  "product": "Producto",
+  "inStock": "En stock",
+  "outOfStock": "Agotado",
+  "shippingNote": "Envío acordado al confirmar",
+  "sizeLabel": "Talla",
+  "chooseOne": "Elige una",
+  "color": "Color",
+  "price": "Precio",
+  "addToCart": "Añadir al carrito",
+  "sizesCount": "{{count}} tallas",
+  "notifyAvailable": "Te avisaremos cuando esté disponible.",
+  "outOfStockNotify": "Agotado. Déjanos tu correo y te avisamos cuando vuelva.",
+  "stockEmailAria": "Correo electrónico para notificación de stock",
+  "notifyMe": "Notificarme",
+  "notifyError": "No se pudo registrar la notificación"
+}

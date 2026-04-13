@@ -1,0 +1,29 @@
+{
+  "title": "Reminders",
+  "subtitle": "Don't forget anything",
+  "type": {
+    "appointment": "Appointment",
+    "followup": "Follow-up",
+    "custom": "Custom"
+  },
+  "markPending": "Mark as pending",
+  "markCompleted": "Mark as completed",
+  "sections": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "upcoming": "Upcoming"
+  },
+  "empty": "No reminders",
+  "guest": {
+    "title": "Your personal reminders",
+    "description": "Sign in to save appointment reminders, follow-ups and personal notes."
+  },
+  "newReminder": "New reminder",
+  "form": {
+    "titleLabel": "Title",
+    "titlePlaceholder": "What do you need to remember?",
+    "date": "Date",
+    "time": "Time",
+    "type": "Type"
+  }
+}

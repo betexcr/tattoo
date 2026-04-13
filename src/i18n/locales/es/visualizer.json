@@ -1,0 +1,12 @@
+{
+  "title": "Visualizador Corporal",
+  "subtitle": "Visualiza tu tatuaje",
+  "front": "Frente",
+  "back": "Espalda",
+  "selectedZone": "Zona seleccionada:",
+  "none": "—",
+  "referenceStyles": "Estilos de referencia",
+  "noReferences": "No hay diseños de referencia disponibles",
+  "painLevel": "Nivel de dolor",
+  "bookAppointment": "Agendar Cita"
+}

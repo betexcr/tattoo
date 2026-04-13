@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { Bot } from 'lucide-react'
 import { doc, getDoc } from 'firebase/firestore'
@@ -12,6 +13,7 @@ import ArtistChatPanel from './chat/ArtistChatPanel'
 import AssistantChatPanel from './chat/AssistantChatPanel'
 
 export default function Chat() {
+  const { t } = useTranslation('chat')
   const { config } = useStudioConfig()
   const { user } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -82,13 +84,13 @@ export default function Chat() {
         if (cancelled || !snap.exists()) return
         const d = snap.data()
         const parts: string[] = []
-        if (d.style) parts.push(`Estilo: ${d.style}`)
-        const sizeLabels: Record<string, string> = { tiny: 'Diminuto', small: 'Pequeño', medium: 'Mediano', large: 'Grande', 'extra-large': 'Extra grande' }
-        if (d.size) parts.push(`Tamaño: ${sizeLabels[d.size] ?? d.size}`)
-        if (d.elements?.length) parts.push(`Elementos: ${d.elements.join(', ')}`)
-        if (d.colorMode) parts.push(`Color: ${d.colorMode === 'negro' ? 'Negro' : 'Color'}`)
-        if (d.notes) parts.push(`Notas: ${d.notes}`)
-        const text = `🎨 Mi diseño de tatuaje:\n${parts.join('\n')}`
+        if (d.style) parts.push(`${t('designShare.style')} ${d.style}`)
+        const sizeLabels: Record<string, string> = { tiny: t('designShare.sizeLabels.tiny'), small: t('designShare.sizeLabels.small'), medium: t('designShare.sizeLabels.medium'), large: t('designShare.sizeLabels.large'), 'extra-large': t('designShare.sizeLabels.xlarge') }
+        if (d.size) parts.push(`${t('designShare.size')} ${sizeLabels[d.size] ?? d.size}`)
+        if (d.elements?.length) parts.push(`${t('designShare.elements')} ${d.elements.join(', ')}`)
+        if (d.colorMode) parts.push(`${t('designShare.color')} ${d.colorMode === 'negro' ? t('designShare.black') : 'Color'}`)
+        if (d.notes) parts.push(`${t('designShare.notes')} ${d.notes}`)
+        const text = `${t('designShare.header')}\n${parts.join('\n')}`
         if (userRef.current) {
           await sendRef.current(text, 'client')
         } else {
@@ -194,7 +196,7 @@ export default function Chat() {
 
   return (
     <div className="min-h-dvh bg-ink flex flex-col">
-      <PageHeader title="Mensajes" subtitle="Mensajes directos" showBack={false} />
+      <PageHeader title={t('title')} subtitle={t('subtitle')} showBack={false} />
 
       {/* Tab toggle */}
       <div className="px-4 pt-1 pb-2">
@@ -214,7 +216,7 @@ export default function Chat() {
             }`}>
               {config.chat_config.artist_initials}
             </div>
-            Artista
+            {t('tabs.artist')}
           </button>
           <button
             type="button"
@@ -227,7 +229,7 @@ export default function Chat() {
             }`}
           >
             <Bot size={14} />
-            Asistente Virtual
+            {t('tabs.assistant')}
           </button>
         </div>
       </div>

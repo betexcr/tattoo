@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import PageHeader from '../components/PageHeader'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Phone, Mail, MapPin, Clock, Instagram, Video, LayoutGrid, CheckCircle } from 'lucide-react'
@@ -20,32 +21,34 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 }
 
-function formatScheduleDisplay(schedule: Record<string, unknown>): string {
-  if (!schedule || Object.keys(schedule).length === 0) {
-    return 'Consultar horario'
-  }
-  const parts: string[] = []
-  const dayMap: Record<string, string> = {
-    monday: 'Lun', tuesday: 'Mar', wednesday: 'Mié', thursday: 'Jue',
-    friday: 'Vie', saturday: 'Sáb', sunday: 'Dom',
-  }
-  for (const [k, v] of Object.entries(schedule)) {
-    const day = dayMap[k.toLowerCase()] ?? k
-    if (v && typeof v === 'object' && v !== null) {
-      const obj = v as { open?: boolean; start?: string; end?: string }
-      if (obj.open === false) continue
-      if (obj.start && obj.end) {
-        parts.push(`${day} ${obj.start}–${obj.end}`)
-      }
-    } else if (typeof v === 'string' && v) {
-      parts.push(`${day} ${v}`)
-    }
-  }
-  return parts.length > 0 ? parts.join(', ') : 'Consultar horario'
-}
-
 export default function Contact() {
+  const { t } = useTranslation('contact')
+  const { t: tc } = useTranslation()
   const { config } = useStudioConfig()
+
+  const formatScheduleDisplay = useCallback((schedule: Record<string, unknown>): string => {
+    if (!schedule || Object.keys(schedule).length === 0) {
+      return t('checkSchedule')
+    }
+    const parts: string[] = []
+    const dayMap: Record<string, string> = {
+      monday: t('days.monday'), tuesday: t('days.tuesday'), wednesday: t('days.wednesday'), thursday: t('days.thursday'),
+      friday: t('days.friday'), saturday: t('days.saturday'), sunday: t('days.sunday'),
+    }
+    for (const [k, v] of Object.entries(schedule)) {
+      const day = dayMap[k.toLowerCase()] ?? k
+      if (v && typeof v === 'object' && v !== null) {
+        const obj = v as { open?: boolean; start?: string; end?: string }
+        if (obj.open === false) continue
+        if (obj.start && obj.end) {
+          parts.push(`${day} ${obj.start}–${obj.end}`)
+        }
+      } else if (typeof v === 'string' && v) {
+        parts.push(`${day} ${v}`)
+      }
+    }
+    return parts.length > 0 ? parts.join(', ') : t('checkSchedule')
+  }, [t])
   const { submit, loading: submitting } = useContactForm()
   const [formData, setFormData] = useState({
     name: '',
@@ -62,12 +65,12 @@ export default function Contact() {
 
   const contactInfo = useMemo(
     () => [
-      { icon: Phone as LucideIcon, label: 'Teléfono', value: config.phone },
-      { icon: Mail as LucideIcon, label: 'Correo electrónico', value: config.email },
-      { icon: MapPin as LucideIcon, label: 'Ubicación', value: config.address },
-      { icon: Clock as LucideIcon, label: 'Horario', value: formatScheduleDisplay(config.schedule) },
+      { icon: Phone as LucideIcon, label: t('info.phone'), value: config.phone },
+      { icon: Mail as LucideIcon, label: t('info.email'), value: config.email },
+      { icon: MapPin as LucideIcon, label: t('info.location'), value: config.address },
+      { icon: Clock as LucideIcon, label: t('info.schedule'), value: formatScheduleDisplay(config.schedule) },
     ],
-    [config.phone, config.email, config.address, config.schedule]
+    [config.phone, config.email, config.address, config.schedule, t, formatScheduleDisplay]
   )
 
   const socialLinks = useMemo(() => {
@@ -112,7 +115,7 @@ export default function Contact() {
 
   return (
     <div className="min-h-dvh bg-ink">
-      <PageHeader title="Contacto" subtitle="Hablemos" />
+      <PageHeader title={t('title')} subtitle={t('subtitle')} />
 
       <div className="px-5 pb-12">
         {/* Contact info cards */}
@@ -148,8 +151,8 @@ export default function Contact() {
             >
               <CheckCircle size={20} className="text-emerald-400 shrink-0" />
               <div>
-                <p className="text-emerald-400 text-sm font-medium">Mensaje enviado</p>
-                <p className="text-emerald-400/70 text-xs">Te responderemos lo antes posible.</p>
+                <p className="text-emerald-400 text-sm font-medium">{t('success.title')}</p>
+                <p className="text-emerald-400/70 text-xs">{t('success.description')}</p>
               </div>
             </motion.div>
           )}
@@ -172,7 +175,7 @@ export default function Contact() {
         >
           <motion.div variants={itemVariants}>
             <label htmlFor="name" className="block text-cream-dark text-sm mb-1.5">
-              Nombre
+              {t('form.name')}
             </label>
             <input
               id="name"
@@ -182,13 +185,13 @@ export default function Contact() {
               onChange={handleChange}
               required
               className="w-full px-4 py-3 rounded-xl bg-ink-medium border border-white/5 text-cream placeholder:text-subtle focus:border-gold/40 focus:outline-none transition-colors"
-              placeholder="Tu nombre"
+              placeholder={t('form.namePlaceholder')}
             />
           </motion.div>
 
           <motion.div variants={itemVariants}>
             <label htmlFor="email" className="block text-cream-dark text-sm mb-1.5">
-              Correo electrónico
+              {t('form.email')}
             </label>
             <input
               id="email"
@@ -198,13 +201,13 @@ export default function Contact() {
               onChange={handleChange}
               required
               className="w-full px-4 py-3 rounded-xl bg-ink-medium border border-white/5 text-cream placeholder:text-subtle focus:border-gold/40 focus:outline-none transition-colors"
-              placeholder="tu@email.com"
+              placeholder={t('form.emailPlaceholder')}
             />
           </motion.div>
 
           <motion.div variants={itemVariants}>
             <label htmlFor="phone" className="block text-cream-dark text-sm mb-1.5">
-              Teléfono
+              {t('form.phone')}
             </label>
             <input
               id="phone"
@@ -213,13 +216,13 @@ export default function Contact() {
               value={formData.phone}
               onChange={handleChange}
               className="w-full px-4 py-3 rounded-xl bg-ink-medium border border-white/5 text-cream placeholder:text-subtle focus:border-gold/40 focus:outline-none transition-colors"
-              placeholder="+34 600 000 000"
+              placeholder={t('form.phonePlaceholder')}
             />
           </motion.div>
 
           <motion.div variants={itemVariants}>
             <label htmlFor="tattooStyle" className="block text-cream-dark text-sm mb-1.5">
-              Estilo de tatuaje de interés
+              {t('form.tattooStyle')}
             </label>
             <select
               id="tattooStyle"
@@ -234,7 +237,7 @@ export default function Contact() {
                 paddingRight: '36px',
               }}
             >
-              <option value="">Selecciona un estilo</option>
+              <option value="">{t('form.selectStyle')}</option>
               {config.tattoo_styles.map((style) => (
                 <option key={style} value={style}>
                   {style}
@@ -245,7 +248,7 @@ export default function Contact() {
 
           <motion.div variants={itemVariants}>
             <label htmlFor="bodyPart" className="block text-cream-dark text-sm mb-1.5">
-              Zona del cuerpo preferida
+              {t('form.bodyZone')}
             </label>
             <select
               id="bodyPart"
@@ -260,7 +263,7 @@ export default function Contact() {
                 paddingRight: '36px',
               }}
             >
-              <option value="">Selecciona una zona</option>
+              <option value="">{t('form.selectZone')}</option>
               {config.body_parts.map((part) => (
                 <option key={part} value={part}>
                   {part}
@@ -271,7 +274,7 @@ export default function Contact() {
 
           <motion.div variants={itemVariants}>
             <label htmlFor="message" className="block text-cream-dark text-sm mb-1.5">
-              Mensaje
+              {t('form.message')}
             </label>
             <textarea
               id="message"
@@ -281,7 +284,7 @@ export default function Contact() {
               required
               rows={4}
               className="w-full px-4 py-3 rounded-xl bg-ink-medium border border-white/5 text-cream placeholder:text-subtle focus:border-gold/40 focus:outline-none transition-colors resize-none"
-              placeholder="Cuéntame tu idea..."
+              placeholder={t('form.messagePlaceholder')}
             />
           </motion.div>
 
@@ -291,7 +294,7 @@ export default function Contact() {
               disabled={submitting}
               className="w-full py-3.5 rounded-xl font-medium text-ink bg-gradient-to-r from-gold to-gold-dark hover:from-gold-light hover:to-gold transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? 'Enviando...' : 'Enviar Mensaje'}
+              {submitting ? tc('sending') : t('form.submit')}
             </button>
           </motion.div>
         </motion.form>

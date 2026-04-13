@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default memo(function ShopPreviewRow({ items, loading }: Props) {
+  const { t } = useTranslation('home')
   return (
     <motion.section
       initial="hidden"
@@ -21,12 +23,12 @@ export default memo(function ShopPreviewRow({ items, loading }: Props) {
       className="py-8"
     >
       <motion.div variants={itemVariants} className="flex items-center justify-between px-5 mb-4">
-        <h2 className="font-serif text-xl text-cream">Tienda</h2>
+        <h2 className="font-serif text-xl text-cream">{t('shopTitle')}</h2>
         <Link
           to="/shop"
           className="text-xs text-gold hover:text-gold-light transition-colors flex items-center gap-1"
         >
-          Ver todo
+          {t('shopViewAll')}
           <ChevronRight size={14} />
         </Link>
       </motion.div>
@@ -39,7 +41,7 @@ export default memo(function ShopPreviewRow({ items, loading }: Props) {
             <div key={i} className="shrink-0 w-36 sm:w-44 lg:w-52 aspect-square rounded-xl bg-ink-medium/40 animate-pulse" />
           ))
         ) : items.length === 0 ? (
-          <p className="text-subtle text-sm px-1">Próximamente productos disponibles</p>
+          <p className="text-subtle text-sm px-1">{t('shopComingSoon')}</p>
         ) : (
           items.map((item) => (
             <Link key={item.id} to="/shop" className="shrink-0 w-36 sm:w-44 lg:w-52 group">

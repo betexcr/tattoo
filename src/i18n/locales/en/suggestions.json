@@ -1,0 +1,21 @@
+{
+  "title": "Suggestions",
+  "subtitle": "Find your inspiration",
+  "intro": "Discover trending styles and designs. Find inspiration for your next tattoo.",
+  "trending": "Trending now",
+  "empty": "No suggestions available",
+  "likeAria": "Like",
+  "popularity": "{{value}}% popularity",
+  "viewDesigns": "View Designs",
+  "quiz": {
+    "title": "Not sure which style to choose?",
+    "description": "Our quiz helps you discover your ideal style in seconds.",
+    "start": "Start Quiz",
+    "dialogAria": "Style quiz",
+    "noQuestions": "No questions available at this time.",
+    "resultTitle": "Your ideal style",
+    "viewStyleDesigns": "View {{style}} designs",
+    "fallbackStyle": "Fine Line",
+    "fallbackDescription": "Delicate and elegant lines for any design"
+  }
+}

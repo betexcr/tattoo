@@ -1,4 +1,6 @@
 import { useState, useMemo, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n from '../i18n'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus,
@@ -27,7 +29,7 @@ function formatDateKey(year: number, month: number, day: number): string {
 
 function formatDateLabel(dateKey: string): string {
   const [y, m, d] = dateKey.split('-').map(Number)
-  return new Date(y, m - 1, d).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+  return new Date(y, m - 1, d).toLocaleDateString(i18n.language, { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 function getDayOfWeek(date: Date): number {
@@ -36,21 +38,21 @@ function getDayOfWeek(date: Date): number {
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr + 'T12:00:00')
-  return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+  return d.toLocaleDateString(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-function getStatusStyles(status: Appointment['status']) {
+function getStatusStyles(status: Appointment['status'], t: (key: string) => string) {
   switch (status) {
     case 'confirmed':
-      return { badge: 'bg-emerald-500/20 text-emerald-400', label: 'Confirmada' }
+      return { badge: 'bg-emerald-500/20 text-emerald-400', label: t('appointments.filters.confirmed') }
     case 'pending':
-      return { badge: 'bg-amber-500/20 text-amber-400', label: 'Pendiente' }
+      return { badge: 'bg-amber-500/20 text-amber-400', label: t('appointments.filters.pending') }
     case 'completed':
-      return { badge: 'bg-subtle/20 text-subtle', label: 'Completada' }
+      return { badge: 'bg-subtle/20 text-subtle', label: t('appointments.filters.completed') }
     case 'rejected':
-      return { badge: 'bg-red-500/20 text-red-400', label: 'Rechazada' }
+      return { badge: 'bg-red-500/20 text-red-400', label: t('appointments.filters.rejected') }
     default:
-      return { badge: 'bg-white/10 text-subtle', label: status ?? 'Desconocido' }
+      return { badge: 'bg-white/10 text-subtle', label: status ?? t('appointments.statusUnknown') }
   }
 }
 
@@ -102,7 +104,8 @@ function AppointmentCard({
   onUpdateStatus,
   updatingApptId,
 }: AppointmentCardProps) {
-  const styles = getStatusStyles(apt.status)
+  const { t } = useTranslation('studio')
+  const styles = getStatusStyles(apt.status, t)
   const hasActions = apt.status === 'pending' || apt.status === 'confirmed'
 
   return (
@@ -157,7 +160,7 @@ function AppointmentCard({
                         disabled={updatingApptId === apt.id}
                         className="px-2 py-1 rounded-lg bg-red-500/20 text-red-400 text-xs border border-red-500/30 hover:bg-red-500/30 disabled:opacity-50"
                       >
-                        {updatingApptId === apt.id ? 'Rechazando...' : 'Sí, rechazar'}
+                        {updatingApptId === apt.id ? '...' : t('appointments.filters.rejected')}
                       </button>
                       <button
                         type="button"
@@ -182,7 +185,7 @@ function AppointmentCard({
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-medium hover:bg-emerald-500/30 disabled:opacity-50"
                       >
                         <Check size={14} />
-                        {updatingApptId === apt.id ? 'Confirmando...' : 'Confirmar'}
+                        {updatingApptId === apt.id ? '...' : t('appointments.filters.confirmed')}
                       </button>
                       <button
                         type="button"
@@ -190,7 +193,7 @@ function AppointmentCard({
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-medium hover:bg-red-500/20"
                       >
                         <X size={14} />
-                        Rechazar
+                        {t('appointments.filters.rejected')}
                       </button>
                     </motion.div>
                   )}
@@ -210,7 +213,7 @@ function AppointmentCard({
                       className="flex items-center gap-1.5"
                     >
                       <AlertTriangle size={14} className="text-amber-400 shrink-0" />
-                      <span className="text-xs text-subtle">¿Cancelar cita?</span>
+                      <span className="text-xs text-subtle">{t('appointments.cancelAppointment')}</span>
                       <button
                         type="button"
                         onClick={() => onUpdateStatus(apt.id, 'rejected')}
@@ -242,7 +245,7 @@ function AppointmentCard({
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gold/50 text-gold text-xs font-medium hover:bg-gold/10 disabled:opacity-50"
                       >
                         <CheckCheck size={14} />
-                        {updatingApptId === apt.id ? 'Completando...' : 'Completar'}
+                        {updatingApptId === apt.id ? t('appointments.completing') : t('appointments.complete')}
                       </button>
                       <button
                         type="button"
@@ -265,6 +268,7 @@ function AppointmentCard({
 }
 
 export default function Appointments() {
+  const { t } = useTranslation('studio')
   const { config } = useStudioConfig()
   const { appointments, create, updateStatus: hookUpdateStatus, loading: hookLoading, error: hookError } = useAppointments()
   const { create: createNotification } = useNotifications()
@@ -387,10 +391,7 @@ export default function Appointments() {
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))
   }, [filteredAppointments])
 
-  const monthNames = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-  ]
+  const monthNames = t('appointments.monthNames', { returnObjects: true }) as string[]
 
   const handleUpdateStatus = async (id: string, status: Appointment['status']) => {
     if (updatingApptId) return
@@ -403,11 +404,11 @@ export default function Appointments() {
       if (result?.error) { setStatusError(result.error); return }
       const apt = appointments.find(a => a.id === id)
       if (apt?.client_id) {
-        const statusLabels: Record<string, string> = { confirmed: 'confirmada', rejected: 'rechazada', completed: 'completada' }
+        const statusLabel = t(`appointments.notification.${status}`, { defaultValue: status })
         await createNotification({
           user_id: apt.client_id,
-          title: `Cita ${statusLabels[status] ?? status}`,
-          body: `Tu cita del ${apt.date} a las ${apt.time} ha sido ${statusLabels[status] ?? status}.`,
+          title: t('appointments.notification.title', { status: statusLabel }),
+          body: t('appointments.notification.body', { date: apt.date, time: apt.time, status: statusLabel }),
           type: 'appointment',
           link: '/agenda',
         })
@@ -457,11 +458,11 @@ export default function Appointments() {
   }
 
   const filters: { key: FilterKey; label: string }[] = [
-    { key: 'all', label: 'Todas' },
-    { key: 'pending', label: 'Pendientes' },
-    { key: 'confirmed', label: 'Confirmadas' },
-    { key: 'completed', label: 'Completadas' },
-    { key: 'rejected', label: 'Rechazadas' },
+    { key: 'all', label: t('appointments.filters.all') },
+    { key: 'pending', label: t('appointments.filters.pending') },
+    { key: 'confirmed', label: t('appointments.filters.confirmed') },
+    { key: 'completed', label: t('appointments.filters.completed') },
+    { key: 'rejected', label: t('appointments.filters.rejected') },
   ]
 
   if (hookLoading) return <LoadingSpinner />
@@ -488,7 +489,7 @@ export default function Appointments() {
                 : 'bg-ink-medium text-subtle hover:text-cream-dark'
             }`}
           >
-            Calendario
+            {t('appointments.views.calendar')}
           </button>
           <button
             type="button"
@@ -500,7 +501,7 @@ export default function Appointments() {
                 : 'bg-ink-medium text-subtle hover:text-cream-dark'
             }`}
           >
-            Lista
+            {t('appointments.views.list')}
           </button>
         </motion.div>
 
@@ -627,7 +628,7 @@ export default function Appointments() {
                   className="space-y-3"
                 >
                   <h3 className="text-sm font-medium text-subtle">
-                    Citas del {formatDate(selectedDate)}
+                    {t('appointments.appointmentsForDate', { date: formatDate(selectedDate) })}
                   </h3>
                   {selectedDateAppointments.length > 0 ? (
                     <motion.div
@@ -651,7 +652,7 @@ export default function Appointments() {
                     </motion.div>
                   ) : (
                     <p className="text-subtle text-sm py-4 text-center">
-                      No hay citas para este día
+                      {t('appointments.noAppointmentsDay')}
                     </p>
                   )}
                 </motion.div>
@@ -700,7 +701,7 @@ export default function Appointments() {
                   animate={{ opacity: 1 }}
                   className="text-subtle text-sm py-12 text-center"
                 >
-                  No hay citas
+                  {t('appointments.noAppointments')}
                 </motion.p>
               )}
             </motion.div>
@@ -711,7 +712,7 @@ export default function Appointments() {
       {/* FAB */}
       <motion.button
         type="button"
-        aria-label="Nueva cita"
+        aria-label={t('appointments.newAppointment')}
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         whileTap={{ scale: 0.95 }}
@@ -737,7 +738,7 @@ export default function Appointments() {
               tabIndex={-1}
               role="dialog"
               aria-modal="true"
-              aria-label="Nueva cita"
+              aria-label={t('appointments.newAppointment')}
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
@@ -745,7 +746,7 @@ export default function Appointments() {
               className="fixed bottom-0 left-0 right-0 z-50 max-h-[90dvh] overflow-y-auto rounded-t-2xl bg-ink-light border-t border-white/10 focus:outline-none"
             >
               <div className="sticky top-0 bg-ink-light/95 backdrop-blur flex items-center justify-between px-5 py-4 border-b border-white/5">
-                <h2 className="font-serif text-lg text-cream">Nueva cita</h2>
+                <h2 className="font-serif text-lg text-cream">{t('appointments.newAppointment')}</h2>
                 <button
                   type="button"
                   aria-label="Cerrar"
@@ -874,7 +875,7 @@ export default function Appointments() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="appt-status" className="block text-xs text-subtle mb-1.5">Estado</label>
+                  <label htmlFor="appt-status" className="block text-xs text-subtle mb-1.5">{t('appointments.form.status')}</label>
                   <select
                     id="appt-status"
                     value={form.status}
@@ -886,8 +887,8 @@ export default function Appointments() {
                     }
                     className="w-full px-4 py-3 rounded-xl bg-ink border border-white/5 text-cream focus:outline-none focus:border-gold/50"
                   >
-                    <option value="pending">Pendiente</option>
-                    <option value="confirmed">Confirmada</option>
+                    <option value="pending">{t('appointments.form.statusPending')}</option>
+                    <option value="confirmed">{t('appointments.form.statusConfirmed')}</option>
                   </select>
                 </div>
                 {modalSaveError && (

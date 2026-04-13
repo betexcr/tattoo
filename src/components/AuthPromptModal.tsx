@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { LogIn, X } from 'lucide-react'
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function AuthPromptModal({ returnTo, onClose }: Props) {
+  const { t } = useTranslation()
   const panelRef = useRef<HTMLDivElement>(null)
   useScrollLock(true)
   useFocusTrap(panelRef, true, onClose)
@@ -34,7 +36,7 @@ export default function AuthPromptModal({ returnTo, onClose }: Props) {
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        aria-label="Iniciar sesión o crear cuenta"
+        aria-label={t('auth.loginOrRegister')}
         initial={{ y: 40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 40, opacity: 0 }}
@@ -43,11 +45,11 @@ export default function AuthPromptModal({ returnTo, onClose }: Props) {
         className="w-full max-w-sm bg-ink-light rounded-2xl border border-white/10 shadow-2xl p-6 focus:outline-none"
       >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-serif text-xl text-cream">Accede a tu cuenta</h2>
+          <h2 className="font-serif text-xl text-cream">{t('auth.accessAccount')}</h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Cerrar"
+            aria-label={t('close')}
             className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-white/5 text-subtle hover:text-cream transition-colors"
           >
             <X size={18} />
@@ -55,7 +57,7 @@ export default function AuthPromptModal({ returnTo, onClose }: Props) {
         </div>
 
         <p className="text-cream-dark/70 text-sm mb-6 leading-relaxed">
-          Inicia sesión para reservar citas, guardar diseños, comprar en la tienda y más.
+          {t('auth.loginPrompt')}
         </p>
 
         <Link
@@ -64,7 +66,7 @@ export default function AuthPromptModal({ returnTo, onClose }: Props) {
           className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gold text-ink font-medium text-sm hover:bg-gold-light transition-colors active:scale-[0.98]"
         >
           <LogIn size={16} />
-          Iniciar sesión
+          {t('auth.login')}
         </Link>
       </motion.div>
     </motion.div>

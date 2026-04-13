@@ -1,0 +1,38 @@
+{
+  "title": "My Account",
+  "tabs": {
+    "profile": "Profile",
+    "appointments": "Appointments",
+    "orders": "Orders"
+  },
+  "profile": {
+    "name": "Name",
+    "namePlaceholder": "Full name",
+    "email": "Email",
+    "phone": "Phone",
+    "phonePlaceholder": "Phone",
+    "editProfile": "Edit profile"
+  },
+  "appointments": {
+    "empty": "No appointments yet",
+    "book": "Book an appointment",
+    "status": {
+      "confirmed": "Confirmed",
+      "pending": "Pending",
+      "completed": "Completed",
+      "rejected": "Rejected"
+    }
+  },
+  "orders": {
+    "empty": "No orders yet",
+    "goToShop": "Go to shop",
+    "status": {
+      "confirmed": "Confirmed",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "unknown": "Unknown"
+    },
+    "itemSingular": "item",
+    "itemPlural": "items"
+  }
+}

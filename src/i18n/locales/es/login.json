@@ -1,0 +1,20 @@
+{
+  "backHome": "Volver al inicio",
+  "title": "Iniciar Sesión",
+  "recoverTitle": "Recuperar Contraseña",
+  "subtitle": "Accede a tu cuenta en {{name}}",
+  "recoverSubtitle": "Te enviaremos un enlace para restablecer tu contraseña",
+  "emailLabel": "Correo electrónico",
+  "emailPlaceholder": "tu@correo.com",
+  "passwordLabel": "Contraseña",
+  "passwordPlaceholder": "Mínimo 6 caracteres",
+  "hidePassword": "Ocultar contraseña",
+  "showPassword": "Mostrar contraseña",
+  "loggingIn": "Entrando...",
+  "sendingLink": "Enviando enlace...",
+  "loginButton": "Entrar",
+  "sendLink": "Enviar enlace",
+  "forgotPassword": "¿Olvidaste tu contraseña?",
+  "backToLogin": "Volver al inicio de sesión",
+  "resetSent": "Te hemos enviado un correo para restablecer tu contraseña."
+}

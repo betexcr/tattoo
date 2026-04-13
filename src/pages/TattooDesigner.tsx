@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, CheckCircle, Share2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -12,6 +13,7 @@ import { designElements, colorPalette, sizeConfig, type SizeOption, type ColorMo
 import DesignCanvas from './designer/DesignCanvas'
 
 export default function TattooDesigner() {
+  const { t } = useTranslation('designer')
   const navigate = useNavigate()
   const { config } = useStudioConfig()
   const { user, requireAuth, authPrompt } = useRequireAuth()
@@ -50,7 +52,7 @@ export default function TattooDesigner() {
   return (
     <div className="min-h-dvh bg-ink pb-24">
       {authPrompt}
-      <PageHeader title="Diseñador de Tatuajes" subtitle="Diseña tu tatuaje" />
+      <PageHeader title={t('title')} subtitle={t('subtitle')} />
 
       <div className="px-5 py-6 space-y-6">
         {/* Canvas */}
@@ -64,7 +66,7 @@ export default function TattooDesigner() {
 
         {/* Style selector */}
         <div>
-          <p className="text-subtle text-xs uppercase tracking-wider mb-2 font-sans">Estilo</p>
+          <p className="text-subtle text-xs uppercase tracking-wider mb-2 font-sans">{t('style')}</p>
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {config.tattoo_styles.map((style) => (
               <button
@@ -86,7 +88,7 @@ export default function TattooDesigner() {
 
         {/* Size selector */}
         <div>
-          <p className="text-subtle text-xs uppercase tracking-wider mb-2 font-sans">Tamaño</p>
+          <p className="text-subtle text-xs uppercase tracking-wider mb-2 font-sans">{t('sizeLabel')}</p>
           <div className="flex gap-3">
             {(Object.keys(sizeConfig) as SizeOption[]).map((size) => (
               <button
@@ -107,7 +109,7 @@ export default function TattooDesigner() {
                     height: sizeConfig[size].size * 0.5,
                   }}
                 />
-                <span className="text-xs font-sans">{sizeConfig[size].label}</span>
+                <span className="text-xs font-sans">{t(`sizes.${size}`)}</span>
               </button>
             ))}
           </div>
@@ -116,7 +118,7 @@ export default function TattooDesigner() {
         {/* Element picker */}
         <div>
           <p className="text-subtle text-xs uppercase tracking-wider mb-2 font-sans">
-            Elementos de diseño
+            {t('elements')}
           </p>
           <div className="grid grid-cols-3 gap-2">
             {designElements.map((el) => {
@@ -136,7 +138,7 @@ export default function TattooDesigner() {
                 >
                   <Icon size={24} strokeWidth={1.5} />
                   <span className="text-[10px] font-sans truncate w-full text-center">
-                    {el.name}
+                    {t(`designElements.${el.id}`, el.name)}
                   </span>
                 </button>
               )
@@ -152,7 +154,7 @@ export default function TattooDesigner() {
             className="space-y-2"
           >
             <p className="text-subtle text-xs uppercase tracking-wider font-sans">
-              Elementos seleccionados
+              {t('selectedElements')}
             </p>
             <div className="flex flex-wrap gap-2">
               <AnimatePresence mode="popLayout">
@@ -170,7 +172,7 @@ export default function TattooDesigner() {
                       className="flex items-center gap-2 pl-3 pr-1 py-1.5 rounded-full bg-ink-medium border border-white/10 hover:border-rose/30 group"
                     >
                       <Icon size={14} strokeWidth={1.5} className="text-gold" />
-                      <span className="text-xs font-sans text-cream">{el.name}</span>
+                      <span className="text-xs font-sans text-cream">{t(`designElements.${el.id}`, el.name)}</span>
                       <span className="p-1 rounded-full hover:bg-rose/20 text-subtle group-hover:text-rose transition-colors">
                         <X size={12} />
                       </span>
@@ -185,7 +187,7 @@ export default function TattooDesigner() {
         {/* Color mode toggle */}
         <div>
           <p className="text-subtle text-xs uppercase tracking-wider mb-2 font-sans">
-            Modo de color
+            {t('colorMode')}
           </p>
           <div className="flex gap-2 mb-3">
             <button
@@ -201,7 +203,7 @@ export default function TattooDesigner() {
                   : 'bg-ink-medium/40 border-white/5 text-cream border hover:border-gold/20'
               }`}
             >
-              Negro
+              {t('black')}
             </button>
             <button
               type="button"
@@ -213,7 +215,7 @@ export default function TattooDesigner() {
                   : 'bg-ink-medium/40 border-white/5 text-cream border hover:border-gold/20'
               }`}
             >
-              Color
+              {t('color')}
             </button>
           </div>
           {colorMode === 'color' && (
@@ -233,8 +235,8 @@ export default function TattooDesigner() {
                       : 'border-white/10 hover:border-gold/40'
                   }`}
                   style={{ backgroundColor: c.hex }}
-                  title={c.label}
-                  aria-label={c.label}
+                  title={t(`colors.${c.id}`, c.label)}
+                  aria-label={t(`colors.${c.id}`, c.label)}
                   aria-pressed={selectedColors.includes(c.id)}
                 />
               ))}
@@ -244,12 +246,12 @@ export default function TattooDesigner() {
 
         {/* Notes */}
         <div>
-          <p className="text-subtle text-xs uppercase tracking-wider mb-2 font-sans">Notas</p>
+          <p className="text-subtle text-xs uppercase tracking-wider mb-2 font-sans">{t('notes')}</p>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Describe tu idea..."
-            aria-label="Notas sobre el diseño"
+            placeholder={t('notesPlaceholder')}
+            aria-label={t('notesAria')}
             rows={3}
             className="w-full px-4 py-3 rounded-xl bg-ink-medium border border-white/5 text-cream placeholder:text-subtle/60 focus:outline-none focus:border-gold/40 resize-none font-sans text-sm"
           />
@@ -265,7 +267,7 @@ export default function TattooDesigner() {
               className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-2"
             >
               <CheckCircle size={16} className="text-emerald-400" />
-              <p className="text-emerald-400 text-sm">Diseño guardado correctamente</p>
+              <p className="text-emerald-400 text-sm">{t('savedSuccess')}</p>
             </motion.div>
           )}
           {showShared && (
@@ -276,7 +278,7 @@ export default function TattooDesigner() {
               className="p-3 rounded-xl bg-gold/10 border border-gold/20 flex items-center gap-2"
             >
               <Share2 size={16} className="text-gold" />
-              <p className="text-gold text-sm">Redirigiendo al chat con la artista...</p>
+              <p className="text-gold text-sm">{t('redirectingChat')}</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -315,7 +317,7 @@ export default function TattooDesigner() {
             }}
             className="flex-1 py-3.5 rounded-xl bg-gold text-ink font-serif font-medium text-sm disabled:opacity-50"
           >
-            {actionLoading ? 'Guardando...' : 'Guardar Diseño'}
+            {actionLoading ? t('common:saving') : t('saveDesign')}
           </motion.button>
           <motion.button
             type="button"
@@ -348,7 +350,7 @@ export default function TattooDesigner() {
             }}
             className="flex-1 py-3.5 rounded-xl border border-gold text-gold font-serif font-medium text-sm hover:bg-gold/10 transition-colors disabled:opacity-50"
           >
-            Compartir con Artista
+            {t('shareWithArtist')}
           </motion.button>
         </div>
       </div>

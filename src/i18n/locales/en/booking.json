@@ -1,0 +1,84 @@
+{
+  "steps": {
+    "style": { "title": "Style", "subtitle": "Choose your tattoo style" },
+    "design": { "title": "Design", "subtitle": "Describe your idea" },
+    "body": { "title": "Location", "subtitle": "Where do you want it?" },
+    "size": { "title": "Size", "subtitle": "Choose the size" },
+    "datetime": { "title": "Date & Time", "subtitle": "Pick your schedule" },
+    "contact": { "title": "Your Info", "subtitle": "To confirm your appointment" },
+    "confirm": { "title": "Confirmation", "subtitle": "All set!" }
+  },
+  "sizes": {
+    "tiny": { "label": "Tiny", "desc": "2-5 cm", "estimate": "30-60 min", "price": "€50-80" },
+    "small": { "label": "Small", "desc": "5-10 cm", "estimate": "1-2 hours", "price": "€80-150" },
+    "medium": { "label": "Medium", "desc": "10-20 cm", "estimate": "2-4 hours", "price": "€150-300" },
+    "large": { "label": "Large", "desc": "20-35 cm", "estimate": "4-6 hours", "price": "€300-500" },
+    "xlarge": { "label": "Extra Large", "desc": "35+ cm", "estimate": "6+ hours (multiple sessions)", "price": "€500+" }
+  },
+  "weekdays": ["M", "T", "W", "T", "F", "S", "S"],
+  "shortDays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  "shortMonths": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+  "monthNames": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+  "stepOf": "Step {{current}} of {{total}}",
+  "prevStep": "Previous step",
+  "closeBooking": "Close booking",
+  "continue": "Continue",
+  "reserving": "Booking...",
+  "confirmReservation": "Confirm Booking",
+  "success": {
+    "title": "Appointment Booked!",
+    "description": "We'll send you a confirmation via WhatsApp. Remember that the deposit is coordinated directly with the artist.",
+    "goHome": "Go home",
+    "viewReminders": "View my reminders"
+  },
+  "summary": {
+    "style": "Style",
+    "zone": "Zone",
+    "size": "Size",
+    "date": "Date",
+    "time": "Time",
+    "estimate": "Estimate",
+    "duration": "Estimated duration",
+    "client": "Client",
+    "contactLabel": "Contact",
+    "estimatedPrice": "Estimated price"
+  },
+  "design": {
+    "describeIdea": "Describe your tattoo idea",
+    "placeholder": "E.g.: I want a small rose with delicate leaves in fine line style, with a touch of geometry on the petals...",
+    "helper": "The more detail you give us, the better we can prepare your design",
+    "referenceImages": "Reference images (optional)",
+    "upload": "Upload",
+    "removeImage": "Remove reference image"
+  },
+  "calendar": {
+    "chooseDate": "Choose an available date",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "slotsFor": "Slots for {{date}}",
+    "occupied": "Taken"
+  },
+  "contactForm": {
+    "fullName": "Full name *",
+    "namePlaceholder": "Your name",
+    "whatsapp": "WhatsApp / Phone *",
+    "phonePlaceholder": "+34 612 345 678",
+    "email": "Email (optional)",
+    "emailPlaceholder": "you@email.com",
+    "notes": "Additional notes",
+    "notesPlaceholder": "Allergies, preferences, questions..."
+  },
+  "confirmStep": {
+    "summaryTitle": "Appointment summary",
+    "designDescription": "Design description",
+    "disclaimer": "By confirming, the artist will review your request and contact you via WhatsApp to arrange the deposit and final design details."
+  },
+  "errors": {
+    "bookingFailed": "Could not book the appointment. Please try again.",
+    "uploadFailed": "Error uploading {{name}}. Please try again."
+  },
+  "notification": {
+    "title": "Appointment booked",
+    "body": "Your {{style}} appointment on {{date}} at {{time}} has been registered."
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "title": "Messages",
+  "subtitle": "Direct messages",
+  "tabs": {
+    "artist": "Artist",
+    "assistant": "Virtual Assistant"
+  },
+  "artistPanel": {
+    "placeholder": "Write a message to {{name}}...",
+    "messageAria": "Message",
+    "sendAria": "Send message"
+  },
+  "assistantPanel": {
+    "intro": "Hi! I'm the virtual assistant of {{name}}. I can help with frequently asked questions. Choose a topic or write to me:",
+    "placeholder": "Write your question...",
+    "messageAria": "Message",
+    "sendAria": "Send message"
+  },
+  "designShare": {
+    "header": "🎨 My tattoo design:",
+    "style": "Style:",
+    "size": "Size:",
+    "elements": "Elements:",
+    "color": "Color:",
+    "notes": "Notes:",
+    "black": "Black",
+    "sizeLabels": {
+      "tiny": "Tiny",
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large",
+      "xlarge": "Extra large"
+    }
+  }
+}

@@ -11,25 +11,27 @@ import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { auth, db } from '../lib/firebase'
 import type { Profile } from '../types'
 import { mapFirestoreError } from '../utils/mapFirestoreError'
+import i18n from '../i18n'
 
-const authErrorMessages: Record<string, string> = {
-  'auth/invalid-credential': 'Credenciales incorrectas',
-  'auth/user-not-found': 'Usuario no encontrado',
-  'auth/wrong-password': 'Contraseña incorrecta',
-  'auth/email-already-in-use': 'Este correo ya está registrado',
-  'auth/weak-password': 'La contraseña es demasiado débil',
-  'auth/too-many-requests': 'Demasiados intentos. Inténtalo más tarde',
-  'auth/invalid-email': 'Correo electrónico no válido',
-  'auth/network-request-failed': 'Error de conexión. Revisa tu internet',
+const authErrorKeys: Record<string, string> = {
+  'auth/invalid-credential': 'errors.auth.invalidCredential',
+  'auth/user-not-found': 'errors.auth.userNotFound',
+  'auth/wrong-password': 'errors.auth.wrongPassword',
+  'auth/email-already-in-use': 'errors.auth.emailInUse',
+  'auth/weak-password': 'errors.auth.weakPassword',
+  'auth/too-many-requests': 'errors.auth.tooManyRequests',
+  'auth/invalid-email': 'errors.auth.invalidEmail',
+  'auth/network-request-failed': 'errors.auth.networkError',
 }
 
 function mapAuthError(e: unknown): string {
   if (e && typeof e === 'object' && 'code' in e) {
     const code = (e as { code: string }).code
-    return authErrorMessages[code] ?? 'Error de autenticación. Inténtalo de nuevo'
+    const key = authErrorKeys[code]
+    if (key) return i18n.t(key)
   }
   if (import.meta.env.DEV) console.warn('[mapAuthError] unmapped error:', e)
-  return 'Error de autenticación. Inténtalo de nuevo'
+  return i18n.t('errors.auth.default')
 }
 
 interface AuthState {

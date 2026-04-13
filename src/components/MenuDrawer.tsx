@@ -7,18 +7,9 @@ import {
   X, Palette, PenTool, Eye, Lightbulb,
   GraduationCap, User, Phone, Bell, ShoppingBag, LogIn, LogOut, LayoutDashboard, UserCircle,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
-
-const menuItems = [
-  { to: '/shop', icon: ShoppingBag, label: 'Tienda', desc: 'Arte para llevar' },
-  { to: '/designer', icon: PenTool, label: 'Diseñador de Tatuajes', desc: 'Diseña tu tatuaje' },
-  { to: '/visualizer', icon: Eye, label: 'Visualizador Corporal', desc: 'Visualiza en tu cuerpo' },
-  { to: '/suggestions', icon: Lightbulb, label: 'Sugerencias', desc: 'Inspiración y estilos' },
-  { to: '/courses', icon: GraduationCap, label: 'Cursos y Talleres', desc: 'Aprende con nosotros' },
-  { to: '/reminders', icon: Bell, label: 'Recordatorios', desc: 'Tus citas y avisos' },
-  { to: '/about', icon: User, label: 'La Artista', desc: 'Conoce mi historia' },
-  { to: '/contact', icon: Phone, label: 'Contacto', desc: 'Hablemos' },
-]
+import LanguageSwitcher from './LanguageSwitcher'
 
 interface MenuDrawerProps {
   open: boolean
@@ -26,6 +17,7 @@ interface MenuDrawerProps {
 }
 
 export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
+  const { t } = useTranslation()
   const { user, profile, isArtist, signOut } = useAuth()
   const navigate = useNavigate()
   const [signOutError, setSignOutError] = useState<string | null>(null)
@@ -33,6 +25,17 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
 
   const drawerRef = useRef<HTMLDivElement>(null)
   useFocusTrap(drawerRef, open, onClose)
+
+  const menuItems = [
+    { to: '/shop', icon: ShoppingBag, label: t('menu.shop'), desc: t('menu.shopDesc') },
+    { to: '/designer', icon: PenTool, label: t('menu.designer'), desc: t('menu.designerDesc') },
+    { to: '/visualizer', icon: Eye, label: t('menu.visualizer'), desc: t('menu.visualizerDesc') },
+    { to: '/suggestions', icon: Lightbulb, label: t('menu.suggestions'), desc: t('menu.suggestionsDesc') },
+    { to: '/courses', icon: GraduationCap, label: t('menu.courses'), desc: t('menu.coursesDesc') },
+    { to: '/reminders', icon: Bell, label: t('menu.reminders'), desc: t('menu.remindersDesc') },
+    { to: '/about', icon: User, label: t('menu.about'), desc: t('menu.aboutDesc') },
+    { to: '/contact', icon: Phone, label: t('menu.contact'), desc: t('menu.contactDesc') },
+  ]
 
   useEffect(() => { if (open) setSignOutError(null) }, [open])
 
@@ -43,7 +46,7 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
       navigate('/')
     } catch (e: unknown) {
       console.warn('Error cerrando sesión:', e)
-      setSignOutError('No se pudo cerrar sesión. Inténtalo de nuevo.')
+      setSignOutError(t('menu.signOutError'))
     }
   }
 
@@ -67,18 +70,18 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             role="dialog"
             aria-modal="true"
-            aria-label="Menú"
+            aria-label={t('menu.explore')}
             className="fixed bottom-0 left-0 right-0 z-50 bg-ink-light rounded-t-3xl max-h-[85dvh] overflow-y-auto overscroll-contain"
           >
             <div className="flex items-center justify-between p-5 border-b border-white/5">
               <div className="flex items-center gap-3">
                 <Palette size={20} className="text-gold" />
-                <h2 className="font-serif text-lg text-cream">Explorar</h2>
+                <h2 className="font-serif text-lg text-cream">{t('menu.explore')}</h2>
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                aria-label="Cerrar menú"
+                aria-label={t('menu.closeMenu')}
                 className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
               >
                 <X size={18} />
@@ -101,8 +104,8 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                       to="/account"
                       onClick={onClose}
                       className="w-10 h-10 min-w-[44px] min-h-[44px] rounded-lg bg-gold/10 flex items-center justify-center text-gold hover:bg-gold/20 transition-colors"
-                      title="Mi Cuenta"
-                      aria-label="Mi Cuenta"
+                      title={t('menu.myAccount')}
+                      aria-label={t('menu.myAccount')}
                     >
                       <UserCircle size={16} />
                     </NavLink>
@@ -111,8 +114,8 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                         to="/studio"
                         onClick={onClose}
                         className="w-10 h-10 min-w-[44px] min-h-[44px] rounded-lg bg-gold/10 flex items-center justify-center text-gold hover:bg-gold/20 transition-colors"
-                        title="Estudio"
-                        aria-label="Estudio"
+                        title={t('menu.studio')}
+                        aria-label={t('menu.studio')}
                       >
                         <LayoutDashboard size={16} />
                       </NavLink>
@@ -121,8 +124,8 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                       type="button"
                       onClick={handleSignOut}
                       className="w-10 h-10 min-w-[44px] min-h-[44px] rounded-lg bg-white/5 flex items-center justify-center text-subtle hover:text-rose transition-colors"
-                      title="Cerrar sesión"
-                      aria-label="Cerrar sesión"
+                      title={t('menu.signOut')}
+                      aria-label={t('menu.signOut')}
                     >
                       <LogOut size={16} />
                     </button>
@@ -141,11 +144,15 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                     <LogIn size={18} strokeWidth={1.5} />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Iniciar Sesión</p>
-                    <p className="text-xs text-gold/60">Para citas, chat y más</p>
+                    <p className="text-sm font-medium">{t('menu.signIn')}</p>
+                    <p className="text-xs text-gold/60">{t('menu.signInDesc')}</p>
                   </div>
                 </NavLink>
               )}
+            </div>
+
+            <div className="px-4 pt-3 flex justify-end">
+              <LanguageSwitcher />
             </div>
 
             <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-1">

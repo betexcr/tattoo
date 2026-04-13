@@ -1,0 +1,26 @@
+{
+  "title": "Cursos y Talleres",
+  "subtitle": "Aprende con nosotros",
+  "intro": "Sumérgete en el mundo del arte del tatuaje con nuestros talleres exclusivos, diseñados tanto para principiantes como para artistas experimentados.",
+  "empty": "No hay cursos disponibles en este momento",
+  "levels": {
+    "beginner": "Principiante",
+    "intermediate": "Intermedio",
+    "advanced": "Avanzado"
+  },
+  "spotsAvailable": "plazas disponibles",
+  "reserved": "Reservado",
+  "reserveSpot": "Reservar Plaza",
+  "reserveAria": "Reservar plaza",
+  "success": {
+    "title": "¡Reserva confirmada!",
+    "description": "Te hemos enviado un correo de confirmación."
+  },
+  "form": {
+    "name": "Nombre",
+    "email": "Correo electrónico",
+    "phone": "Teléfono"
+  },
+  "reserving": "Reservando...",
+  "confirmReserve": "Confirmar Reserva"
+}

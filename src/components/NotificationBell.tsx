@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useScrollLock } from '../hooks/useScrollLock'
 import { useFocusTrap } from '../hooks/useFocusTrap'
@@ -9,6 +10,7 @@ import { useNotifications } from '../hooks/useNotifications'
 import { formatRelativeTime } from '../utils/formatRelativeTime'
 
 export default function NotificationBell() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const { notifications, unreadCount, markRead, markAllRead, loading, error } = useNotifications(user?.uid)
   const [open, setOpen] = useState(false)
@@ -33,7 +35,7 @@ export default function NotificationBell() {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        aria-label={unreadCount > 0 ? `Notificaciones, ${unreadCount} sin leer` : 'Notificaciones'}
+        aria-label={unreadCount > 0 ? t('notifications.unread', { count: unreadCount }) : t('notifications.title')}
         aria-expanded={open}
         className="relative w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
       >
@@ -63,7 +65,7 @@ export default function NotificationBell() {
               ref={panelRef}
               role="dialog"
               aria-modal="true"
-              aria-label="Notificaciones"
+              aria-label={t('notifications.title')}
               initial={{ opacity: 0, y: -8, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.95 }}
@@ -71,15 +73,15 @@ export default function NotificationBell() {
               className="absolute right-0 top-full mt-2 w-80 max-h-96 bg-ink-light border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
             >
               <div className="flex items-center justify-between p-3 border-b border-white/5">
-                <h3 className="text-sm font-medium text-cream">Notificaciones</h3>
+                <h3 className="text-sm font-medium text-cream">{t('notifications.title')}</h3>
                 <div className="flex items-center gap-1">
                   {unreadCount > 0 && (
                     <button
                       type="button"
                       onClick={markAllRead}
                       className="w-10 h-10 rounded-lg text-subtle hover:text-gold hover:bg-gold/10 transition-colors flex items-center justify-center"
-                      title="Marcar todo como leído"
-                      aria-label="Marcar todas como leídas"
+                      title={t('notifications.markAllRead')}
+                      aria-label={t('notifications.markAllReadAria')}
                     >
                       <CheckCheck size={14} />
                     </button>
@@ -87,7 +89,7 @@ export default function NotificationBell() {
                   <button
                     type="button"
                     onClick={() => setOpen(false)}
-                    aria-label="Cerrar notificaciones"
+                    aria-label={t('notifications.closeNotifications')}
                     className="w-10 h-10 rounded-lg text-subtle hover:text-cream hover:bg-white/5 transition-colors flex items-center justify-center"
                   >
                     <X size={14} />
@@ -102,12 +104,12 @@ export default function NotificationBell() {
                   </div>
                 ) : error ? (
                   <div className="p-4 text-center">
-                    <p className="text-red-400 text-xs">No se pudieron cargar las notificaciones</p>
+                    <p className="text-red-400 text-xs">{t('notifications.loadError')}</p>
                   </div>
                 ) : notifications.length === 0 ? (
                   <div className="p-6 text-center">
                     <Bell className="w-8 h-8 text-subtle mx-auto mb-2 opacity-50" />
-                    <p className="text-subtle text-xs">Sin notificaciones</p>
+                    <p className="text-subtle text-xs">{t('notifications.empty')}</p>
                   </div>
                 ) : (
                   notifications.slice(0, 20).map(n => (

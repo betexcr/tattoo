@@ -1,4 +1,6 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n from '../i18n'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Package, ChevronDown, ChevronUp } from 'lucide-react'
 import { useOrders } from '../hooks/useOrders'
@@ -8,16 +10,18 @@ import type { Order } from '../types'
 
 type StatusFilter = '' | Order['status']
 
-const STATUS_CONFIG: Record<Order['status'], { label: string; badge: string; next?: Order['status']; nextLabel?: string }> = {
-  pending: { label: 'Pendiente', badge: 'bg-amber-500/20 text-amber-400', next: 'confirmed', nextLabel: 'Confirmar' },
-  confirmed: { label: 'Confirmado', badge: 'bg-emerald-500/20 text-emerald-400', next: 'shipped', nextLabel: 'Enviar' },
-  shipped: { label: 'Enviado', badge: 'bg-blue-500/20 text-blue-400', next: 'delivered', nextLabel: 'Entregado' },
-  delivered: { label: 'Entregado', badge: 'bg-subtle/20 text-subtle' },
-  cancelled: { label: 'Cancelado', badge: 'bg-red-500/20 text-red-400' },
+function getStatusConfig(t: (key: string) => string): Record<Order['status'], { label: string; badge: string; next?: Order['status']; nextLabel?: string }> {
+  return {
+    pending: { label: t('orders.status.pending.label'), badge: 'bg-amber-500/20 text-amber-400', next: 'confirmed', nextLabel: t('orders.status.pending.nextLabel') },
+    confirmed: { label: t('orders.status.confirmed.label'), badge: 'bg-emerald-500/20 text-emerald-400', next: 'shipped', nextLabel: t('orders.status.confirmed.nextLabel') },
+    shipped: { label: t('orders.status.shipped.label'), badge: 'bg-blue-500/20 text-blue-400', next: 'delivered', nextLabel: t('orders.status.shipped.nextLabel') },
+    delivered: { label: t('orders.status.delivered.label'), badge: 'bg-subtle/20 text-subtle' },
+    cancelled: { label: t('orders.status.unknown.label'), badge: 'bg-red-500/20 text-red-400' },
+  }
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(iso).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 const containerVariants = {
@@ -31,8 +35,10 @@ const itemVariants = {
 }
 
 export default function Orders() {
+  const { t } = useTranslation('studio')
   const { orders, loading, error, updateStatus: hookUpdateStatus } = useOrders()
   const { create: createNotification } = useNotifications()
+  const STATUS_CONFIG = useMemo(() => getStatusConfig(t), [t])
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [updateError, setUpdateError] = useState<string | null>(null)
@@ -44,11 +50,11 @@ export default function Orders() {
   )
 
   const filters: { value: StatusFilter; label: string }[] = [
-    { value: '', label: 'Todos' },
-    { value: 'pending', label: 'Pendientes' },
-    { value: 'confirmed', label: 'Confirmados' },
-    { value: 'shipped', label: 'Enviados' },
-    { value: 'delivered', label: 'Entregados' },
+    { value: '', label: t('orders.filters.all') },
+    { value: 'pending', label: t('orders.filters.pending') },
+    { value: 'confirmed', label: t('orders.filters.confirmed') },
+    { value: 'shipped', label: t('orders.filters.shipped') },
+    { value: 'delivered', label: t('orders.filters.delivered') },
   ]
 
   if (loading) return <LoadingSpinner />
@@ -61,8 +67,8 @@ export default function Orders() {
   return (
     <div className="p-4 pb-24 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="font-serif text-xl text-cream">Pedidos</h1>
-        <span className="text-xs text-subtle">{orders.length} en total</span>
+        <h1 className="font-serif text-xl text-cream">{t('orders.title')}</h1>
+        <span className="text-xs text-subtle">{t('orders.totalCount', { count: orders.length })}</span>
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1">
@@ -85,11 +91,11 @@ export default function Orders() {
         {filtered.length === 0 ? (
           <motion.div variants={itemVariants} className="text-center py-12">
             <Package className="w-10 h-10 text-subtle mx-auto mb-3" />
-            <p className="text-subtle text-sm">No hay pedidos</p>
+            <p className="text-subtle text-sm">{t('orders.empty')}</p>
           </motion.div>
         ) : (
           filtered.map(order => {
-            const cfg = STATUS_CONFIG[order.status] ?? { label: 'Desconocido', badge: 'bg-white/10 text-subtle' }
+            const cfg = STATUS_CONFIG[order.status] ?? { label: t('orders.status.unknown.label'), badge: 'bg-white/10 text-subtle' }
             const expanded = expandedId === order.id
             return (
               <motion.article key={order.id} variants={itemVariants} className="rounded-xl bg-ink-light border border-white/5 overflow-hidden">
@@ -126,14 +132,14 @@ export default function Orders() {
                     >
                       <div className="px-4 pb-4 space-y-3 border-t border-white/5 pt-3">
                         {order.client_phone && (
-                          <p className="text-xs text-subtle">Tel: {order.client_phone}</p>
+                          <p className="text-xs text-subtle">{t('orders.phone')} {order.client_phone}</p>
                         )}
                         {order.client_address && (
-                          <p className="text-xs text-subtle">Dir: {order.client_address}</p>
+                          <p className="text-xs text-subtle">{t('orders.address')} {order.client_address}</p>
                         )}
                         {order.items && order.items.length > 0 && (
                           <div className="space-y-1">
-                            <p className="text-xs text-subtle uppercase tracking-wider">Artículos</p>
+                            <p className="text-xs text-subtle uppercase tracking-wider">{t('orders.items')}</p>
                             {order.items.map((item) => (
                               <div key={item.id} className="flex justify-between text-sm">
                                 <span className="text-cream-dark">{item.quantity}x — {item.size} / {item.color}</span>
@@ -157,15 +163,15 @@ export default function Orders() {
                               try {
                                 const result = await hookUpdateStatus(order.id, cfg.next!)
                                 if (result?.error) {
-                                  setUpdateError('Error al actualizar el estado del pedido')
+                                  setUpdateError(t('orders.updateError'))
                                   return
                                 }
                                 if (order.client_id) {
                                   const nextCfg = STATUS_CONFIG[cfg.next!]
                                   await createNotification({
                                     user_id: order.client_id,
-                                    title: 'Pedido actualizado',
-                                    body: `Tu pedido ha sido marcado como "${nextCfg.label}".`,
+                                    title: t('orders.notification.title'),
+                                    body: t('orders.notification.body', { label: nextCfg.label }),
                                     type: 'order',
                                     link: '/account',
                                   })
@@ -177,7 +183,7 @@ export default function Orders() {
                             disabled={updatingOrderId === order.id}
                             className="w-full py-2.5 rounded-xl bg-gold/10 text-gold text-sm font-medium hover:bg-gold/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {updatingOrderId === order.id ? 'Actualizando...' : cfg.nextLabel}
+                            {updatingOrderId === order.id ? t('orders.updating') : cfg.nextLabel}
                           </button>
                         )}
                       </div>

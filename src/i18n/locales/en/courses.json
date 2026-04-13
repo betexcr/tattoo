@@ -1,0 +1,26 @@
+{
+  "title": "Courses & Workshops",
+  "subtitle": "Learn with us",
+  "intro": "Dive into the world of tattoo art with our exclusive workshops, designed for both beginners and experienced artists.",
+  "empty": "No courses available at this time",
+  "levels": {
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced"
+  },
+  "spotsAvailable": "spots available",
+  "reserved": "Reserved",
+  "reserveSpot": "Reserve Spot",
+  "reserveAria": "Reserve spot",
+  "success": {
+    "title": "Reservation confirmed!",
+    "description": "We've sent you a confirmation email."
+  },
+  "form": {
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone"
+  },
+  "reserving": "Reserving...",
+  "confirmReserve": "Confirm Reservation"
+}

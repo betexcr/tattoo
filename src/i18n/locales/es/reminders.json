@@ -1,0 +1,29 @@
+{
+  "title": "Recordatorios",
+  "subtitle": "No olvides nada",
+  "type": {
+    "appointment": "Cita",
+    "followup": "Seguimiento",
+    "custom": "Personalizado"
+  },
+  "markPending": "Marcar como pendiente",
+  "markCompleted": "Marcar como completado",
+  "sections": {
+    "today": "Hoy",
+    "tomorrow": "Mañana",
+    "upcoming": "Próximos"
+  },
+  "empty": "No hay recordatorios",
+  "guest": {
+    "title": "Tus recordatorios personales",
+    "description": "Inicia sesión para guardar recordatorios de citas, seguimientos y notas personales."
+  },
+  "newReminder": "Nuevo recordatorio",
+  "form": {
+    "titleLabel": "Título",
+    "titlePlaceholder": "¿Qué necesitas recordar?",
+    "date": "Fecha",
+    "time": "Hora",
+    "type": "Tipo"
+  }
+}

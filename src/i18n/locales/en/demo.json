@@ -1,0 +1,74 @@
+{
+  "back": "Back",
+  "title": "Studio Demo",
+  "tabs": {
+    "admin": "Admin Panel",
+    "features": "Features"
+  },
+  "dashboard": {
+    "preview": "Preview",
+    "adminPanel": "Admin Panel",
+    "adminPanelDesc": "This is what the panel you'll use to manage your studio looks like",
+    "greeting": "Good morning, Artist",
+    "date": "Saturday, April 11, 2026"
+  },
+  "stats": {
+    "todayAppointments": "Today's Appointments",
+    "pending": "Pending",
+    "messages": "Messages",
+    "monthRevenue": "Month Revenue"
+  },
+  "sections": {
+    "pendingRequests": "Pending Requests",
+    "todaySchedule": "Today's Schedule",
+    "unreadMessages": "Unread Messages",
+    "quickActions": "Quick actions",
+    "revenueChart": "Revenue (7 days)"
+  },
+  "quickActions": {
+    "addPortfolio": "Add to Portfolio",
+    "newAppointment": "New Manual Appointment",
+    "viewAnalytics": "View Analytics",
+    "settings": "Settings"
+  },
+  "cta": {
+    "title": "Want this for your studio?",
+    "price": "Full setup from $350 USD",
+    "contactInstagram": "Contact via Instagram"
+  },
+  "features": {
+    "artistTitle": "For the Artist",
+    "artistHeading": "Admin Panel",
+    "artistDesc": "Everything you need to manage your studio",
+    "clientTitle": "For Your Clients",
+    "clientHeading": "Public App",
+    "clientDesc": "Your clients get a professional experience",
+    "admin": {
+      "dashboard": { "label": "Dashboard", "desc": "Real-time overview of your business" },
+      "appointments": { "label": "Appointment Management", "desc": "Schedule, confirmations, and automatic reminders" },
+      "clients": { "label": "Client Database", "desc": "History, notes, and preferences for each client" },
+      "chat": { "label": "Live Chat", "desc": "Direct messaging with your clients" },
+      "shop": { "label": "Online Shop", "desc": "Sell merch, aftercare, and more" },
+      "portfolio": { "label": "Digital Portfolio", "desc": "Filterable gallery of your best work" },
+      "analytics": { "label": "Analytics", "desc": "Revenue, monthly goals, and key metrics" },
+      "settings": { "label": "Full Configuration", "desc": "Branding, hours, pricing, and content" }
+    },
+    "client": {
+      "portfolio": { "label": "Portfolio", "desc": "Work gallery with filters" },
+      "designer": { "label": "Tattoo Designer", "desc": "Interactive design tool" },
+      "visualizer": { "label": "Body Visualizer", "desc": "SVG map for placing tattoos" },
+      "shop": { "label": "Shop", "desc": "Catalog with shopping cart" },
+      "courses": { "label": "Courses", "desc": "Workshops with spot reservations" },
+      "pwa": { "label": "Installable App (PWA)", "desc": "Install from browser" }
+    }
+  },
+  "mockData": {
+    "today": "Today",
+    "forearm": "Forearm",
+    "back": "Back",
+    "wrist": "Wrist",
+    "msg1": "Hi! Do you have availability this week?",
+    "msg2": "I loved the design, when can we schedule?"
+  },
+  "weekdays": ["M", "T", "W", "T", "F", "S", "S"]
+}

@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, Check, CheckCheck } from 'lucide-react'
 import { formatRelativeTime } from '../../utils/formatRelativeTime'
@@ -26,6 +27,7 @@ export default function ArtistChatPanel({
   chatError, chatLoading, sendError, inputText, onInputChange, onSend, sending,
   artistTyping, isGuest,
 }: Props) {
+  const { t } = useTranslation('chat')
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -126,15 +128,15 @@ export default function ArtistChatPanel({
                 onSend()
               }
             }}
-            placeholder={`Escribe un mensaje a ${artistFirstName}...`}
-            aria-label="Mensaje"
+            placeholder={t('artistPanel.placeholder', { name: artistFirstName })}
+            aria-label={t('artistPanel.messageAria')}
             className="flex-1 px-4 py-3 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle/60 focus:outline-none focus:border-gold/50"
           />
           <button
             type="button"
             onClick={onSend}
             disabled={!inputText.trim() || sending}
-            aria-label="Enviar mensaje"
+            aria-label={t('artistPanel.sendAria')}
             className="w-12 h-12 rounded-xl bg-gold text-ink flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gold-light transition-colors"
           >
             <Send size={18} />

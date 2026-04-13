@@ -1,0 +1,34 @@
+{
+  "title": "Contacto",
+  "subtitle": "Hablemos",
+  "info": {
+    "phone": "Teléfono",
+    "email": "Correo electrónico",
+    "location": "Ubicación",
+    "schedule": "Horario"
+  },
+  "checkSchedule": "Consultar horario",
+  "days": {
+    "monday": "Lun", "tuesday": "Mar", "wednesday": "Mié",
+    "thursday": "Jue", "friday": "Vie", "saturday": "Sáb", "sunday": "Dom"
+  },
+  "success": {
+    "title": "Mensaje enviado",
+    "description": "Te responderemos lo antes posible."
+  },
+  "form": {
+    "name": "Nombre",
+    "namePlaceholder": "Tu nombre",
+    "email": "Correo electrónico",
+    "emailPlaceholder": "tu@email.com",
+    "phone": "Teléfono",
+    "phonePlaceholder": "+34 600 000 000",
+    "tattooStyle": "Estilo de tatuaje de interés",
+    "selectStyle": "Selecciona un estilo",
+    "bodyZone": "Zona del cuerpo preferida",
+    "selectZone": "Selecciona una zona",
+    "message": "Mensaje",
+    "messagePlaceholder": "Cuéntame tu idea...",
+    "submit": "Enviar Mensaje"
+  }
+}

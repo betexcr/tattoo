@@ -1,0 +1,84 @@
+{
+  "steps": {
+    "style": { "title": "Estilo", "subtitle": "Elige tu estilo de tatuaje" },
+    "design": { "title": "Diseño", "subtitle": "Describe tu idea" },
+    "body": { "title": "Ubicación", "subtitle": "¿Dónde lo quieres?" },
+    "size": { "title": "Tamaño", "subtitle": "Elige el tamaño" },
+    "datetime": { "title": "Fecha y Hora", "subtitle": "Escoge tu horario" },
+    "contact": { "title": "Tus Datos", "subtitle": "Para confirmar tu cita" },
+    "confirm": { "title": "Confirmación", "subtitle": "¡Todo listo!" }
+  },
+  "sizes": {
+    "tiny": { "label": "Diminuto", "desc": "2-5 cm", "estimate": "30-60 min", "price": "€50-80" },
+    "small": { "label": "Pequeño", "desc": "5-10 cm", "estimate": "1-2 horas", "price": "€80-150" },
+    "medium": { "label": "Mediano", "desc": "10-20 cm", "estimate": "2-4 horas", "price": "€150-300" },
+    "large": { "label": "Grande", "desc": "20-35 cm", "estimate": "4-6 horas", "price": "€300-500" },
+    "xlarge": { "label": "Extra Grande", "desc": "35+ cm", "estimate": "6+ horas (varias sesiones)", "price": "€500+" }
+  },
+  "weekdays": ["L", "M", "X", "J", "V", "S", "D"],
+  "shortDays": ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"],
+  "shortMonths": ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"],
+  "monthNames": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
+  "stepOf": "Paso {{current}} de {{total}}",
+  "prevStep": "Paso anterior",
+  "closeBooking": "Cerrar reserva",
+  "continue": "Continuar",
+  "reserving": "Reservando...",
+  "confirmReservation": "Confirmar Reserva",
+  "success": {
+    "title": "¡Cita Reservada!",
+    "description": "Te enviaremos una confirmación por WhatsApp. Recuerda que el depósito se coordina directamente con la artista.",
+    "goHome": "Volver al inicio",
+    "viewReminders": "Ver mis recordatorios"
+  },
+  "summary": {
+    "style": "Estilo",
+    "zone": "Zona",
+    "size": "Tamaño",
+    "date": "Fecha",
+    "time": "Hora",
+    "estimate": "Estimado",
+    "duration": "Duración estimada",
+    "client": "Cliente",
+    "contactLabel": "Contacto",
+    "estimatedPrice": "Precio estimado"
+  },
+  "design": {
+    "describeIdea": "Describe tu idea de tatuaje",
+    "placeholder": "Ej: Quiero una rosa pequeña con hojas delicadas en estilo línea fina, con un toque de geometría en los pétalos...",
+    "helper": "Cuanto más detalle nos des, mejor podremos preparar tu diseño",
+    "referenceImages": "Imágenes de referencia (opcional)",
+    "upload": "Subir",
+    "removeImage": "Eliminar imagen de referencia"
+  },
+  "calendar": {
+    "chooseDate": "Elige una fecha disponible",
+    "prevMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
+    "slotsFor": "Horarios para {{date}}",
+    "occupied": "Ocupado"
+  },
+  "contactForm": {
+    "fullName": "Nombre completo *",
+    "namePlaceholder": "Tu nombre",
+    "whatsapp": "WhatsApp / Teléfono *",
+    "phonePlaceholder": "+34 612 345 678",
+    "email": "Correo electrónico (opcional)",
+    "emailPlaceholder": "tu@email.com",
+    "notes": "Notas adicionales",
+    "notesPlaceholder": "Alergias, preferencias, preguntas..."
+  },
+  "confirmStep": {
+    "summaryTitle": "Resumen de tu cita",
+    "designDescription": "Descripción del diseño",
+    "disclaimer": "Al confirmar, la artista revisará tu solicitud y te contactará por WhatsApp para coordinar el depósito y los detalles finales del diseño."
+  },
+  "errors": {
+    "bookingFailed": "No se pudo reservar la cita. Inténtalo de nuevo.",
+    "uploadFailed": "Error al subir {{name}}. Inténtalo de nuevo."
+  },
+  "notification": {
+    "title": "Cita reservada",
+    "body": "Tu cita para {{style}} el {{date}} a las {{time}} ha sido registrada."
+  }
+}

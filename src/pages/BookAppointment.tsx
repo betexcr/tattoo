@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft,
@@ -21,25 +22,9 @@ import { useRequireAuth } from '../hooks/useRequireAuth'
 import { mapFirestoreError } from '../utils/mapFirestoreError'
 import { useNotifications } from '../hooks/useNotifications'
 
-const STEPS = [
-  { id: 'style', title: 'Estilo', subtitle: 'Elige tu estilo de tatuaje' },
-  { id: 'design', title: 'Diseño', subtitle: 'Describe tu idea' },
-  { id: 'body', title: 'Ubicación', subtitle: '¿Dónde lo quieres?' },
-  { id: 'size', title: 'Tamaño', subtitle: 'Elige el tamaño' },
-  { id: 'datetime', title: 'Fecha y Hora', subtitle: 'Escoge tu horario' },
-  { id: 'contact', title: 'Tus Datos', subtitle: 'Para confirmar tu cita' },
-  { id: 'confirm', title: 'Confirmación', subtitle: '¡Todo listo!' },
-]
-
-const sizes = [
-  { id: 'tiny', label: 'Diminuto', desc: '2-5 cm', icon: '·', estimate: '30-60 min', price: '€50-80' },
-  { id: 'small', label: 'Pequeño', desc: '5-10 cm', icon: '●', estimate: '1-2 horas', price: '€80-150' },
-  { id: 'medium', label: 'Mediano', desc: '10-20 cm', icon: '⬤', estimate: '2-4 horas', price: '€150-300' },
-  { id: 'large', label: 'Grande', desc: '20-35 cm', icon: '⬤', estimate: '4-6 horas', price: '€300-500' },
-  { id: 'xlarge', label: 'Extra Grande', desc: '35+ cm', icon: '⬤', estimate: '6+ horas (varias sesiones)', price: '€500+' },
-]
-
-const WEEKDAY_LABELS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+const SIZE_IDS = ['tiny', 'small', 'medium', 'large', 'xlarge'] as const
+const SIZE_ICONS: Record<string, string> = { tiny: '·', small: '●', medium: '⬤', large: '⬤', xlarge: '⬤' }
+const STEP_IDS = ['style', 'design', 'body', 'size', 'datetime', 'contact', 'confirm'] as const
 
 const WEEKDAY_SLOTS = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00']
 const SATURDAY_SLOTS = ['10:00', '11:00', '12:00', '13:00', '14:00']
@@ -61,12 +46,32 @@ const slideVariants = {
 }
 
 export default function BookAppointment() {
+  const { t, i18n: i18nInstance } = useTranslation('booking')
   const navigate = useNavigate()
   const { config } = useStudioConfig()
   const { create, getOccupiedSlots } = useAppointments()
   const { user, requireAuth, authPrompt } = useRequireAuth()
   const { create: createNotification } = useNotifications(user?.uid)
   const occupiedSlots = getOccupiedSlots()
+
+  const STEPS = useMemo(() => STEP_IDS.map(id => ({
+    id,
+    title: t(`steps.${id}.title`),
+    subtitle: t(`steps.${id}.subtitle`),
+  })), [t])
+
+  const sizes = useMemo(() => SIZE_IDS.map(id => ({
+    id,
+    label: t(`sizes.${id}.label`),
+    desc: t(`sizes.${id}.desc`),
+    icon: SIZE_ICONS[id],
+    estimate: t(`sizes.${id}.estimate`),
+    price: t(`sizes.${id}.price`),
+  })), [t])
+
+  const WEEKDAY_LABELS = t('weekdays', { returnObjects: true }) as string[]
+  const monthNames = t('monthNames', { returnObjects: true }) as string[]
+
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState(1)
 
@@ -131,14 +136,14 @@ export default function BookAppointment() {
           notes: contact.notes,
         })
         if (result?.error) {
-          setBookingError('No se pudo reservar la cita. Inténtalo de nuevo.')
+          setBookingError(t('errors.bookingFailed'))
           return
         }
         try {
           await createNotification({
             user_id: user?.uid ?? '',
-            title: 'Cita reservada',
-            body: `Tu cita para ${selectedStyle} el ${selectedDate} a las ${selectedTime} ha sido registrada.`,
+            title: t('notification.title'),
+            body: t('notification.body', { style: selectedStyle, date: selectedDate, time: selectedTime }),
             type: 'appointment',
             link: '/agenda',
           })
@@ -181,7 +186,7 @@ export default function BookAppointment() {
           const url = await getDownloadURL(storageRef)
           uploaded.push(url)
         } catch {
-          setBookingError(`Error al subir ${file.name}. Inténtalo de nuevo.`)
+          setBookingError(t('errors.uploadFailed', { name: file.name }))
         }
       }
       setReferenceImages(prev => [...prev, ...uploaded])
@@ -259,12 +264,10 @@ export default function BookAppointment() {
     if (!selectedDate) return ''
     const [y, m, d] = selectedDate.split('-').map(Number)
     const dateObj = new Date(y, m - 1, d)
-    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
-    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+    const days = t('shortDays', { returnObjects: true }) as string[]
+    const months = t('shortMonths', { returnObjects: true }) as string[]
     return `${days[dateObj.getDay()]} ${d} ${months[dateObj.getMonth()]}`
-  }, [selectedDate])
-
-  const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+  }, [selectedDate, t])
 
   if (booked) {
     return (
@@ -289,7 +292,7 @@ export default function BookAppointment() {
           transition={{ delay: 0.4 }}
           className="font-serif text-2xl text-cream mb-2"
         >
-          ¡Cita Reservada!
+          {t('success.title')}
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: 20 }}
@@ -297,8 +300,7 @@ export default function BookAppointment() {
           transition={{ delay: 0.5 }}
           className="text-subtle text-sm mb-8 max-w-xs"
         >
-          Te enviaremos una confirmación por WhatsApp. Recuerda que el depósito
-          se coordina directamente con la artista.
+          {t('success.description')}
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -307,27 +309,27 @@ export default function BookAppointment() {
           className="w-full max-w-xs space-y-4 p-5 rounded-2xl bg-ink-light border border-white/5"
         >
           <div className="flex justify-between text-sm">
-            <span className="text-subtle">Estilo</span>
+            <span className="text-subtle">{t('summary.style')}</span>
             <span className="text-cream">{selectedStyle}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-subtle">Zona</span>
+            <span className="text-subtle">{t('summary.zone')}</span>
             <span className="text-cream">{selectedBodyPart}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-subtle">Tamaño</span>
+            <span className="text-subtle">{t('summary.size')}</span>
             <span className="text-cream">{sizes.find((s) => s.id === selectedSize)?.label}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-subtle">Fecha</span>
+            <span className="text-subtle">{t('summary.date')}</span>
             <span className="text-cream">{selectedDateLabel}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-subtle">Hora</span>
+            <span className="text-subtle">{t('summary.time')}</span>
             <span className="text-cream">{selectedTime}</span>
           </div>
           <div className="border-t border-white/5 pt-3 flex justify-between text-sm">
-            <span className="text-subtle">Estimado</span>
+            <span className="text-subtle">{t('summary.estimate')}</span>
             <span className="text-gold font-medium">{selectedSizeData?.price}</span>
           </div>
         </motion.div>
@@ -342,14 +344,14 @@ export default function BookAppointment() {
             onClick={() => navigate('/')}
             className="w-full py-3.5 rounded-xl bg-gold text-ink font-medium hover:bg-gold-light transition-colors"
           >
-            Volver al inicio
+            {t('success.goHome')}
           </button>
           <button
             type="button"
             onClick={() => navigate('/reminders')}
             className="w-full py-3.5 rounded-xl border border-gold/30 text-gold font-medium hover:bg-gold/5 transition-colors"
           >
-            Ver mis recordatorios
+            {t('success.viewReminders')}
           </button>
         </motion.div>
       </div>
@@ -365,19 +367,19 @@ export default function BookAppointment() {
           <button
             type="button"
             onClick={goBack}
-            aria-label="Paso anterior"
+            aria-label={t('prevStep')}
             className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
           >
             <ArrowLeft size={18} />
           </button>
           <div className="text-center">
             <p className="text-cream text-sm font-medium">{currentStep.title}</p>
-            <p className="text-subtle text-[10px]">Paso {step + 1} de {STEPS.length}</p>
+            <p className="text-subtle text-[10px]">{t('stepOf', { current: step + 1, total: STEPS.length })}</p>
           </div>
           <button
             type="button"
             onClick={() => navigate(-1)}
-            aria-label="Cerrar reserva"
+            aria-label={t('closeBooking')}
             className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
           >
             <X size={18} />
@@ -433,22 +435,22 @@ export default function BookAppointment() {
             {step === 1 && (
               <div className="space-y-5">
                 <div>
-                  <label htmlFor="book-description" className="block text-xs text-subtle mb-2">Describe tu idea de tatuaje</label>
+                  <label htmlFor="book-description" className="block text-xs text-subtle mb-2">{t('design.describeIdea')}</label>
                   <textarea
                     id="book-description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Ej: Quiero una rosa pequeña con hojas delicadas en estilo línea fina, con un toque de geometría en los pétalos..."
+                    placeholder={t('design.placeholder')}
                     rows={5}
                     className="w-full px-4 py-3 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle/50 focus:outline-none focus:border-gold/50 resize-none text-sm leading-relaxed"
                   />
                   <p className="text-subtle text-[11px] mt-1.5">
-                    Cuanto más detalle nos des, mejor podremos preparar tu diseño
+                    {t('design.helper')}
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-xs text-subtle mb-2">Imágenes de referencia (opcional)</label>
+                  <label className="block text-xs text-subtle mb-2">{t('design.referenceImages')}</label>
                   <div className="flex gap-3 flex-wrap">
                     {referenceImages.map((img, i) => (
                       <div key={img} className="relative w-20 h-20 rounded-xl overflow-visible border border-white/10">
@@ -456,7 +458,7 @@ export default function BookAppointment() {
                         <button
                           type="button"
                           onClick={() => setReferenceImages((prev) => prev.filter((_, idx) => idx !== i))}
-                          aria-label="Eliminar imagen de referencia"
+                          aria-label={t('design.removeImage')}
                           className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-ink/80 flex items-center justify-center shadow-sm border border-white/10"
                         >
                           <X size={14} className="text-cream" />
@@ -469,7 +471,7 @@ export default function BookAppointment() {
                       className="w-20 h-20 rounded-xl border border-dashed border-white/10 flex flex-col items-center justify-center gap-1 text-subtle hover:text-cream hover:border-gold/30 transition-colors"
                     >
                       <Upload size={16} />
-                      <span className="text-[9px]">Subir</span>
+                      <span className="text-[9px]">{t('design.upload')}</span>
                     </button>
                   </div>
                 </div>
@@ -533,7 +535,7 @@ export default function BookAppointment() {
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <CalendarDays size={14} className="text-gold" />
-                    <span className="text-xs text-subtle">Elige una fecha disponible</span>
+                    <span className="text-xs text-subtle">{t('calendar.chooseDate')}</span>
                   </div>
 
                   {/* Calendar header with month navigation */}
@@ -545,7 +547,7 @@ export default function BookAppointment() {
                         month: v.month === 0 ? 11 : v.month - 1,
                         year: v.month === 0 ? v.year - 1 : v.year,
                       }))}
-                      aria-label="Mes anterior"
+                      aria-label={t('calendar.prevMonth')}
                       className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
                     >
                       <ChevronLeft size={16} />
@@ -560,7 +562,7 @@ export default function BookAppointment() {
                         month: v.month === 11 ? 0 : v.month + 1,
                         year: v.month === 11 ? v.year + 1 : v.year,
                       }))}
-                      aria-label="Mes siguiente"
+                      aria-label={t('calendar.nextMonth')}
                       className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
                     >
                       <ChevronRight size={16} />
@@ -583,7 +585,7 @@ export default function BookAppointment() {
                       const isSelected = cell.date === selectedDate
 
                       const fullDate = new Date(cell.date + 'T12:00:00')
-                      const dateLabel = fullDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+                      const dateLabel = fullDate.toLocaleDateString(i18nInstance.language, { day: 'numeric', month: 'long', year: 'numeric' })
 
                       return (
                         <button
@@ -624,7 +626,7 @@ export default function BookAppointment() {
                   >
                     <div className="flex items-center gap-2 mb-3">
                       <Clock size={14} className="text-gold" />
-                      <span className="text-xs text-subtle">Horarios para {selectedDateLabel}</span>
+                      <span className="text-xs text-subtle">{t('calendar.slotsFor', { date: selectedDateLabel })}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2.5">
                       {timeSlotsForDate.map((time) => {
@@ -650,7 +652,7 @@ export default function BookAppointment() {
                             <span className="text-sm font-medium">{time}</span>
                             {occupied && (
                               <span className="absolute -top-1 -right-1 text-[8px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">
-                                Ocupado
+                                {t('calendar.occupied')}
                               </span>
                             )}
                           </button>
@@ -666,45 +668,45 @@ export default function BookAppointment() {
             {step === 5 && (
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="book-name" className="block text-xs text-subtle mb-1.5">Nombre completo *</label>
+                  <label htmlFor="book-name" className="block text-xs text-subtle mb-1.5">{t('contactForm.fullName')}</label>
                   <input
                     id="book-name"
                     type="text"
                     value={contact.name}
                     onChange={(e) => setContact((c) => ({ ...c, name: e.target.value }))}
-                    placeholder="Tu nombre"
+                    placeholder={t('contactForm.namePlaceholder')}
                     className="w-full px-4 py-3 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle/50 focus:outline-none focus:border-gold/50 text-sm"
                   />
                 </div>
                 <div>
-                  <label htmlFor="book-phone" className="block text-xs text-subtle mb-1.5">WhatsApp / Teléfono *</label>
+                  <label htmlFor="book-phone" className="block text-xs text-subtle mb-1.5">{t('contactForm.whatsapp')}</label>
                   <input
                     id="book-phone"
                     type="tel"
                     value={contact.phone}
                     onChange={(e) => setContact((c) => ({ ...c, phone: e.target.value }))}
-                    placeholder="+34 612 345 678"
+                    placeholder={t('contactForm.phonePlaceholder')}
                     className="w-full px-4 py-3 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle/50 focus:outline-none focus:border-gold/50 text-sm"
                   />
                 </div>
                 <div>
-                  <label htmlFor="book-email" className="block text-xs text-subtle mb-1.5">Correo electrónico (opcional)</label>
+                  <label htmlFor="book-email" className="block text-xs text-subtle mb-1.5">{t('contactForm.email')}</label>
                   <input
                     id="book-email"
                     type="email"
                     value={contact.email}
                     onChange={(e) => setContact((c) => ({ ...c, email: e.target.value }))}
-                    placeholder="tu@email.com"
+                    placeholder={t('contactForm.emailPlaceholder')}
                     className="w-full px-4 py-3 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle/50 focus:outline-none focus:border-gold/50 text-sm"
                   />
                 </div>
                 <div>
-                  <label htmlFor="book-notes" className="block text-xs text-subtle mb-1.5">Notas adicionales</label>
+                  <label htmlFor="book-notes" className="block text-xs text-subtle mb-1.5">{t('contactForm.notes')}</label>
                   <textarea
                     id="book-notes"
                     value={contact.notes}
                     onChange={(e) => setContact((c) => ({ ...c, notes: e.target.value }))}
-                    placeholder="Alergias, preferencias, preguntas..."
+                    placeholder={t('contactForm.notesPlaceholder')}
                     rows={3}
                     className="w-full px-4 py-3 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle/50 focus:outline-none focus:border-gold/50 resize-none text-sm"
                   />
@@ -718,46 +720,46 @@ export default function BookAppointment() {
                 <div className="p-5 rounded-2xl bg-ink-light border border-white/5 space-y-4">
                   <h3 className="font-serif text-cream text-lg flex items-center gap-2">
                     <Sparkles size={16} className="text-gold" />
-                    Resumen de tu cita
+                    {t('confirmStep.summaryTitle')}
                   </h3>
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm">
-                      <span className="text-subtle">Estilo</span>
+                      <span className="text-subtle">{t('summary.style')}</span>
                       <span className="text-cream font-medium">{selectedStyle}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-subtle">Zona</span>
+                      <span className="text-subtle">{t('summary.zone')}</span>
                       <span className="text-cream font-medium">{selectedBodyPart}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-subtle">Tamaño</span>
+                      <span className="text-subtle">{t('summary.size')}</span>
                       <span className="text-cream font-medium">{selectedSizeData?.label} ({selectedSizeData?.desc})</span>
                     </div>
                     <div className="border-t border-white/5 my-2" />
                     <div className="flex justify-between text-sm">
-                      <span className="text-subtle">Fecha</span>
+                      <span className="text-subtle">{t('summary.date')}</span>
                       <span className="text-cream font-medium">{selectedDateLabel}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-subtle">Hora</span>
+                      <span className="text-subtle">{t('summary.time')}</span>
                       <span className="text-cream font-medium">{selectedTime}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-subtle">Duración estimada</span>
+                      <span className="text-subtle">{t('summary.duration')}</span>
                       <span className="text-cream font-medium">{selectedSizeData?.estimate}</span>
                     </div>
                     <div className="border-t border-white/5 my-2" />
                     <div className="flex justify-between text-sm">
-                      <span className="text-subtle">Cliente</span>
+                      <span className="text-subtle">{t('summary.client')}</span>
                       <span className="text-cream font-medium">{contact.name}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-subtle">Contacto</span>
+                      <span className="text-subtle">{t('summary.contactLabel')}</span>
                       <span className="text-cream font-medium">{contact.phone}</span>
                     </div>
                     <div className="border-t border-white/5 my-2" />
                     <div className="flex justify-between text-sm">
-                      <span className="text-subtle">Precio estimado</span>
+                      <span className="text-subtle">{t('summary.estimatedPrice')}</span>
                       <span className="text-gold font-serif text-lg">{selectedSizeData?.price}</span>
                     </div>
                   </div>
@@ -765,14 +767,13 @@ export default function BookAppointment() {
 
                 {description && (
                   <div className="p-4 rounded-xl bg-ink-medium/60 border border-white/5">
-                    <p className="text-[11px] text-subtle mb-1">Descripción del diseño</p>
+                    <p className="text-[11px] text-subtle mb-1">{t('confirmStep.designDescription')}</p>
                     <p className="text-cream text-sm leading-relaxed">{description}</p>
                   </div>
                 )}
 
                 <p className="text-subtle text-[11px] text-center leading-relaxed">
-                  Al confirmar, la artista revisará tu solicitud y te contactará
-                  por WhatsApp para coordinar el depósito y los detalles finales del diseño.
+                  {t('confirmStep.disclaimer')}
                 </p>
               </div>
             )}
@@ -790,7 +791,7 @@ export default function BookAppointment() {
             <button
               type="button"
               onClick={goBack}
-              aria-label="Paso anterior"
+              aria-label={t('prevStep')}
               className="px-5 py-3.5 rounded-xl border border-white/10 text-cream text-sm font-medium hover:bg-white/5 transition-colors"
             >
               <ArrowLeft size={16} />
@@ -809,11 +810,11 @@ export default function BookAppointment() {
             {step === STEPS.length - 1 ? (
               <>
                 <Check size={16} />
-                {submitting ? 'Reservando...' : 'Confirmar Reserva'}
+                {submitting ? t('reserving') : t('confirmReservation')}
               </>
             ) : (
               <>
-                Continuar
+                {t('continue')}
                 <ArrowRight size={16} />
               </>
             )}

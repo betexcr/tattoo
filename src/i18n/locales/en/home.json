@@ -1,0 +1,43 @@
+{
+  "bookAppointment": "Book appointment",
+  "viewPortfolio": "View portfolio",
+  "explore": "Explore",
+  "readyForTattoo": "Ready for your tattoo?",
+  "bookOnline": "Book online in minutes. Response within 24h.",
+  "popularStyles": "Popular Styles",
+  "seeMore": "See more",
+  "nextCourse": "Next Course",
+  "nextCourses": "Upcoming Courses",
+  "allCourses": "All courses",
+  "spots": "spots",
+  "messages": "Messages",
+  "contactCta": "Contact",
+  "artistAccess": "Artist Access",
+  "quickActions": {
+    "book": { "label": "Book", "desc": "Schedule your appointment" },
+    "designer": { "label": "Design", "desc": "Create your tattoo" },
+    "visualizer": { "label": "Visualize", "desc": "On your body" },
+    "shop": { "label": "Shop", "desc": "Art & more" },
+    "courses": { "label": "Courses", "desc": "Learn" },
+    "suggestions": { "label": "Inspiration", "desc": "Styles" }
+  },
+  "featuredWork": "Recent Work",
+  "viewAll": "View all",
+  "noWorksYet": "No works available yet",
+  "shopTitle": "Shop",
+  "shopViewAll": "View all",
+  "shopComingSoon": "Products coming soon",
+  "reviews": {
+    "title": "What our clients say",
+    "leaveReview": "Leave a review",
+    "yourName": "Your name",
+    "yourExperience": "Your experience...",
+    "rateStarSingular": "Rate {{count}} star",
+    "rateStarPlural": "Rate {{count}} stars",
+    "styleLabel": "Review style",
+    "stylePlaceholder": "Style",
+    "send": "Submit",
+    "completeFields": "Complete your name and experience",
+    "thankYou": "Thank you for your review"
+  }
+}

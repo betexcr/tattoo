@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import i18n from '../i18n'
 
 interface Props {
   children: ReactNode
@@ -29,9 +30,9 @@ export default class RouteErrorBoundary extends Component<Props, State> {
       return (
         <div role="alert" className="flex-1 flex items-center justify-center px-6 py-20">
           <div className="max-w-sm text-center space-y-4">
-            <h2 className="font-serif text-lg text-cream">Algo salió mal</h2>
+            <h2 className="font-serif text-lg text-cream">{i18n.t('errors.somethingWentWrong')}</h2>
             <p className="text-cream-dark text-sm leading-relaxed">
-              Ha ocurrido un error en esta sección. Puedes intentar de nuevo o volver al inicio.
+              {i18n.t('errors.sectionError')}
             </p>
             {import.meta.env.DEV && this.state.error?.message && (
               <p className="text-subtle text-xs font-mono bg-ink-light rounded-lg p-3 text-left break-all">
@@ -44,14 +45,14 @@ export default class RouteErrorBoundary extends Component<Props, State> {
                 onClick={() => this.setState({ hasError: false, error: null })}
                 className="px-5 py-2.5 rounded-full bg-gold text-ink text-sm font-medium hover:bg-gold-light transition-colors"
               >
-                Reintentar
+                {i18n.t('errors.retry')}
               </button>
               {/* Intentional full reload to reset all app state after error */}
               <a
                 href="/"
                 className="px-5 py-2.5 rounded-full border border-white/20 text-cream text-sm font-medium hover:bg-white/5 transition-colors"
               >
-                Ir al inicio
+                {i18n.t('errors.goHome')}
               </a>
             </div>
           </div>

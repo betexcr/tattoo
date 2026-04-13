@@ -1,0 +1,358 @@
+{
+  "layout": {
+    "skipToContent": "Saltar al contenido",
+    "openMenu": "Abrir menú",
+    "moreOptions": "Más opciones",
+    "studioMenu": "Menú del estudio",
+    "closeMenu": "Cerrar menú",
+    "drawerTitle": "Estudio",
+    "subtitle": "Estudio",
+    "more": "Más"
+  },
+  "nav": {
+    "dashboard": "Panel",
+    "dashboardDesc": "Resumen y actividad",
+    "appointments": "Citas",
+    "appointmentsDesc": "Agenda del estudio",
+    "clients": "Clientes",
+    "clientsDesc": "Base de datos",
+    "messages": "Mensajes",
+    "messagesDesc": "Chat con clientes",
+    "orders": "Pedidos",
+    "ordersDesc": "Tienda online",
+    "portfolio": "Portafolio",
+    "portfolioDesc": "Gestión de trabajos",
+    "analytics": "Analíticas",
+    "analyticsDesc": "Datos y métricas",
+    "settings": "Configuración",
+    "settingsDesc": "Ajustes del estudio"
+  },
+  "pageTitle": {
+    "dashboard": "Panel",
+    "appointments": "Citas",
+    "clients": "Clientes",
+    "messages": "Mensajes",
+    "orders": "Pedidos",
+    "portfolio": "Portafolio",
+    "analytics": "Analíticas",
+    "settings": "Configuración",
+    "default": "Estudio"
+  },
+  "dashboard": {
+    "greetings": {
+      "morning": "Buenos días",
+      "afternoon": "Buenas tardes",
+      "evening": "Buenas noches"
+    },
+    "stats": {
+      "todayAppointments": "Citas Hoy",
+      "pending": "Pendientes",
+      "messages": "Mensajes",
+      "monthRevenue": "Ingresos Mes"
+    },
+    "pendingRequests": "Solicitudes Pendientes",
+    "viewAll": "Ver todas",
+    "noPendingRequests": "No hay solicitudes pendientes",
+    "todaySchedule": "Agenda de Hoy",
+    "dayOff": "Día libre",
+    "unreadMessages": "Mensajes sin leer",
+    "allCaughtUp": "Todo al día",
+    "quickActions": {
+      "title": "Acciones rápidas",
+      "addPortfolio": "Agregar al Portafolio",
+      "newAppointment": "Nueva Cita Manual",
+      "viewAnalytics": "Ver Analíticas",
+      "settings": "Configuración"
+    },
+    "revenueChart": "Ingresos (7 días)",
+    "weekdaysShort": ["L", "M", "X", "J", "V", "S", "D"]
+  },
+  "appointments": {
+    "statusUnknown": "Desconocido",
+    "filters": {
+      "all": "Todas",
+      "pending": "Pendientes",
+      "confirmed": "Confirmadas",
+      "completed": "Completadas",
+      "rejected": "Rechazadas"
+    },
+    "views": {
+      "calendar": "Calendario",
+      "list": "Lista"
+    },
+    "appointmentsForDate": "Citas del {{date}}",
+    "noAppointmentsDay": "No hay citas para este día",
+    "noAppointments": "No hay citas",
+    "cancelAppointment": "¿Cancelar cita?",
+    "completing": "Completando...",
+    "complete": "Completar",
+    "notification": {
+      "title": "Cita {{status}}",
+      "body": "Tu cita del {{date}} a las {{time}} ha sido {{status}}.",
+      "confirmed": "confirmada",
+      "rejected": "rechazada",
+      "completed": "completada"
+    },
+    "newAppointment": "Nueva cita",
+    "form": {
+      "status": "Estado",
+      "statusPending": "Pendiente",
+      "statusConfirmed": "Confirmada"
+    },
+    "monthNames": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+  },
+  "clients": {
+    "noVisits": "Sin visitas",
+    "stats": {
+      "appointments": "Citas",
+      "spent": "Gastado",
+      "firstVisit": "Primera visita"
+    },
+    "appointmentHistory": "Historial de Citas",
+    "notes": "Notas",
+    "notesPlaceholder": "Añadir nota...",
+    "notesAria": "Nota del cliente",
+    "notesSaveError": "Error guardando nota:",
+    "sendMessage": "Enviar Mensaje",
+    "newAppointment": "Nueva Cita",
+    "tabs": {
+      "all": "Todos",
+      "registered": "Registrados"
+    },
+    "registered": "Registrado",
+    "searchPlaceholder": "Buscar clientes...",
+    "searchAria": "Buscar clientes",
+    "sort": {
+      "name": "Nombre",
+      "visits": "Visitas",
+      "spent": "Gasto"
+    },
+    "visits": "visitas",
+    "spent": "gastado",
+    "noAppointments": "Sin citas aún",
+    "registeredDate": "Registrado {{date}}",
+    "noResults": "No se encontraron clientes",
+    "empty": "No hay clientes"
+  },
+  "messages": {
+    "backToConversations": "Volver a conversaciones",
+    "viewProfile": "Ver perfil",
+    "emptyThread": "No hay mensajes aún",
+    "firstMessage": "Envía el primer mensaje a este cliente",
+    "unreadCount": "{{count}} mensaje(s) sin leer",
+    "noConversations": "No hay conversaciones",
+    "placeholder": "Escribe un mensaje...",
+    "messageAria": "Mensaje",
+    "sendAria": "Enviar mensaje"
+  },
+  "orders": {
+    "status": {
+      "pending": { "label": "Pendiente", "nextLabel": "Confirmar" },
+      "confirmed": { "label": "Confirmado", "nextLabel": "Marcar enviado" },
+      "shipped": { "label": "Enviado", "nextLabel": "Marcar entregado" },
+      "delivered": { "label": "Entregado" },
+      "unknown": { "label": "Desconocido" }
+    },
+    "filters": {
+      "all": "Todos",
+      "pending": "Pendientes",
+      "confirmed": "Confirmados",
+      "shipped": "Enviados",
+      "delivered": "Entregados"
+    },
+    "title": "Pedidos",
+    "totalCount": "{{count}} en total",
+    "empty": "No hay pedidos",
+    "phone": "Tel:",
+    "address": "Dir:",
+    "items": "Artículos",
+    "updateError": "Error al actualizar el estado del pedido",
+    "updating": "Actualizando...",
+    "notification": {
+      "title": "Pedido actualizado",
+      "body": "Tu pedido ha sido marcado como \"{{label}}\"."
+    }
+  },
+  "portfolioManager": {
+    "totalWorks": "Total de trabajos",
+    "published": "Publicado",
+    "draft": "Borrador",
+    "markedPublished": "Marcado como publicado",
+    "markedDraft": "Marcado como borrador",
+    "moveUp": "Subir en la lista",
+    "moveDown": "Bajar en la lista",
+    "editWork": "Editar trabajo",
+    "deleteWork": "Eliminar trabajo",
+    "addToPortfolio": "Añadir al portafolio",
+    "editDialog": "Editar trabajo del portafolio",
+    "newDialog": "Nuevo trabajo del portafolio",
+    "editTitle": "Editar trabajo",
+    "newTitle": "Nuevo trabajo",
+    "form": {
+      "title": "Título",
+      "titlePlaceholder": "Nombre del diseño",
+      "description": "Descripción",
+      "descriptionPlaceholder": "Descripción del tatuaje",
+      "style": "Estilo",
+      "image": "Imagen",
+      "imagePlaceholder": "URL o sube un archivo",
+      "uploading": "Subiendo...",
+      "upload": "Subir",
+      "preview": "Vista previa"
+    },
+    "validation": "Completa el título, estilo e imagen"
+  },
+  "analytics": {
+    "loading": "Cargando...",
+    "loadError": "Error al cargar datos",
+    "revenue": {
+      "title": "Ingresos",
+      "total": "Total ingresos",
+      "description": "Depósitos de citas + pedidos de tienda (total histórico)",
+      "monthlyGoal": "Objetivo mensual",
+      "bySource": "Ingresos por fuente",
+      "tattoos": "Tatuajes",
+      "shop": "Tienda (pedidos)"
+    },
+    "appointments": {
+      "title": "Citas",
+      "total": "Total citas",
+      "confirmed": "Confirmadas",
+      "pending": "Pendientes",
+      "completed": "Completadas",
+      "rejected": "Rechazadas",
+      "byStatus": "Por estado",
+      "popularStyles": "Estilos más populares",
+      "noStyleData": "Sin datos de estilos",
+      "popularZones": "Zonas más populares",
+      "noZoneData": "Sin datos de zonas"
+    },
+    "clients": {
+      "title": "Clientes",
+      "unique": "Clientes únicos",
+      "avgDeposit": "Depósito medio",
+      "returning": "Clientes recurrentes",
+      "newVsReturning": "Nuevos vs recurrentes",
+      "new": "Nuevos",
+      "returningLabel": "Recurrentes"
+    },
+    "weeklyDensity": "Densidad semanal",
+    "weekdaysShort": ["L", "M", "X", "J", "V", "S", "D"]
+  },
+  "settings": {
+    "tabs": {
+      "profile": "Perfil",
+      "catalog": "Catálogo",
+      "suggestions": "Sugerencias y Cuestionario",
+      "content": "Contenido",
+      "chat": "Mensajes",
+      "notifications": "Notificaciones"
+    },
+    "loading": "Cargando configuración...",
+    "profile": {
+      "title": "Perfil del Estudio",
+      "studioName": "Nombre del estudio",
+      "artistName": "Nombre del artista",
+      "bio": "Bio",
+      "phone": "Teléfono",
+      "email": "Correo electrónico",
+      "address": "Dirección",
+      "schedule": "Horario de Trabajo",
+      "closed": "Cerrado",
+      "preview": "Vista previa",
+      "basePrices": "Precios Base",
+      "socialLinks": "Redes Sociales"
+    },
+    "weekdays": {
+      "monday": "Lunes", "tuesday": "Martes", "wednesday": "Miércoles",
+      "thursday": "Jueves", "friday": "Viernes", "saturday": "Sábado", "sunday": "Domingo"
+    },
+    "sizeLabels": {
+      "tiny": "Diminuto (2-5cm)",
+      "small": "Pequeño (5-10cm)",
+      "medium": "Mediano (10-20cm)",
+      "large": "Grande (20-35cm)",
+      "xlarge": "Extra grande (35+cm)"
+    },
+    "catalog": {
+      "tattooStyles": "Estilos de Tatuaje",
+      "newStyle": "Nuevo estilo...",
+      "bodyParts": "Partes del Cuerpo",
+      "newBodyPart": "Nueva parte del cuerpo..."
+    },
+    "suggestions": {
+      "title": "Sugerencias",
+      "titlePlaceholder": "Título",
+      "descriptionPlaceholder": "Descripción",
+      "addSuggestion": "Añadir sugerencia",
+      "quizTitle": "Cuestionario de Estilo",
+      "questionPlaceholder": "Pregunta",
+      "optionPlaceholder": "Opción {{index}}",
+      "addOption": "+ Añadir opción",
+      "addQuestion": "Añadir pregunta",
+      "recommendations": "Recomendaciones de Estilo",
+      "trendingThreshold": "Umbral de tendencia",
+      "trendingDescription": "Popularidad mínima para mostrar como trending (0-100)"
+    },
+    "content": {
+      "homePage": "Página de Inicio",
+      "subtitleLabel": "Subtítulo",
+      "tagline": "Eslogan",
+      "reviews": "Reseñas",
+      "reviewName": "Nombre",
+      "reviewText": "Texto de la reseña",
+      "reviewRating": "Valoración (1-5)",
+      "reviewStyle": "Estilo",
+      "addReview": "Añadir reseña",
+      "aboutPage": "Página Sobre Nosotros",
+      "heroImage": "URL imagen hero",
+      "artistTitle": "Título del artista",
+      "bio": "Bio",
+      "stats": "Estadísticas",
+      "statValue": "Valor (ej: 8+)",
+      "statLabel": "Etiqueta (ej: Años)",
+      "addStat": "+ Añadir estadística",
+      "specialties": "Especialidades",
+      "newSpecialty": "Nueva especialidad...",
+      "certifications": "Certificaciones",
+      "newCertification": "Nueva certificación..."
+    },
+    "chatConfig": {
+      "title": "Configuración del Chat",
+      "artistName": "Nombre del artista",
+      "initials": "Iniciales",
+      "initialsDefault": "VR",
+      "welcomeMessage": "Mensaje de bienvenida",
+      "responseTime": "Texto de tiempo de respuesta",
+      "responseTimeDefault": "Normalmente responde en menos de 1h",
+      "quickReplies": "Respuestas Rápidas",
+      "replyLabel": "Etiqueta (ej: Precios)",
+      "replyKey": "Clave (ej: precio)",
+      "addQuickReply": "Añadir respuesta rápida",
+      "botResponses": "Respuestas del Chatbot",
+      "addBotResponse": "Añadir nueva respuesta",
+      "botKey": "Clave (ej: precio)",
+      "botValue": "Respuesta (multilínea)",
+      "addBotResponseBtn": "Añadir respuesta",
+      "cannedResponses": "Respuestas Predefinidas (sin autenticación)",
+      "cannedPlaceholder": "Respuesta predefinida...",
+      "addCanned": "Añadir respuesta predefinida",
+      "fallbackResponse": "Respuesta por Defecto",
+      "fallbackHint": "Cuando el chatbot no tiene respuesta específica"
+    },
+    "notificationSettings": {
+      "newBooking": "Nueva reserva",
+      "newBookingDesc": "Recibir aviso cuando un cliente reserve una cita",
+      "newMessage": "Nuevo mensaje",
+      "newMessageDesc": "Aviso cuando recibas un mensaje en el chat",
+      "reminders": "Recordatorios",
+      "remindersDesc": "Recordatorios de citas pendientes",
+      "depositReceived": "Depósito recibido",
+      "depositReceivedDesc": "Confirmación cuando se reciba un depósito"
+    },
+    "saveButton": {
+      "saved": "Cambios guardados correctamente",
+      "saveChanges": "Guardar Cambios"
+    }
+  }
+}

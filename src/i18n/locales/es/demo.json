@@ -1,0 +1,74 @@
+{
+  "back": "Volver",
+  "title": "Demo del Estudio",
+  "tabs": {
+    "admin": "Panel Admin",
+    "features": "Funcionalidades"
+  },
+  "dashboard": {
+    "preview": "Vista Previa",
+    "adminPanel": "Panel de Administración",
+    "adminPanelDesc": "Así se ve el panel que usarás para gestionar tu estudio",
+    "greeting": "Buenos días, Artista",
+    "date": "Sábado, 11 de abril de 2026"
+  },
+  "stats": {
+    "todayAppointments": "Citas Hoy",
+    "pending": "Pendientes",
+    "messages": "Mensajes",
+    "monthRevenue": "Ingresos Mes"
+  },
+  "sections": {
+    "pendingRequests": "Solicitudes Pendientes",
+    "todaySchedule": "Agenda de Hoy",
+    "unreadMessages": "Mensajes sin leer",
+    "quickActions": "Acciones rápidas",
+    "revenueChart": "Ingresos (7 días)"
+  },
+  "quickActions": {
+    "addPortfolio": "Agregar al Portafolio",
+    "newAppointment": "Nueva Cita Manual",
+    "viewAnalytics": "Ver Analíticas",
+    "settings": "Configuración"
+  },
+  "cta": {
+    "title": "¿Querés esto para tu estudio?",
+    "price": "Configuración completa desde $350 USD",
+    "contactInstagram": "Contactar por Instagram"
+  },
+  "features": {
+    "artistTitle": "Para el Artista",
+    "artistHeading": "Panel de Administración",
+    "artistDesc": "Todo lo que necesitás para gestionar tu estudio",
+    "clientTitle": "Para tus Clientes",
+    "clientHeading": "App Pública",
+    "clientDesc": "Tus clientes obtienen una experiencia profesional",
+    "admin": {
+      "dashboard": { "label": "Panel de Control", "desc": "Vista general de tu negocio en tiempo real" },
+      "appointments": { "label": "Gestión de Citas", "desc": "Agenda, confirmaciones y recordatorios automáticos" },
+      "clients": { "label": "Base de Clientes", "desc": "Historial, notas y preferencias de cada cliente" },
+      "chat": { "label": "Chat en Vivo", "desc": "Mensajería directa con tus clientes" },
+      "shop": { "label": "Tienda Online", "desc": "Vende merch, aftercare y más" },
+      "portfolio": { "label": "Portafolio Digital", "desc": "Galería filtrable de tus mejores trabajos" },
+      "analytics": { "label": "Analíticas", "desc": "Ingresos, metas mensuales y métricas clave" },
+      "settings": { "label": "Configuración Total", "desc": "Marca, horarios, precios y contenido" }
+    },
+    "client": {
+      "portfolio": { "label": "Portafolio", "desc": "Galería de trabajos con filtros" },
+      "designer": { "label": "Diseñador de Tatuajes", "desc": "Herramienta de diseño interactiva" },
+      "visualizer": { "label": "Visualizador Corporal", "desc": "Mapa SVG para ubicar tatuajes" },
+      "shop": { "label": "Tienda", "desc": "Catálogo con carrito de compras" },
+      "courses": { "label": "Cursos", "desc": "Talleres con reservación de cupos" },
+      "pwa": { "label": "App Instalable (PWA)", "desc": "Se instala desde el navegador" }
+    }
+  },
+  "mockData": {
+    "today": "Hoy",
+    "forearm": "Antebrazo",
+    "back": "Espalda",
+    "wrist": "Muñeca",
+    "msg1": "¡Hola! ¿Tienen disponibilidad esta semana?",
+    "msg2": "Me encantó el diseño, ¿cuándo agendamos?"
+  },
+  "weekdays": ["L", "M", "X", "J", "V", "S", "D"]
+}

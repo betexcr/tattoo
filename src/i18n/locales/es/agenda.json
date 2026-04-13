@@ -1,0 +1,47 @@
+{
+  "title": "Agenda",
+  "subtitle": "Gestiona tus citas",
+  "book": "Reservar",
+  "status": {
+    "confirmed": "Confirmada",
+    "pending": "Pendiente",
+    "completed": "Completada",
+    "rejected": "Rechazada"
+  },
+  "tabs": {
+    "pending": "Pendientes",
+    "confirmed": "Confirmadas",
+    "completed": "Completadas"
+  },
+  "guest": {
+    "title": "Tus citas en un solo lugar",
+    "description": "Inicia sesión para reservar citas, ver su estado y recibir actualizaciones del estudio."
+  },
+  "empty": {
+    "pending": "No hay citas pendientes",
+    "confirmed": "No hay citas confirmadas",
+    "completed": "No hay citas completadas"
+  },
+  "actions": {
+    "messages": "Mensajes",
+    "areYouSure": "¿Seguro?",
+    "rejecting": "Rechazando...",
+    "yesReject": "Sí, rechazar",
+    "confirming": "Confirmando...",
+    "reject": "Rechazar",
+    "markCompleted": "Marcar como completada"
+  },
+  "newAppointment": "Nueva cita",
+  "form": {
+    "client": "Cliente",
+    "clientPlaceholder": "Nombre del cliente",
+    "date": "Fecha",
+    "time": "Hora",
+    "description": "Descripción del tatuaje",
+    "descriptionPlaceholder": "Describe el diseño...",
+    "bodyPart": "Parte del cuerpo",
+    "style": "Estilo",
+    "deposit": "Depósito (€)",
+    "depositPlaceholder": "0"
+  }
+}

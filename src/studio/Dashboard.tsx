@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import i18n from '../i18n'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { motion } from 'framer-motion'
 import {
@@ -19,16 +21,16 @@ import { useAppointments } from '../hooks/useAppointments'
 import { useOrders } from '../hooks/useOrders'
 import { useChatConversations } from '../hooks/useChat'
 
-function getGreeting(): string {
+function getGreetingKey(): string {
   const hour = new Date().getHours()
-  if (hour < 12) return 'Buenos días'
-  if (hour < 20) return 'Buenas tardes'
-  return 'Buenas noches'
+  if (hour < 12) return 'dashboard.greetings.morning'
+  if (hour < 20) return 'dashboard.greetings.afternoon'
+  return 'dashboard.greetings.evening'
 }
 
-function formatDateSpanish(dateStr: string): string {
+function formatDateLocalized(dateStr: string): string {
   const date = new Date(dateStr + 'T12:00:00')
-  return date.toLocaleDateString('es-ES', {
+  return date.toLocaleDateString(i18n.language, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -59,6 +61,7 @@ const itemVariants = {
 }
 
 export default function Dashboard() {
+  const { t } = useTranslation('studio')
   const { config } = useStudioConfig()
   const { appointments: localAppointments, updateStatus, loading: apptLoading, error: apptError } = useAppointments()
   const { orders, loading: ordersLoading, error: ordersError } = useOrders()
@@ -196,10 +199,10 @@ export default function Dashboard() {
         </div>
         <div>
           <h1 className="font-serif text-xl text-cream">
-            {getGreeting()}, {artistFirstName}
+            {t(getGreetingKey())}, {artistFirstName}
           </h1>
           <p className="text-subtle text-sm capitalize">
-            {formatDateSpanish(today)}
+            {formatDateLocalized(today)}
           </p>
         </div>
       </motion.header>
@@ -211,7 +214,7 @@ export default function Dashboard() {
           <p className="text-2xl font-serif font-semibold text-cream">
             {todayAppointments.length}
           </p>
-          <p className="text-xs text-subtle mt-0.5">Citas Hoy</p>
+          <p className="text-xs text-subtle mt-0.5">{t('dashboard.stats.todayAppointments')}</p>
           <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gold/40" />
         </div>
         <div className="rounded-xl bg-ink-light border border-white/5 p-4 relative overflow-hidden">
@@ -219,7 +222,7 @@ export default function Dashboard() {
           <p className="text-2xl font-serif font-semibold text-cream">
             {pendingAppointments.length}
           </p>
-          <p className="text-xs text-subtle mt-0.5">Pendientes</p>
+          <p className="text-xs text-subtle mt-0.5">{t('dashboard.stats.pending')}</p>
           <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-400/40" />
         </div>
         <div className="rounded-xl bg-ink-light border border-white/5 p-4 relative overflow-hidden">
@@ -227,15 +230,15 @@ export default function Dashboard() {
           <p className="text-2xl font-serif font-semibold text-cream">
             {totalUnread}
           </p>
-          <p className="text-xs text-subtle mt-0.5">Mensajes</p>
+          <p className="text-xs text-subtle mt-0.5">{t('dashboard.stats.messages')}</p>
           <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-rose/40" />
         </div>
         <div className="rounded-xl bg-ink-light border border-white/5 p-4 relative overflow-hidden">
           <Euro className="absolute top-3 right-3 w-5 h-5 text-emerald-400/70" />
           <p className="text-2xl font-serif font-semibold text-cream">
-            €{new Intl.NumberFormat('es-ES').format(monthlyRevenue)}
+            €{new Intl.NumberFormat(i18n.language).format(monthlyRevenue)}
           </p>
-          <p className="text-xs text-subtle mt-0.5">Ingresos Mes</p>
+          <p className="text-xs text-subtle mt-0.5">{t('dashboard.stats.monthRevenue')}</p>
           <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-400/40" />
         </div>
       </motion.section>
@@ -244,13 +247,13 @@ export default function Dashboard() {
       <motion.section variants={itemVariants}>
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-serif text-lg text-cream">
-            Solicitudes Pendientes
+            {t('dashboard.pendingRequests')}
           </h2>
           <Link
             to="/studio/appointments"
             className="text-xs text-gold hover:text-gold-light transition-colors"
           >
-            Ver todas
+            {t('dashboard.viewAll')}
           </Link>
         </div>
         {statusError && (
@@ -259,7 +262,7 @@ export default function Dashboard() {
         {pendingAppointments.length === 0 ? (
           <div className="rounded-xl bg-ink-light border border-white/5 p-6 text-center">
             <p className="text-cream-dark text-sm">
-              No hay solicitudes pendientes
+              {t('dashboard.noPendingRequests')}
             </p>
           </div>
         ) : (
@@ -325,10 +328,10 @@ export default function Dashboard() {
 
       {/* 4. Today's Schedule */}
       <motion.section variants={itemVariants}>
-        <h2 className="font-serif text-lg text-cream mb-3">Agenda de Hoy</h2>
+        <h2 className="font-serif text-lg text-cream mb-3">{t('dashboard.todaySchedule')}</h2>
         {displaySchedule.length === 0 ? (
           <div className="rounded-xl bg-ink-light border border-white/5 p-6 text-center">
-            <p className="text-cream-dark text-sm">Día libre</p>
+            <p className="text-cream-dark text-sm">{t('dashboard.dayOff')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -360,11 +363,11 @@ export default function Dashboard() {
       {/* 5. Unread Messages */}
       <motion.section variants={itemVariants}>
         <h2 className="font-serif text-lg text-cream mb-3">
-          Mensajes sin leer
+          {t('dashboard.unreadMessages')}
         </h2>
         {unreadConversations.length === 0 ? (
           <div className="rounded-xl bg-ink-light border border-white/5 p-4 text-center">
-            <p className="text-cream-dark text-sm">Todo al día</p>
+            <p className="text-cream-dark text-sm">{t('dashboard.allCaughtUp')}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -396,7 +399,7 @@ export default function Dashboard() {
 
       {/* 6. Quick Actions */}
       <motion.section variants={itemVariants}>
-        <h2 className="font-serif text-lg text-cream mb-3">Acciones rápidas</h2>
+        <h2 className="font-serif text-lg text-cream mb-3">{t('dashboard.quickActions.title')}</h2>
         <div className="grid grid-cols-2 gap-3">
           <Link
             to="/studio/portfolio"
@@ -406,7 +409,7 @@ export default function Dashboard() {
               <ImagePlus className="w-5 h-5 text-gold" />
             </div>
             <span className="text-sm font-medium text-cream">
-              Agregar al Portafolio
+              {t('dashboard.quickActions.addPortfolio')}
             </span>
           </Link>
           <Link
@@ -417,7 +420,7 @@ export default function Dashboard() {
               <CalendarPlus className="w-5 h-5 text-gold" />
             </div>
             <span className="text-sm font-medium text-cream">
-              Nueva Cita Manual
+              {t('dashboard.quickActions.newAppointment')}
             </span>
           </Link>
           <Link
@@ -428,7 +431,7 @@ export default function Dashboard() {
               <BarChart3 className="w-5 h-5 text-gold" />
             </div>
             <span className="text-sm font-medium text-cream">
-              Ver Analíticas
+              {t('dashboard.quickActions.viewAnalytics')}
             </span>
           </Link>
           <Link
@@ -439,7 +442,7 @@ export default function Dashboard() {
               <Settings className="w-5 h-5 text-gold" />
             </div>
             <span className="text-sm font-medium text-cream">
-              Configuración
+              {t('dashboard.quickActions.settings')}
             </span>
           </Link>
         </div>
@@ -447,11 +450,12 @@ export default function Dashboard() {
 
       {/* 7. Revenue mini chart */}
       <motion.section variants={itemVariants}>
-        <h2 className="font-serif text-lg text-cream mb-3">Ingresos (7 días)</h2>
+        <h2 className="font-serif text-lg text-cream mb-3">{t('dashboard.revenueChart')}</h2>
         <div className="rounded-xl bg-ink-light border border-white/5 p-4">
           <div className="flex items-end justify-between gap-2 h-20">
             {dailyRevenue.map((val, i) => {
-              const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+              const weekdaysShort = t('dashboard.weekdaysShort', { returnObjects: true }) as string[]
+              const dayNames = weekdaysShort
               return (
                 <div
                   key={i}
@@ -471,13 +475,9 @@ export default function Dashboard() {
             })}
           </div>
           <div className="flex justify-between mt-2 text-[10px] text-subtle">
-            <span>L</span>
-            <span>M</span>
-            <span>X</span>
-            <span>J</span>
-            <span>V</span>
-            <span>S</span>
-            <span>D</span>
+            {(t('dashboard.weekdaysShort', { returnObjects: true }) as string[]).map((d, i) => (
+              <span key={i}>{d}</span>
+            ))}
           </div>
         </div>
       </motion.section>

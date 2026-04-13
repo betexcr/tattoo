@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import PageHeader from '../components/PageHeader'
@@ -10,6 +11,7 @@ import BodySVGFront from './visualizer/BodySVGFront'
 import BodySVGBack from './visualizer/BodySVGBack'
 
 export default function BodyVisualizer() {
+  const { t } = useTranslation('visualizer')
   const { items: portfolioItems, loading, error } = usePortfolio()
   const [selectedZone, setSelectedZone] = useState<BodyZone | null>(null)
   const [selectedView, setSelectedView] = useState<ViewMode>('front')
@@ -35,7 +37,7 @@ export default function BodyVisualizer() {
       {error && (
         <div className="mx-5 mt-4 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{error}</div>
       )}
-      <PageHeader title="Visualizador Corporal" subtitle="Visualiza tu tatuaje" />
+      <PageHeader title={t('title')} subtitle={t('subtitle')} />
 
       <div className="px-5 pt-4 pb-28">
         {/* View toggle */}
@@ -56,7 +58,7 @@ export default function BodyVisualizer() {
                   : 'bg-ink-medium text-subtle hover:text-cream-dark'
               }`}
             >
-              {view === 'front' ? 'Frente' : 'Espalda'}
+              {view === 'front' ? t('front') : t('back')}
             </button>
           ))}
         </motion.div>
@@ -83,19 +85,19 @@ export default function BodyVisualizer() {
           className="mb-6"
         >
           <p className="text-sm text-subtle">
-            Zona seleccionada:{' '}
+            {t('selectedZone')}{' '}
             <span className="text-gold font-medium">
-              {selectedZone ? ZONE_LABELS[selectedZone] : '—'}
+              {selectedZone ? ZONE_LABELS[selectedZone] : t('none')}
             </span>
           </p>
         </motion.div>
 
         {/* Tattoo style gallery */}
         <div className="mb-6">
-          <h3 className="text-xs text-subtle uppercase tracking-wider mb-3">Estilos de referencia</h3>
+          <h3 className="text-xs text-subtle uppercase tracking-wider mb-3">{t('referenceStyles')}</h3>
           <div className="flex gap-3 overflow-x-auto pb-2 -mx-1">
             {previewItems.length === 0 && (
-              <p className="text-subtle text-xs py-2">No hay diseños de referencia disponibles</p>
+              <p className="text-subtle text-xs py-2">{t('noReferences')}</p>
             )}
             {previewItems.map((item) => (
               <motion.button
@@ -129,7 +131,7 @@ export default function BodyVisualizer() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-6 p-4 rounded-xl bg-ink-light border border-white/5"
           >
-            <h3 className="text-xs text-subtle uppercase tracking-wider mb-2">Nivel de dolor</h3>
+            <h3 className="text-xs text-subtle uppercase tracking-wider mb-2">{t('painLevel')}</h3>
             <div className="flex gap-1 mb-2">
               {[1, 2, 3, 4, 5].map((i) => (
                 <div
@@ -149,7 +151,7 @@ export default function BodyVisualizer() {
           to="/book"
           className="block w-full py-3.5 rounded-full bg-gold text-ink font-medium hover:bg-gold-light transition-colors text-center active:scale-[0.98]"
         >
-          Agendar Cita
+          {t('bookAppointment')}
         </Link>
       </div>
     </div>

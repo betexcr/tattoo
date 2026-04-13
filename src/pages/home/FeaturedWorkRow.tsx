@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default memo(function FeaturedWorkRow({ items, loading }: Props) {
+  const { t } = useTranslation('home')
   return (
     <motion.section
       initial="hidden"
@@ -21,12 +23,12 @@ export default memo(function FeaturedWorkRow({ items, loading }: Props) {
       className="py-8"
     >
       <motion.div variants={itemVariants} className="flex items-center justify-between px-5 mb-4">
-        <h2 className="font-serif text-xl text-cream">Trabajos Recientes</h2>
+        <h2 className="font-serif text-xl text-cream">{t('featuredWork')}</h2>
         <Link
           to="/portfolio"
           className="text-xs text-gold hover:text-gold-light transition-colors flex items-center gap-1"
         >
-          Ver todos
+          {t('viewAll')}
           <ChevronRight size={14} />
         </Link>
       </motion.div>
@@ -39,7 +41,7 @@ export default memo(function FeaturedWorkRow({ items, loading }: Props) {
             <div key={i} className="shrink-0 w-40 sm:w-48 lg:w-56 aspect-[3/4] rounded-xl bg-ink-medium/40 animate-pulse" />
           ))
         ) : items.length === 0 ? (
-          <p className="text-subtle text-sm px-1">No hay trabajos disponibles aún</p>
+          <p className="text-subtle text-sm px-1">{t('noWorksYet')}</p>
         ) : items.map((item) => (
           <Link
             key={item.id}

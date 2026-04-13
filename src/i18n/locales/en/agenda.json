@@ -1,0 +1,47 @@
+{
+  "title": "Agenda",
+  "subtitle": "Manage your appointments",
+  "book": "Book",
+  "status": {
+    "confirmed": "Confirmed",
+    "pending": "Pending",
+    "completed": "Completed",
+    "rejected": "Rejected"
+  },
+  "tabs": {
+    "pending": "Pending",
+    "confirmed": "Confirmed",
+    "completed": "Completed"
+  },
+  "guest": {
+    "title": "Your appointments in one place",
+    "description": "Sign in to book appointments, check their status and receive studio updates."
+  },
+  "empty": {
+    "pending": "No pending appointments",
+    "confirmed": "No confirmed appointments",
+    "completed": "No completed appointments"
+  },
+  "actions": {
+    "messages": "Messages",
+    "areYouSure": "Are you sure?",
+    "rejecting": "Rejecting...",
+    "yesReject": "Yes, reject",
+    "confirming": "Confirming...",
+    "reject": "Reject",
+    "markCompleted": "Mark as completed"
+  },
+  "newAppointment": "New appointment",
+  "form": {
+    "client": "Client",
+    "clientPlaceholder": "Client name",
+    "date": "Date",
+    "time": "Time",
+    "description": "Tattoo description",
+    "descriptionPlaceholder": "Describe the design...",
+    "bodyPart": "Body part",
+    "style": "Style",
+    "deposit": "Deposit (€)",
+    "depositPlaceholder": "0"
+  }
+}

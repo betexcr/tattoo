@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useScrollLock } from '../hooks/useScrollLock'
 import { useFocusTrap } from '../hooks/useFocusTrap'
@@ -6,6 +7,7 @@ import PageHeader from '../components/PageHeader'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { useCourses } from '../hooks/useCourses'
 import { useRequireAuth } from '../hooks/useRequireAuth'
+import i18n from '../i18n'
 import type { Course } from '../types'
 
 const LEVEL_STYLES: Record<Course['level'], string> = {
@@ -14,15 +16,9 @@ const LEVEL_STYLES: Record<Course['level'], string> = {
   advanced: 'bg-rose/20 text-rose border-rose/30',
 }
 
-const LEVEL_LABELS: Record<Course['level'], string> = {
-  beginner: 'Principiante',
-  intermediate: 'Intermedio',
-  advanced: 'Avanzado',
-}
-
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr)
-  return date.toLocaleDateString('es-ES', {
+  return date.toLocaleDateString(i18n.language, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -46,6 +42,7 @@ const cardVariants = {
 const INITIAL_FORM = { name: '', email: '', phone: '' }
 
 export default function Courses() {
+  const { t } = useTranslation('courses')
   const { courses, reservedIds, reserve, loading, error } = useCourses()
   const { requireAuth, authPrompt } = useRequireAuth()
   const [reservingCourse, setReservingCourse] = useState<Course | null>(null)
@@ -94,7 +91,7 @@ export default function Courses() {
   if (loading) {
     return (
       <div className="min-h-dvh pb-6">
-        <PageHeader title="Cursos y Talleres" subtitle="Aprende con nosotros" />
+        <PageHeader title={t('title')} subtitle={t('subtitle')} />
         <div className="flex items-center justify-center py-20">
           <LoadingSpinner />
         </div>
@@ -105,7 +102,7 @@ export default function Courses() {
   if (error) {
     return (
       <div className="min-h-dvh pb-6">
-        <PageHeader title="Cursos y Talleres" subtitle="Aprende con nosotros" />
+        <PageHeader title={t('title')} subtitle={t('subtitle')} />
         <div className="flex flex-col items-center justify-center py-20 px-5">
           <p className="text-red-400 text-sm text-center">{error}</p>
         </div>
@@ -117,8 +114,8 @@ export default function Courses() {
     <div className="min-h-dvh pb-6">
       {authPrompt}
       <PageHeader
-        title="Cursos y Talleres"
-        subtitle="Aprende con nosotros"
+        title={t('title')}
+        subtitle={t('subtitle')}
       />
 
       <motion.div
@@ -132,14 +129,12 @@ export default function Courses() {
           variants={cardVariants}
           className="text-cream-dark text-sm leading-relaxed"
         >
-          Sumérgete en el mundo del arte del tatuaje con nuestros talleres
-          exclusivos, diseñados tanto para principiantes como para artistas
-          experimentados.
+          {t('intro')}
         </motion.p>
 
         {courses.length === 0 && !loading && (
           <div className="flex flex-col items-center justify-center py-16">
-            <p className="text-subtle text-sm">No hay cursos disponibles en este momento</p>
+            <p className="text-subtle text-sm">{t('empty')}</p>
           </div>
         )}
 
@@ -164,7 +159,7 @@ export default function Courses() {
                   <span
                     className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${LEVEL_STYLES[course.level]}`}
                   >
-                    {LEVEL_LABELS[course.level]}
+                    {t(`levels.${course.level}`)}
                   </span>
                 </div>
               </div>
@@ -180,7 +175,7 @@ export default function Courses() {
                   <span>•</span>
                   <span>{course.duration}</span>
                   <span>•</span>
-                  <span>{course.spots} plazas disponibles</span>
+                  <span>{course.spots} {t('spotsAvailable')}</span>
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-gold font-semibold text-lg">
@@ -192,7 +187,7 @@ export default function Courses() {
                       disabled
                       className="px-6 py-2.5 rounded-full bg-emerald-500/30 text-emerald-400 font-medium text-sm cursor-not-allowed"
                     >
-                      Reservado
+                      {t('reserved')}
                     </button>
                   ) : (
                     <button
@@ -200,7 +195,7 @@ export default function Courses() {
                       onClick={() => setReservingCourse(course)}
                       className="px-6 py-2.5 rounded-full bg-gold text-ink font-medium text-sm hover:bg-gold-light active:scale-[0.98] transition-all"
                     >
-                      Reservar Plaza
+                      {t('reserveSpot')}
                     </button>
                   )}
                 </div>
@@ -237,14 +232,14 @@ export default function Courses() {
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               role="dialog"
               aria-modal="true"
-              aria-label="Reservar plaza"
+              aria-label={t('reserveAria')}
               className="relative w-full rounded-t-3xl bg-ink-light border-t border-white/10 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] focus:outline-none"
               onClick={(e) => e.stopPropagation()}
             >
               {showSuccess ? (
                 <div className="py-8 text-center">
-                  <p className="font-serif text-xl text-cream mb-2">¡Reserva confirmada!</p>
-                  <p className="text-cream-dark text-sm">Te hemos enviado un correo de confirmación.</p>
+                  <p className="font-serif text-xl text-cream mb-2">{t('success.title')}</p>
+                  <p className="text-cream-dark text-sm">{t('success.description')}</p>
                 </div>
               ) : (
                 <>
@@ -261,8 +256,8 @@ export default function Courses() {
                   >
                     <input
                       type="text"
-                      placeholder="Nombre"
-                      aria-label="Nombre"
+                      placeholder={t('form.name')}
+                      aria-label={t('form.name')}
                       value={reservationForm.name}
                       onChange={(e) => setReservationForm((f) => ({ ...f, name: e.target.value }))}
                       className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm focus:outline-none focus:border-gold/50"
@@ -270,8 +265,8 @@ export default function Courses() {
                     />
                     <input
                       type="email"
-                      placeholder="Correo electrónico"
-                      aria-label="Correo electrónico"
+                      placeholder={t('form.email')}
+                      aria-label={t('form.email')}
                       value={reservationForm.email}
                       onChange={(e) => setReservationForm((f) => ({ ...f, email: e.target.value }))}
                       className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm focus:outline-none focus:border-gold/50"
@@ -279,8 +274,8 @@ export default function Courses() {
                     />
                     <input
                       type="tel"
-                      placeholder="Teléfono"
-                      aria-label="Teléfono"
+                      placeholder={t('form.phone')}
+                      aria-label={t('form.phone')}
                       value={reservationForm.phone}
                       onChange={(e) => setReservationForm((f) => ({ ...f, phone: e.target.value }))}
                       className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm focus:outline-none focus:border-gold/50"
@@ -292,7 +287,7 @@ export default function Courses() {
                       disabled={reserveLoading}
                       className="w-full py-3.5 rounded-full bg-gold text-ink font-medium text-sm hover:bg-gold-light active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {reserveLoading ? 'Reservando...' : 'Confirmar Reserva'}
+                      {reserveLoading ? t('reserving') : t('confirmReserve')}
                     </button>
                   </form>
                 </>

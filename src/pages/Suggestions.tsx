@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { useScrollLock } from '../hooks/useScrollLock'
 import { useFocusTrap } from '../hooks/useFocusTrap'
@@ -12,13 +13,11 @@ import { useAuth } from '../contexts/AuthContext'
 
 function getStyleRecommendation(
   answers: string[],
-  styleRecommendations: Record<string, { style: string; description: string }>
+  styleRecommendations: Record<string, { style: string; description: string }>,
+  fallback: { style: string; description: string },
 ): { style: string; description: string } {
   const key = `${answers[0]}-${answers[2]}`
-  return styleRecommendations[key] ?? {
-    style: 'Línea Fina',
-    description: 'Líneas delicadas y elegantes para cualquier diseño',
-  }
+  return styleRecommendations[key] ?? fallback
 }
 
 const containerVariants = {
@@ -35,6 +34,7 @@ const itemVariants = {
 }
 
 export default function Suggestions() {
+  const { t } = useTranslation('suggestions')
   const { config } = useStudioConfig()
   const { user } = useAuth()
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set())
@@ -103,11 +103,11 @@ export default function Suggestions() {
 
   useFocusTrap(quizDialogRef, quizOpen, handleCloseQuiz)
 
-  const quizResult = quizAnswers.length === 3 ? getStyleRecommendation(quizAnswers, styleRecommendations) : null
+  const quizResult = quizAnswers.length === 3 ? getStyleRecommendation(quizAnswers, styleRecommendations, { style: t('quiz.fallbackStyle'), description: t('quiz.fallbackDescription') }) : null
 
   return (
     <div className="min-h-dvh pb-6">
-      <PageHeader title="Sugerencias" subtitle="Encuentra tu inspiración" />
+      <PageHeader title={t('title')} subtitle={t('subtitle')} />
 
       <div className="px-5 pt-6 space-y-6">
         {/* Intro */}
@@ -118,8 +118,7 @@ export default function Suggestions() {
           className="space-y-3"
         >
           <p className="text-cream-dark text-sm leading-relaxed">
-            Explora nuestras sugerencias personalizadas basadas en las tendencias más populares y los estilos más
-            solicitados.
+            {t('intro')}
           </p>
 
           {/* Trending indicator */}
@@ -127,7 +126,7 @@ export default function Suggestions() {
             <div className="flex items-center gap-2 flex-wrap">
               <span className="inline-flex items-center gap-1.5 text-xs text-gold font-medium">
                 <Flame size={14} className="text-gold" />
-                Popular ahora
+                {t('trending')}
               </span>
               <div className="flex gap-2 flex-wrap">
                 {trendingStyles.map((style) => (
@@ -151,7 +150,7 @@ export default function Suggestions() {
           className="space-y-4"
         >
           {sortedSuggestions.length === 0 && (
-            <motion.p variants={itemVariants} className="text-subtle text-sm text-center py-8">No hay sugerencias disponibles</motion.p>
+            <motion.p variants={itemVariants} className="text-subtle text-sm text-center py-8">{t('empty')}</motion.p>
           )}
           {sortedSuggestions.map((suggestion) => (
             <motion.article
@@ -168,7 +167,7 @@ export default function Suggestions() {
                   <button
                     type="button"
                     onClick={() => toggleLike(suggestion.id)}
-                    aria-label="Me gusta"
+                    aria-label={t('likeAria')}
                     aria-pressed={likedIds.has(suggestion.id)}
                     className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition-colors"
                     style={{
@@ -203,14 +202,14 @@ export default function Suggestions() {
                       }}
                     />
                   </div>
-                  <p className="text-[11px] text-subtle">{suggestion.popularity}% popularidad</p>
+                  <p className="text-[11px] text-subtle">{t('popularity', { value: suggestion.popularity })}</p>
                 </div>
 
                 <Link
                   to={`/portfolio?style=${encodeURIComponent(suggestion.style)}`}
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-gold/50 text-gold text-sm font-medium hover:bg-gold/10 transition-colors"
                 >
-                  Ver Diseños
+                  {t('viewDesigns')}
                   <ChevronRight size={16} />
                 </Link>
               </div>
@@ -225,9 +224,9 @@ export default function Suggestions() {
           transition={{ duration: 0.4, delay: 0.2 }}
           className="rounded-xl bg-ink-light border border-white/5 p-5 space-y-4"
         >
-          <h3 className="font-serif text-cream text-lg">¿No sabes qué estilo elegir?</h3>
+          <h3 className="font-serif text-cream text-lg">{t('quiz.title')}</h3>
           <p className="text-cream-dark text-sm leading-relaxed">
-            Responde unas preguntas y te ayudaremos a encontrar tu estilo ideal
+            {t('quiz.description')}
           </p>
           <button
             type="button"
@@ -235,7 +234,7 @@ export default function Suggestions() {
             disabled={quizQuestions.length === 0}
             className="w-full py-3 rounded-lg border-2 border-gold text-gold font-medium text-sm hover:bg-gold/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Comenzar Cuestionario
+            {t('quiz.start')}
           </button>
         </motion.section>
       </div>
@@ -255,7 +254,7 @@ export default function Suggestions() {
               tabIndex={-1}
               role="dialog"
               aria-modal="true"
-              aria-label="Cuestionario de estilo"
+              aria-label={t('quiz.dialogAria')}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -266,8 +265,8 @@ export default function Suggestions() {
               <div className="p-6">
                 {quizQuestions.length === 0 ? (
                   <div className="text-center space-y-3">
-                    <p className="text-cream text-sm">No hay preguntas disponibles en este momento.</p>
-                    <button type="button" onClick={handleCloseQuiz} className="px-5 py-2.5 rounded-full bg-gold text-ink text-sm font-medium hover:bg-gold-light transition-colors">Cerrar</button>
+                    <p className="text-cream text-sm">{t('quiz.noQuestions')}</p>
+                    <button type="button" onClick={handleCloseQuiz} className="px-5 py-2.5 rounded-full bg-gold text-ink text-sm font-medium hover:bg-gold-light transition-colors">{t('common:close')}</button>
                   </div>
                 ) : !quizResult ? (
                   <>
@@ -305,7 +304,7 @@ export default function Suggestions() {
                     animate={{ opacity: 1, y: 0 }}
                     className="text-center space-y-4"
                   >
-                    <h3 className="font-serif text-cream text-xl">Tu estilo ideal</h3>
+                    <h3 className="font-serif text-cream text-xl">{t('quiz.resultTitle')}</h3>
                     <div className="py-4 px-5 rounded-xl bg-gold/10 border border-gold/30">
                       <p className="font-serif text-gold text-lg font-medium">{quizResult.style}</p>
                       <p className="text-cream-dark text-sm mt-1">{quizResult.description}</p>
@@ -315,14 +314,14 @@ export default function Suggestions() {
                       onClick={handleCloseQuiz}
                       className="block w-full py-3 rounded-lg bg-gold text-ink font-medium text-sm hover:bg-gold-light transition-colors"
                     >
-                      Ver diseños {quizResult.style}
+                      {t('quiz.viewStyleDesigns', { style: quizResult.style })}
                     </Link>
                     <button
                       type="button"
                       onClick={handleCloseQuiz}
                       className="w-full py-2.5 text-subtle text-sm hover:text-cream transition-colors"
                     >
-                      Cerrar
+                      {t('common:close')}
                     </button>
                   </motion.div>
                 )}

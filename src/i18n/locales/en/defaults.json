@@ -1,0 +1,92 @@
+{
+  "tattooStyles": ["Fine Line", "Blackwork", "Traditional", "Neo Traditional", "Japanese", "Geometric", "Dotwork", "Watercolor", "Realism", "Tribal", "Lettering", "Mandala", "Minimalist", "Ornamental", "Sketch", "Surrealism"],
+  "bodyParts": ["Wrist", "Forearm", "Full arm", "Shoulder", "Back", "Chest", "Side", "Leg", "Ankle", "Foot", "Neck", "Hand", "Finger", "Hip", "Thigh"],
+  "suggestions": {
+    "1": { "title": "Botanical Minimalism", "description": "Leaves and flowers with delicate lines, perfect for first tattoos" },
+    "2": { "title": "Sacred Geometry", "description": "Geometric patterns with deep spiritual meaning" },
+    "3": { "title": "Mystic Fauna", "description": "Animals with mystical and celestial elements" },
+    "4": { "title": "Artistic Lettering", "description": "Phrases and words with unique decorative typefaces" },
+    "5": { "title": "Micro Realism", "description": "Hyperrealistic details in small size" },
+    "6": { "title": "Neo Traditional Floral", "description": "Flowers with vibrant colors and defined lines" },
+    "7": { "title": "Constellations", "description": "Your zodiac sign or favorite constellation" },
+    "8": { "title": "Custom Mandalas", "description": "Unique circular designs with your own symbolism" }
+  },
+  "chatbotResponses": {
+    "precio": "💰 Prices vary by size and complexity:\n• Tiny (2-5cm): €50-80\n• Small (5-10cm): €80-150\n• Medium (10-20cm): €150-300\n• Large (20-35cm): €300-500\n• Extra large (35+cm): €500+\n\nGet an exact quote by booking an appointment.",
+    "cuidados": "🩹 Aftercare instructions:\n1. Keep the protective film for 3-4 hours\n2. Gently wash with neutral soap\n3. Apply healing cream 2-3 times a day\n4. Don't scratch or pull off scabs\n5. Avoid direct sunlight for 2-3 weeks\n6. Don't swim in pools/sea for 2 weeks",
+    "deposito": "💳 A 30% deposit is required to confirm the appointment. It is deducted from the final price. If you cancel more than 48h in advance, you get a full refund.",
+    "duracion": "⏱️ Duration depends on size and detail:\n• Tiny: 30-60 min\n• Small: 1-2 hours\n• Medium: 2-4 hours\n• Large: 4-6 hours\n• Extra large: multiple sessions",
+    "dolor": "😬 Pain varies by area:\n• Low pain: Arm, thigh, calf\n• Medium pain: Shoulder, back, chest\n• High pain: Ribs, feet, hands, neck\n\nWe use numbing creams if needed.",
+    "horario": "🕐 Our hours:\n• Monday to Friday: 10:00 - 19:00\n• Saturday: 10:00 - 15:00\n• Sunday: Closed\n\nAppointments are booked at least 3 days in advance.",
+    "estilos": "🎨 Artist specialties:\n• Fine Line: Delicate and minimalist lines\n• Dotwork: Detailed dotwork\n• Geometric: Geometric shapes and symmetry\n• Botanical: Flowers and plants\n• Watercolor: Watercolor effect\n• Mandala: Spiritual symmetric designs",
+    "cancelar": "❌ Cancellation policy:\n• More than 48h before: Full deposit refund\n• 24-48h before: 50% of deposit\n• Less than 24h: No refund\n\nTo cancel, write to us or call +34 612 345 678.",
+    "preparacion": "✅ Before your appointment:\n1. Get a good night's sleep\n2. Eat well beforehand\n3. Don't drink alcohol 24h before\n4. Moisturize the area in the days before\n5. Don't tan the area\n6. Wear comfortable clothing that allows access to the area"
+  },
+  "quickReplies": {
+    "precio": "Prices",
+    "cuidados": "Aftercare",
+    "deposito": "Deposit",
+    "duracion": "Duration",
+    "dolor": "Pain",
+    "horario": "Hours",
+    "estilos": "Styles",
+    "cancelar": "Cancellation",
+    "preparacion": "Preparation"
+  },
+  "chatConfig": {
+    "welcomeMessage": "Hello! Welcome to INK & SOUL. I'm Valentina, how can I help you? 😊",
+    "fallbackResponse": "I don't have a specific answer for that. Would you like to talk directly with the artist? Use the \"Artist\" tab to send her a message.",
+    "responseTimeText": "Usually responds within 1h",
+    "cannedResponses": [
+      "Thanks for your message! I'll review it and get back to you shortly 😊",
+      "Great idea! I'd love to work on that. Do you have any visual references?",
+      "Perfect, noted. Is there anything else you'd like to tell me?",
+      "I love it! We can discuss the details when you come to the studio.",
+      "Of course, no problem. Want me to book you a slot this week?",
+      "Great! I'll prepare a sketch and show it to you before the appointment.",
+      "Good choice of area. The result is going to look amazing there.",
+      "Remember to moisturize the area well in the days before your appointment 🙌"
+    ]
+  },
+  "reviews": [
+    { "name": "Lucía M.", "text": "Incredible work. Valentina captured exactly what I wanted. Totally recommended.", "style": "Fine Line" },
+    { "name": "Andrés P.", "text": "The studio is gorgeous and the service impeccable. My tattoo healed perfectly.", "style": "Geometric" },
+    { "name": "Carmen R.", "text": "I already have 3 tattoos with her. She exceeds my expectations every time. A true artist.", "style": "Dotwork" }
+  ],
+  "homeContent": {
+    "subtitle": "Art & Tattoo Studio",
+    "tagline": "Art that lives on your skin. Unique designs, made with passion and dedication."
+  },
+  "aboutStats": {
+    "years": "Years",
+    "tattoos": "Tattoos",
+    "designs": "Designs"
+  },
+  "aboutContent": {
+    "artistTitle": "Tattoo Artist & Visual Creator",
+    "bio": "With over 8 years of experience in the tattoo world, my passion is transforming ideas into lasting art. Specializing in fine line, dotwork and botanical designs, every piece I create is unique and personal. My studio is a safe space where art and expression meet."
+  },
+  "quizQuestions": {
+    "q1": { "question": "What attracts you most?", "options": ["Nature", "Geometry", "Animals", "Symbols"] },
+    "q2": { "question": "Do you prefer designs that are...", "options": ["Small and discreet", "Medium", "Large and bold"] },
+    "q3": { "question": "What aesthetic represents you?", "options": ["Minimalist", "Detailed", "Colorful", "Dark"] }
+  },
+  "styleRecommendations": {
+    "Naturaleza-Minimalista": { "style": "Fine Line", "description": "Delicate lines with botanical elements" },
+    "Naturaleza-Detallada": { "style": "Neo Traditional", "description": "Flowers and nature with rich details" },
+    "Naturaleza-Colorida": { "style": "Watercolor", "description": "Nature with a splash of colors" },
+    "Naturaleza-Oscura": { "style": "Blackwork", "description": "Natural elements in intense black" },
+    "Geometría-Minimalista": { "style": "Geometric", "description": "Pure shapes and clean lines" },
+    "Geometría-Detallada": { "style": "Mandala", "description": "Intricate geometric patterns" },
+    "Geometría-Colorida": { "style": "Neo Traditional", "description": "Geometry with color accents" },
+    "Geometría-Oscura": { "style": "Blackwork", "description": "Sacred geometry in black" },
+    "Animales-Minimalista": { "style": "Fine Line", "description": "Delicate animal silhouettes" },
+    "Animales-Detallada": { "style": "Dotwork", "description": "Fauna with textures and details" },
+    "Animales-Colorida": { "style": "Neo Traditional", "description": "Animals with vibrant colors" },
+    "Animales-Oscura": { "style": "Tribal", "description": "Animals in dark tribal style" },
+    "Símbolos-Minimalista": { "style": "Minimalist", "description": "Simple and elegant symbols" },
+    "Símbolos-Detallada": { "style": "Ornamental", "description": "Elaborate decorative symbols" },
+    "Símbolos-Colorida": { "style": "Traditional", "description": "Classic symbols with color" },
+    "Símbolos-Oscura": { "style": "Blackwork", "description": "Symbols in solid black" }
+  }
+}

@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import PageHeader from '../components/PageHeader'
 import { motion } from 'framer-motion'
 import { Instagram, Video, LayoutGrid } from 'lucide-react'
@@ -20,6 +21,7 @@ const itemVariants = {
 }
 
 export default function About() {
+  const { t } = useTranslation('about')
   const { config } = useStudioConfig()
 
   const socialLinks = useMemo(() => {
@@ -42,7 +44,7 @@ export default function About() {
 
   return (
     <div className="min-h-dvh bg-ink">
-      <PageHeader title="La Artista" subtitle="Mi historia" />
+      <PageHeader title={t('title')} subtitle={t('subtitle')} />
 
       <div className="pb-12">
         {/* Hero image */}
@@ -131,7 +133,7 @@ export default function About() {
             variants={itemVariants}
             className="font-serif text-lg text-cream mb-3"
           >
-            Especialidades
+            {t('specialties')}
           </motion.h3>
           <div className="flex flex-wrap gap-2">
             {specialties.map((spec) => (
@@ -158,7 +160,7 @@ export default function About() {
             variants={itemVariants}
             className="font-serif text-lg text-cream mb-3"
           >
-            Certificaciones
+            {t('certifications')}
           </motion.h3>
           <ul className="space-y-2">
             {certifications.map((cert) => (

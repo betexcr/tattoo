@@ -1,0 +1,34 @@
+{
+  "title": "Contact",
+  "subtitle": "Let's talk",
+  "info": {
+    "phone": "Phone",
+    "email": "Email",
+    "location": "Location",
+    "schedule": "Hours"
+  },
+  "checkSchedule": "Check hours",
+  "days": {
+    "monday": "Mon", "tuesday": "Tue", "wednesday": "Wed",
+    "thursday": "Thu", "friday": "Fri", "saturday": "Sat", "sunday": "Sun"
+  },
+  "success": {
+    "title": "Message sent",
+    "description": "We'll get back to you as soon as possible."
+  },
+  "form": {
+    "name": "Name",
+    "namePlaceholder": "Your name",
+    "email": "Email",
+    "emailPlaceholder": "you@email.com",
+    "phone": "Phone",
+    "phonePlaceholder": "+34 600 000 000",
+    "tattooStyle": "Tattoo style of interest",
+    "selectStyle": "Select a style",
+    "bodyZone": "Preferred body zone",
+    "selectZone": "Select a zone",
+    "message": "Message",
+    "messagePlaceholder": "Tell me your idea...",
+    "submit": "Send Message"
+  }
+}

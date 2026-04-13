@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import type { ReactNode } from 'react'
 
 interface PageHeaderProps {
@@ -11,6 +12,7 @@ interface PageHeaderProps {
 }
 
 export default function PageHeader({ title, subtitle, showBack = true, action }: PageHeaderProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   return (
@@ -25,7 +27,7 @@ export default function PageHeader({ title, subtitle, showBack = true, action }:
             <button
               type="button"
               onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')}
-              aria-label="Volver"
+              aria-label={t('back')}
               className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-subtle hover:text-cream transition-colors"
             >
               <ArrowLeft size={16} />

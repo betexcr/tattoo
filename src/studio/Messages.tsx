@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Send } from 'lucide-react'
 import { useChatConversations, useChat } from '../hooks/useChat'
@@ -30,6 +31,7 @@ const itemVariants = {
 }
 
 export default function Messages() {
+  const { t } = useTranslation('studio')
   const { config } = useStudioConfig()
   const quickReplies = config.chat_config.canned_responses.slice(0, 6)
   const { conversations, loading: conversationsLoading, error: conversationsError } = useChatConversations()
@@ -122,7 +124,7 @@ export default function Messages() {
               <button
                 type="button"
                 onClick={() => setActiveClientId(null)}
-                aria-label="Volver a conversaciones"
+                aria-label={t('messages.backToConversations')}
                 className="w-11 h-11 rounded-full flex items-center justify-center text-subtle hover:text-cream transition-colors"
               >
                 <ArrowLeft size={20} />
@@ -136,7 +138,7 @@ export default function Messages() {
                 to="/studio/clients"
                 className="text-xs text-gold hover:text-gold-light font-medium shrink-0"
               >
-                Ver perfil
+                {t('messages.viewProfile')}
               </Link>
             </header>
 
@@ -148,8 +150,8 @@ export default function Messages() {
                 <LoadingSpinner />
               ) : !chatLoading && messages.length === 0 ? (
                 <div className="py-12 text-center">
-                  <p className="text-subtle text-sm">No hay mensajes aún</p>
-                  <p className="text-subtle text-xs mt-1">Envía el primer mensaje a este cliente</p>
+                  <p className="text-subtle text-sm">{t('messages.emptyThread')}</p>
+                  <p className="text-subtle text-xs mt-1">{t('messages.firstMessage')}</p>
                 </div>
               ) : messages.map((msg, i) => {
                 const prev = messages[i - 1]
@@ -207,15 +209,15 @@ export default function Messages() {
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                  placeholder="Escribe un mensaje..."
-                  aria-label="Mensaje"
+                  placeholder={t('messages.placeholder')}
+                  aria-label={t('messages.messageAria')}
                   className="flex-1 px-4 py-2.5 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle text-sm focus:outline-none focus:border-gold/40 transition-colors"
                 />
                 <button
                   type="button"
                   onClick={handleSend}
                   disabled={!inputText.trim() || sending}
-                  aria-label="Enviar mensaje"
+                  aria-label={t('messages.sendAria')}
                   className="w-11 h-11 rounded-xl bg-gold text-ink flex items-center justify-center shrink-0 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gold-light transition-colors"
                 >
                   <Send size={18} strokeWidth={2} />
@@ -233,13 +235,13 @@ export default function Messages() {
           >
             {totalUnread > 0 && (
               <p className="text-sm text-subtle">
-                {totalUnread} mensaje{totalUnread !== 1 ? 's' : ''} sin leer
+                {t('messages.unreadCount', { count: totalUnread })}
               </p>
             )}
 
             <div className="space-y-2">
               {sortedConversations.length === 0 && (
-                <p className="text-subtle text-sm py-8 text-center">No hay conversaciones</p>
+                <p className="text-subtle text-sm py-8 text-center">{t('messages.noConversations')}</p>
               )}
               {sortedConversations.map((conv) => (
                 <motion.button

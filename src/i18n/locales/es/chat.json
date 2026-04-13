@@ -1,0 +1,35 @@
+{
+  "title": "Mensajes",
+  "subtitle": "Mensajes directos",
+  "tabs": {
+    "artist": "Artista",
+    "assistant": "Asistente Virtual"
+  },
+  "artistPanel": {
+    "placeholder": "Escribe un mensaje a {{name}}...",
+    "messageAria": "Mensaje",
+    "sendAria": "Enviar mensaje"
+  },
+  "assistantPanel": {
+    "intro": "¡Hola! Soy el asistente virtual de {{name}}. Puedo ayudarte con preguntas frecuentes. Elige un tema o escríbeme:",
+    "placeholder": "Escribe tu pregunta...",
+    "messageAria": "Mensaje",
+    "sendAria": "Enviar mensaje"
+  },
+  "designShare": {
+    "header": "🎨 Mi diseño de tatuaje:",
+    "style": "Estilo:",
+    "size": "Tamaño:",
+    "elements": "Elementos:",
+    "color": "Color:",
+    "notes": "Notas:",
+    "black": "Negro",
+    "sizeLabels": {
+      "tiny": "Diminuto",
+      "small": "Pequeño",
+      "medium": "Mediano",
+      "large": "Grande",
+      "xlarge": "Extra grande"
+    }
+  }
+}

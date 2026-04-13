@@ -1,0 +1,46 @@
+{
+  "title": "Tattoo Designer",
+  "subtitle": "Design your tattoo",
+  "style": "Style",
+  "sizeLabel": "Size",
+  "elements": "Design elements",
+  "selectedElements": "Selected elements",
+  "colorMode": "Color mode",
+  "black": "Black",
+  "color": "Color",
+  "notes": "Notes",
+  "notesPlaceholder": "Describe your idea...",
+  "notesAria": "Design notes",
+  "savedSuccess": "Design saved successfully",
+  "redirectingChat": "Redirecting to chat with the artist...",
+  "saveDesign": "Save Design",
+  "shareWithArtist": "Share with Artist",
+  "selectElements": "Select elements for your design",
+  "sizes": {
+    "small": "Small",
+    "medium": "Medium",
+    "large": "Large"
+  },
+  "designElements": {
+    "rose": "Rose",
+    "lotus": "Lotus",
+    "sunflower": "Sunflower",
+    "bird": "Bird",
+    "fish": "Fish",
+    "cat": "Cat",
+    "triangle": "Triangle",
+    "circle": "Circle",
+    "diamond": "Diamond",
+    "moon": "Moon",
+    "star": "Star",
+    "heart": "Heart"
+  },
+  "colors": {
+    "black": "Black",
+    "gold": "Gold",
+    "rose": "Pink",
+    "blue": "Blue",
+    "green": "Green",
+    "red": "Red"
+  }
+}

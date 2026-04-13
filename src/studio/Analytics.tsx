@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { Euro } from 'lucide-react'
 import { useAppointments } from '../hooks/useAppointments'
@@ -19,6 +20,7 @@ const itemVariants = {
 }
 
 export default function Analytics() {
+  const { t } = useTranslation('studio')
   const { appointments, loading: loadingAppts, error: errorAppts } = useAppointments()
   const { orders, loading: loadingOrders, error: errorOrders } = useOrders()
   const { config } = useStudioConfig()
@@ -105,8 +107,7 @@ export default function Analytics() {
     const newPct = newVsReturnTotal ? (newClients / newVsReturnTotal) * 100 : 100
     const returnPct = newVsReturnTotal ? (repeatClients / newVsReturnTotal) * 100 : 0
 
-    const dayLabels = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
-    const dayDensity = dayLabels.map((_, i) => {
+    const dayDensity = [0, 1, 2, 3, 4, 5, 6].map((i) => {
       const dayNum = i === 6 ? 0 : i + 1
       return appointments.filter((a) => {
         const d = new Date(a.date + 'T12:00:00')
@@ -145,7 +146,7 @@ export default function Analytics() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20" role="status">
-        <span className="sr-only">Cargando...</span>
+        <span className="sr-only">{t('analytics.loading')}</span>
         <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
       </div>
     )
@@ -155,7 +156,7 @@ export default function Analytics() {
     return (
       <div className="flex items-center justify-center py-20 px-4">
         <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-center max-w-sm">
-          <p className="text-red-400 text-sm font-medium mb-1">Error al cargar datos</p>
+          <p className="text-red-400 text-sm font-medium mb-1">{t('analytics.loadError')}</p>
           <p className="text-subtle text-xs">{error}</p>
         </div>
       </div>
@@ -171,22 +172,22 @@ export default function Analytics() {
     >
       {/* Revenue Section */}
       <motion.section variants={itemVariants}>
-        <h2 className="font-serif text-lg text-cream mb-3">Ingresos</h2>
+        <h2 className="font-serif text-lg text-cream mb-3">{t('analytics.revenue.title')}</h2>
         <div className="rounded-xl bg-ink-light border border-white/5 p-5">
           <div className="flex items-center gap-2 mb-2">
             <Euro className="w-5 h-5 text-gold" />
-            <span className="text-subtle text-sm">Total ingresos</span>
+            <span className="text-subtle text-sm">{t('analytics.revenue.total')}</span>
           </div>
           <p className="text-4xl font-serif font-bold text-gold">
             €{stats.totalRevenue}
           </p>
           <p className="text-xs text-subtle mt-1">
-            Depósitos de citas + pedidos de tienda (total histórico)
+            {t('analytics.revenue.description')}
           </p>
         </div>
 
         <div className="mt-4 rounded-xl bg-ink-light border border-white/5 p-4">
-          <p className="text-sm text-subtle mb-2">Objetivo mensual</p>
+          <p className="text-sm text-subtle mb-2">{t('analytics.revenue.monthlyGoal')}</p>
           <div className="flex items-center justify-between mb-2">
             <span className="text-cream font-medium">
               €{stats.monthlyRevenue} / €{MONTHLY_TARGET}
@@ -208,13 +209,13 @@ export default function Analytics() {
         </div>
 
         <div className="mt-4 rounded-xl bg-ink-light border border-white/5 p-4">
-          <p className="text-sm text-subtle mb-3">Ingresos por fuente</p>
+          <p className="text-sm text-subtle mb-3">{t('analytics.revenue.bySource')}</p>
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full bg-gold shrink-0" />
               <div className="flex-1">
                 <div className="flex justify-between text-xs mb-0.5">
-                  <span className="text-cream">Tatuajes</span>
+                  <span className="text-cream">{t('analytics.revenue.tattoos')}</span>
                   <span className="text-gold">€{stats.tattooRevenue}</span>
                 </div>
                 <div className="h-2 rounded-full bg-ink overflow-hidden">
@@ -233,7 +234,7 @@ export default function Analytics() {
               <div className="w-3 h-3 rounded-full bg-rose shrink-0" />
               <div className="flex-1">
                 <div className="flex justify-between text-xs mb-0.5">
-                  <span className="text-cream">Tienda (pedidos)</span>
+                  <span className="text-cream">{t('analytics.revenue.shop')}</span>
                   <span className="text-rose">€{stats.shopRevenue}</span>
                 </div>
                 <div className="h-2 rounded-full bg-ink overflow-hidden">
@@ -254,10 +255,10 @@ export default function Analytics() {
 
       {/* Appointments Analytics */}
       <motion.section variants={itemVariants}>
-        <h2 className="font-serif text-lg text-cream mb-3">Citas</h2>
+        <h2 className="font-serif text-lg text-cream mb-3">{t('analytics.appointments.title')}</h2>
         <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-subtle text-sm">Total citas</span>
+            <span className="text-subtle text-sm">{t('analytics.appointments.total')}</span>
             <span className="text-2xl font-serif font-semibold text-cream">
               {stats.totalAppts}
             </span>
@@ -265,23 +266,23 @@ export default function Analytics() {
           <div className="grid grid-cols-4 gap-2 text-center">
             <div>
               <p className="text-gold text-sm font-medium">{stats.confirmedPct.toFixed(0)}%</p>
-              <p className="text-[10px] text-subtle">Confirmadas</p>
+              <p className="text-[10px] text-subtle">{t('analytics.appointments.confirmed')}</p>
             </div>
             <div>
               <p className="text-amber-400 text-sm font-medium">{stats.pendingPct.toFixed(0)}%</p>
-              <p className="text-[10px] text-subtle">Pendientes</p>
+              <p className="text-[10px] text-subtle">{t('analytics.appointments.pending')}</p>
             </div>
             <div>
               <p className="text-emerald-400 text-sm font-medium">{stats.completedPct.toFixed(0)}%</p>
-              <p className="text-[10px] text-subtle">Completadas</p>
+              <p className="text-[10px] text-subtle">{t('analytics.appointments.completed')}</p>
             </div>
             <div>
               <p className="text-red-400 text-sm font-medium">{stats.rejectedPct.toFixed(0)}%</p>
-              <p className="text-[10px] text-subtle">Rechazadas</p>
+              <p className="text-[10px] text-subtle">{t('analytics.appointments.rejected')}</p>
             </div>
           </div>
           <div className="space-y-2">
-            <p className="text-xs text-subtle">Por estado</p>
+            <p className="text-xs text-subtle">{t('analytics.appointments.byStatus')}</p>
             <div className="flex gap-2 items-end h-8">
               <motion.div
                 initial={{ width: 0 }}
@@ -320,10 +321,10 @@ export default function Analytics() {
         </div>
 
         <div className="mt-4 rounded-xl bg-ink-light border border-white/5 p-4">
-          <p className="text-sm text-subtle mb-3">Estilos más populares</p>
+          <p className="text-sm text-subtle mb-3">{t('analytics.appointments.popularStyles')}</p>
           <div className="space-y-3">
             {stats.styleRanked.length === 0 && (
-              <p className="text-subtle text-xs text-center py-2">Sin datos de estilos</p>
+              <p className="text-subtle text-xs text-center py-2">{t('analytics.appointments.noStyleData')}</p>
             )}
             {stats.styleRanked.map(([style, count], i) => (
               <div key={style} className="flex items-center gap-3">
@@ -346,10 +347,10 @@ export default function Analytics() {
         </div>
 
         <div className="mt-4 rounded-xl bg-ink-light border border-white/5 p-4">
-          <p className="text-sm text-subtle mb-3">Zonas más populares</p>
+          <p className="text-sm text-subtle mb-3">{t('analytics.appointments.popularZones')}</p>
           <div className="space-y-3">
             {stats.bodyRanked.length === 0 && (
-              <p className="text-subtle text-xs text-center py-2">Sin datos de zonas</p>
+              <p className="text-subtle text-xs text-center py-2">{t('analytics.appointments.noZoneData')}</p>
             )}
             {stats.bodyRanked.map(([part, count], i) => (
               <div key={part} className="flex items-center gap-3">
@@ -374,30 +375,30 @@ export default function Analytics() {
 
       {/* Client Insights */}
       <motion.section variants={itemVariants}>
-        <h2 className="font-serif text-lg text-cream mb-3">Clientes</h2>
+        <h2 className="font-serif text-lg text-cream mb-3">{t('analytics.clients.title')}</h2>
         <div className="rounded-xl bg-ink-light border border-white/5 p-4 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <p className="text-subtle text-xs">Clientes únicos</p>
+              <p className="text-subtle text-xs">{t('analytics.clients.unique')}</p>
               <p className="text-xl font-serif font-semibold text-cream">
                 {stats.uniqueClients}
               </p>
             </div>
             <div>
-              <p className="text-subtle text-xs">Depósito medio</p>
+              <p className="text-subtle text-xs">{t('analytics.clients.avgDeposit')}</p>
               <p className="text-xl font-serif font-semibold text-gold">
                 €{stats.avgDeposit.toFixed(0)}
               </p>
             </div>
             <div>
-              <p className="text-subtle text-xs">Clientes recurrentes</p>
+              <p className="text-subtle text-xs">{t('analytics.clients.returning')}</p>
               <p className="text-xl font-serif font-semibold text-cream">
                 {stats.repeatClients}
               </p>
             </div>
           </div>
           <div>
-            <p className="text-xs text-subtle mb-2">Nuevos vs recurrentes</p>
+            <p className="text-xs text-subtle mb-2">{t('analytics.clients.newVsReturning')}</p>
             <div className="h-3 rounded-full bg-ink overflow-hidden flex">
               <motion.div
                 initial={{ width: 0 }}
@@ -413,8 +414,8 @@ export default function Analytics() {
               />
             </div>
             <div className="flex justify-between mt-1 text-[10px] text-subtle">
-              <span>Nuevos {stats.newPct.toFixed(0)}%</span>
-              <span>Recurrentes {stats.returnPct.toFixed(0)}%</span>
+              <span>{t('analytics.clients.new')} {stats.newPct.toFixed(0)}%</span>
+              <span>{t('analytics.clients.returningLabel')} {stats.returnPct.toFixed(0)}%</span>
             </div>
           </div>
         </div>
@@ -422,7 +423,7 @@ export default function Analytics() {
 
       {/* Monthly Overview */}
       <motion.section variants={itemVariants}>
-        <h2 className="font-serif text-lg text-cream mb-3">Densidad semanal</h2>
+        <h2 className="font-serif text-lg text-cream mb-3">{t('analytics.weeklyDensity')}</h2>
         <div className="rounded-xl bg-ink-light border border-white/5 p-4">
           <div className="flex items-end justify-between gap-2 h-24">
             {stats.dayDensity.map((val, i) => (
@@ -442,13 +443,9 @@ export default function Analytics() {
             ))}
           </div>
           <div className="flex justify-between mt-2 text-[10px] text-subtle">
-            <span>L</span>
-            <span>M</span>
-            <span>X</span>
-            <span>J</span>
-            <span>V</span>
-            <span>S</span>
-            <span>D</span>
+            {(t('analytics.weekdaysShort', { returnObjects: true }) as string[]).map((d, i) => (
+              <span key={i}>{d}</span>
+            ))}
           </div>
         </div>
       </motion.section>

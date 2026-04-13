@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -18,7 +19,13 @@ import ShopPreviewRow from './home/ShopPreviewRow'
 import HomeReviewsSection from './home/HomeReviewsSection'
 import TattooFlashBackdrop from '../components/TattooFlashBackdrop'
 
+const actionKeyMap: Record<string, string> = {
+  '/book': 'book', '/designer': 'designer', '/visualizer': 'visualizer',
+  '/shop': 'shop', '/courses': 'courses', '/suggestions': 'suggestions',
+}
+
 export default function Home() {
+  const { t, i18n } = useTranslation('home')
   const { config } = useStudioConfig()
   const { items: allPortfolioItems, loading: loadingPortfolio } = usePortfolio()
   const { items: allShopItems, loading: loadingShop } = useShop()
@@ -72,13 +79,13 @@ export default function Home() {
               className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gold text-ink text-sm font-medium hover:bg-gold-light transition-colors active:scale-[0.97]"
             >
               <Sparkles size={15} />
-              Reservar cita
+              {t('bookAppointment')}
             </Link>
             <Link
               to="/portfolio"
               className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-gold/30 text-gold text-sm font-medium hover:bg-gold/5 transition-colors"
             >
-              Ver portafolio
+              {t('viewPortfolio')}
             </Link>
           </motion.div>
         </div>
@@ -95,23 +102,26 @@ export default function Home() {
         className="px-5 py-6"
       >
         <motion.h2 variants={itemVariants} className="font-serif text-xl text-cream mb-4">
-          Explora
+          {t('explore')}
         </motion.h2>
         <div className="grid grid-cols-3 gap-2.5">
-          {quickActions.map(({ to, label, icon: Icon, desc }) => (
-            <motion.div key={to} variants={itemVariants}>
-              <Link
-                to={to}
-                className="flex flex-col items-center gap-1.5 p-4 rounded-xl bg-ink-medium/40 border border-white/5 hover:border-gold/30 hover:bg-ink-medium/60 transition-all active:scale-[0.98]"
-              >
-                <div className="w-9 h-9 rounded-full bg-gold/10 flex items-center justify-center text-gold">
-                  <Icon size={18} strokeWidth={1.5} />
-                </div>
-                <span className="text-cream text-xs font-medium">{label}</span>
-                <span className="text-subtle text-[10px]">{desc}</span>
-              </Link>
-            </motion.div>
-          ))}
+          {quickActions.map(({ to, icon: Icon }) => {
+            const key = actionKeyMap[to]
+            return (
+              <motion.div key={to} variants={itemVariants}>
+                <Link
+                  to={to}
+                  className="flex flex-col items-center gap-1.5 p-4 rounded-xl bg-ink-medium/40 border border-white/5 hover:border-gold/30 hover:bg-ink-medium/60 transition-all active:scale-[0.98]"
+                >
+                  <div className="w-9 h-9 rounded-full bg-gold/10 flex items-center justify-center text-gold">
+                    <Icon size={18} strokeWidth={1.5} />
+                  </div>
+                  <span className="text-cream text-xs font-medium">{t(`quickActions.${key}.label`)}</span>
+                  <span className="text-subtle text-[10px]">{t(`quickActions.${key}.desc`)}</span>
+                </Link>
+              </motion.div>
+            )
+          })}
         </div>
       </motion.section>
 
@@ -131,8 +141,8 @@ export default function Home() {
             <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-gold/10 blur-2xl" />
             <div className="relative z-10 flex items-center justify-between">
               <div>
-                <p className="font-serif text-cream text-lg">¿Listo para tu tatuaje?</p>
-                <p className="text-subtle text-xs mt-1">Reserva online en minutos. Respuesta en 24h.</p>
+                <p className="font-serif text-cream text-lg">{t('readyForTattoo')}</p>
+                <p className="text-subtle text-xs mt-1">{t('bookOnline')}</p>
               </div>
               <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center text-gold shrink-0">
                 <ArrowRight size={18} />
@@ -155,12 +165,12 @@ export default function Home() {
         className="px-5 py-6"
       >
         <motion.div variants={itemVariants} className="flex items-center justify-between mb-4">
-          <h2 className="font-serif text-xl text-cream">Estilos Populares</h2>
+          <h2 className="font-serif text-xl text-cream">{t('popularStyles')}</h2>
           <Link
             to="/suggestions"
             className="text-xs text-gold hover:text-gold-light transition-colors flex items-center gap-1"
           >
-            Ver más
+            {t('seeMore')}
             <ChevronRight size={14} />
           </Link>
         </motion.div>
@@ -197,13 +207,13 @@ export default function Home() {
         >
           <motion.div variants={itemVariants} className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-xl text-cream">
-              {upcomingCourses.length === 1 ? 'Próximo Curso' : 'Próximos Cursos'}
+              {upcomingCourses.length === 1 ? t('nextCourse') : t('nextCourses')}
             </h2>
             <Link
               to="/courses"
               className="text-xs text-gold hover:text-gold-light transition-colors flex items-center gap-1"
             >
-              Todos los cursos
+              {t('allCourses')}
               <ChevronRight size={14} />
             </Link>
           </motion.div>
@@ -224,13 +234,13 @@ export default function Home() {
                     <div className="absolute bottom-0 left-0 right-0 p-3.5 z-[3]">
                       <p className="font-serif text-cream text-base leading-snug line-clamp-2">{course.title}</p>
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1.5 text-[11px] text-subtle">
-                        <span>{new Date(course.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
+                        <span>{new Date(course.date).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })}</span>
                         <span>·</span>
                         <span>{course.duration}</span>
                         <span>·</span>
                         <span className="text-gold font-medium">€{course.price}</span>
                       </div>
-                      <p className="text-cream-dark/70 text-[11px] mt-1">{course.spots} plazas</p>
+                      <p className="text-cream-dark/70 text-[11px] mt-1">{course.spots} {t('spots')}</p>
                     </div>
                   </div>
                 </Link>
@@ -254,13 +264,13 @@ export default function Home() {
             className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-ink-medium/40 border border-white/5 text-cream text-sm font-medium hover:border-gold/20 transition-all"
           >
             <MessageCircle size={16} className="text-gold" />
-            Mensajes
+            {t('messages')}
           </Link>
           <Link
             to="/contact"
             className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gold/10 border border-gold/20 text-gold text-sm font-medium hover:bg-gold/20 transition-colors"
           >
-            Contactar
+            {t('contactCta')}
             <ArrowRight size={14} />
           </Link>
         </motion.div>
@@ -273,7 +283,7 @@ export default function Home() {
           className="flex items-center justify-center gap-2 py-3 rounded-xl border border-white/5 bg-ink-medium/20 text-subtle text-xs hover:text-cream-dark hover:border-gold/20 transition-all"
         >
           <Lock size={12} />
-          Acceso Artista
+          {t('artistAccess')}
         </Link>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Star, Plus } from 'lucide-react'
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function HomeReviewsSection({ tattooStyles, staticReviews }: Props) {
+  const { t } = useTranslation('home')
   const navigate = useNavigate()
   const { reviews: dbReviews, create: createReview, loading: loadingReviews } = useReviews()
   const { profile, user, loading: authLoading } = useAuth()
@@ -39,7 +41,7 @@ export default function HomeReviewsSection({ tattooStyles, staticReviews }: Prop
     }
     if (reviewSubmitting) return
     if (!reviewForm.text.trim() || !reviewForm.name.trim()) {
-      setReviewError('Completa tu nombre y experiencia')
+      setReviewError(t('reviews.completeFields'))
       return
     }
     setReviewSubmitting(true)
@@ -69,7 +71,7 @@ export default function HomeReviewsSection({ tattooStyles, staticReviews }: Prop
       className="px-5 py-8"
     >
       <motion.div variants={itemVariants} className="flex items-center justify-between mb-4">
-        <h2 className="font-serif text-xl text-cream">Lo que dicen nuestros clientes</h2>
+        <h2 className="font-serif text-xl text-cream">{t('reviews.title')}</h2>
         <button
           type="button"
           onClick={() => {
@@ -84,7 +86,7 @@ export default function HomeReviewsSection({ tattooStyles, staticReviews }: Prop
           className="flex items-center gap-1 text-xs text-gold hover:text-gold-light transition-colors"
         >
           <Plus size={14} />
-          Dejar reseña
+          {t('reviews.leaveReview')}
         </button>
       </motion.div>
 
@@ -98,21 +100,21 @@ export default function HomeReviewsSection({ tattooStyles, staticReviews }: Prop
           >
             {reviewSubmitted ? (
               <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-                <p className="text-emerald-400 text-sm font-medium">Gracias por tu reseña</p>
+                <p className="text-emerald-400 text-sm font-medium">{t('reviews.thankYou')}</p>
               </div>
             ) : (
               <div className="p-4 rounded-xl bg-ink-medium/40 border border-white/5 space-y-3">
                 <input
                   type="text"
-                  placeholder="Tu nombre"
-                  aria-label="Tu nombre"
+                  placeholder={t('reviews.yourName')}
+                  aria-label={t('reviews.yourName')}
                   value={reviewForm.name}
                   onChange={e => setReviewForm(f => ({ ...f, name: e.target.value }))}
                   className="w-full px-3 py-2 rounded-lg bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm"
                 />
                 <textarea
-                  placeholder="Tu experiencia..."
-                  aria-label="Tu experiencia"
+                  placeholder={t('reviews.yourExperience')}
+                  aria-label={t('reviews.yourExperience')}
                   value={reviewForm.text}
                   onChange={e => setReviewForm(f => ({ ...f, text: e.target.value }))}
                   rows={2}
@@ -121,7 +123,7 @@ export default function HomeReviewsSection({ tattooStyles, staticReviews }: Prop
                 <div className="flex items-center gap-4">
                   <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map(n => (
-                      <button type="button" key={n} onClick={() => setReviewForm(f => ({ ...f, rating: n }))} aria-label={`Valorar ${n} estrella${n > 1 ? 's' : ''}`} className="min-h-11 min-w-11 inline-flex items-center justify-center">
+                      <button type="button" key={n} onClick={() => setReviewForm(f => ({ ...f, rating: n }))} aria-label={t(n > 1 ? 'reviews.rateStarPlural' : 'reviews.rateStarSingular', { count: n })} className="min-h-11 min-w-11 inline-flex items-center justify-center">
                         <Star size={18} className={n <= reviewForm.rating ? 'text-gold fill-gold' : 'text-subtle'} />
                       </button>
                     ))}
@@ -129,16 +131,16 @@ export default function HomeReviewsSection({ tattooStyles, staticReviews }: Prop
                   <select
                     value={reviewForm.style}
                     onChange={e => setReviewForm(f => ({ ...f, style: e.target.value }))}
-                    aria-label="Estilo de la reseña"
+                    aria-label={t('reviews.styleLabel')}
                     className="flex-1 px-2 py-1 rounded-lg bg-ink border border-white/10 text-cream text-xs"
                   >
-                    <option value="">Estilo</option>
+                    <option value="">{t('reviews.stylePlaceholder')}</option>
                     {tattooStyles.slice(0, 8).map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => setShowReviewForm(false)} className="flex-1 py-2 rounded-lg border border-white/10 text-subtle text-sm">Cancelar</button>
-                  <button type="button" onClick={handleReviewSubmit} disabled={reviewSubmitting} className="flex-1 py-2 rounded-lg bg-gold text-ink text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">{reviewSubmitting ? 'Enviando...' : 'Enviar'}</button>
+                  <button type="button" onClick={() => setShowReviewForm(false)} className="flex-1 py-2 rounded-lg border border-white/10 text-subtle text-sm">{t('common:cancel')}</button>
+                  <button type="button" onClick={handleReviewSubmit} disabled={reviewSubmitting} className="flex-1 py-2 rounded-lg bg-gold text-ink text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">{reviewSubmitting ? t('common:sending') : t('reviews.send')}</button>
                 </div>
                 {reviewError && <p className="text-rose text-xs mt-2">{reviewError}</p>}
               </div>

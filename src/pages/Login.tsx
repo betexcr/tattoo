@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useNavigate, Link, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useStudioConfig } from '../contexts/StudioConfigContext'
 
 export default function Login() {
+  const { t } = useTranslation('login')
   const { signIn, resetPassword } = useAuth()
   const { config } = useStudioConfig()
   const navigate = useNavigate()
@@ -35,7 +37,7 @@ export default function Login() {
         if (err) {
           setError(err)
         } else {
-          setSuccess('Te hemos enviado un correo para restablecer tu contraseña.')
+          setSuccess(t('resetSent'))
         }
         return
       }
@@ -59,21 +61,21 @@ export default function Login() {
       >
         <Link to="/" className="inline-flex items-center gap-2 text-gold/70 hover:text-gold mb-8 text-sm">
           <ArrowLeft size={16} />
-          Volver al inicio
+          {t('backHome')}
         </Link>
 
         <h1 className="font-serif text-3xl text-cream mb-2">
-          {mode === 'login' ? 'Iniciar Sesión' : 'Recuperar Contraseña'}
+          {mode === 'login' ? t('title') : t('recoverTitle')}
         </h1>
         <p className="text-cream/50 mb-8 text-sm">
           {mode === 'login'
-            ? `Accede a tu cuenta de ${config.studio_name}`
-            : 'Ingresa tu correo y te enviaremos un enlace'}
+            ? t('subtitle', { name: config.studio_name })
+            : t('recoverSubtitle')}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="login-email" className="text-cream/60 text-xs block mb-1">Correo electrónico</label>
+            <label htmlFor="login-email" className="text-cream/60 text-xs block mb-1">{t('emailLabel')}</label>
             <input
               id="login-email"
               type="email"
@@ -81,13 +83,13 @@ export default function Login() {
               onChange={e => setEmail(e.target.value)}
               required
               className="w-full bg-ink-light border border-gold/20 rounded-xl px-4 py-3 text-cream focus:border-gold/60 outline-none transition-colors"
-              placeholder="tu@correo.com"
+              placeholder={t('emailPlaceholder')}
             />
           </div>
 
           {mode !== 'reset' && (
             <div>
-              <label htmlFor="login-password" className="text-cream/60 text-xs block mb-1">Contraseña</label>
+              <label htmlFor="login-password" className="text-cream/60 text-xs block mb-1">{t('passwordLabel')}</label>
               <div className="relative">
                 <input
                   id="login-password"
@@ -97,12 +99,12 @@ export default function Login() {
                   required
                   minLength={6}
                   className="w-full bg-ink-light border border-gold/20 rounded-xl px-4 py-3 pr-14 text-cream focus:border-gold/60 outline-none transition-colors"
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder={t('passwordPlaceholder')}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPw(!showPw)}
-                  aria-label={showPw ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  aria-label={showPw ? t('hidePassword') : t('showPassword')}
                   className="absolute right-1 top-1/2 -translate-y-1/2 min-w-11 min-h-11 flex items-center justify-center text-cream/40 hover:text-cream/70"
                 >
                   {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -140,20 +142,20 @@ export default function Login() {
             className="w-full bg-gold text-ink font-semibold py-3 rounded-xl hover:bg-gold/90 transition-colors disabled:opacity-50"
           >
             {loading
-              ? mode === 'login' ? 'Entrando...' : 'Enviando enlace...'
-              : mode === 'login' ? 'Entrar' : 'Enviar enlace'}
+              ? mode === 'login' ? t('loggingIn') : t('sendingLink')
+              : mode === 'login' ? t('loginButton') : t('sendLink')}
           </button>
         </form>
 
         <div className="text-cream/40 text-sm text-center mt-6 space-y-2">
           {mode === 'login' && (
             <p>
-              <button type="button" onClick={() => { setMode('reset'); setError(''); setSuccess('') }} className="text-gold/70 hover:text-gold hover:underline">¿Olvidaste tu contraseña?</button>
+              <button type="button" onClick={() => { setMode('reset'); setError(''); setSuccess('') }} className="text-gold/70 hover:text-gold hover:underline">{t('forgotPassword')}</button>
             </p>
           )}
           {mode === 'reset' && (
             <p>
-              <button type="button" onClick={() => { setMode('login'); setError(''); setSuccess('') }} className="text-gold hover:underline">Volver al inicio de sesión</button>
+              <button type="button" onClick={() => { setMode('login'); setError(''); setSuccess('') }} className="text-gold hover:underline">{t('backToLogin')}</button>
             </p>
           )}
         </div>

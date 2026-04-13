@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { useScrollLock } from '../hooks/useScrollLock'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -16,20 +17,13 @@ import type { ShopItem } from '../types'
 type Category = ShopItem['category'] | ''
 type CartLine = { item: ShopItem; size: string; color: string; qty: number }
 
-const CATEGORY_TABS: { label: string; value: Category; icon: typeof Frame }[] = [
-  { label: 'Todos', value: '', icon: ShoppingCart },
-  { label: 'Cuadros', value: 'cuadros', icon: Frame },
-  { label: 'Ropa', value: 'ropa', icon: Shirt },
-  { label: 'Zapatos', value: 'zapatos', icon: Footprints },
-  { label: 'Accesorios', value: 'accesorios', icon: Watch },
+const CATEGORY_ICONS: { value: Category; icon: typeof Frame }[] = [
+  { value: '', icon: ShoppingCart },
+  { value: 'cuadros', icon: Frame },
+  { value: 'ropa', icon: Shirt },
+  { value: 'zapatos', icon: Footprints },
+  { value: 'accesorios', icon: Watch },
 ]
-
-const CATEGORY_LABELS: Record<ShopItem['category'], string> = {
-  cuadros: 'Cuadro',
-  ropa: 'Ropa',
-  zapatos: 'Zapatos',
-  accesorios: 'Accesorio',
-}
 
 const CATEGORY_COLORS: Record<ShopItem['category'], string> = {
   cuadros: 'bg-gold/15 text-gold',
@@ -52,6 +46,7 @@ const cardVariants = {
 }
 
 const ShopProductCard = memo(function ShopProductCard({ item, onClick }: { item: ShopItem; onClick: (item: ShopItem) => void }) {
+  const { t } = useTranslation('shop')
   return (
     <motion.article
       variants={cardVariants}
@@ -74,20 +69,20 @@ const ShopProductCard = memo(function ShopProductCard({ item, onClick }: { item:
         <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent" />
         <div className="absolute top-2.5 left-2.5">
           <span className={`px-2 py-0.5 rounded-lg text-[9px] font-medium uppercase tracking-wider ${CATEGORY_COLORS[item.category]}`}>
-            {CATEGORY_LABELS[item.category]}
+            {t(`categoryLabels.${item.category}`)}
           </span>
         </div>
         {!item.in_stock && (
           <div className="absolute top-2.5 right-2.5">
             <span className="px-2 py-0.5 rounded-lg bg-red-500/20 text-red-400 text-[9px] font-medium uppercase tracking-wider">
-              Agotado
+              {t('outOfStock')}
             </span>
           </div>
         )}
         {item.in_stock && item.sizes && (
           <div className="absolute top-10 right-2.5">
             <span className="px-1.5 py-0.5 rounded-md bg-ink/70 backdrop-blur-sm text-[9px] text-cream-dark">
-              {item.sizes.length} tallas
+              {t('sizesCount', { count: item.sizes.length })}
             </span>
           </div>
         )}
@@ -103,9 +98,17 @@ const ShopProductCard = memo(function ShopProductCard({ item, onClick }: { item:
 })
 
 export default function Shop() {
+  const { t } = useTranslation('shop')
+  const { t: tc } = useTranslation()
   const { items: shopItems, loading, error: shopError } = useShop()
   const { create: createOrder } = useOrders(undefined, { skip: true })
   const { user, requireAuth, authPrompt } = useRequireAuth()
+
+  const CATEGORY_TABS = useMemo(() => CATEGORY_ICONS.map(({ value, icon }) => ({
+    label: value === '' ? t('categories.all') : t(`categories.${value}`),
+    value,
+    icon,
+  })), [t])
   const [categoryFilter, setCategoryFilter] = useState<Category>('')
   const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null)
   const [cart, setCart] = useState<CartLine[]>([])
@@ -195,7 +198,7 @@ export default function Shop() {
       setNotifiedItems(prev => new Set(prev).add(selectedItem.id))
       setNotifyEmail('')
     } catch {
-      setNotifyError('No se pudo registrar la notificación')
+      setNotifyError(t('notifyError'))
     } finally {
       setNotifyLoading(false)
     }
@@ -204,7 +207,7 @@ export default function Shop() {
   const handleCheckoutSubmit = async () => {
     if (!requireAuth('/shop') || checkoutLoading) return
     if (!checkoutForm.name.trim() || !checkoutForm.email.trim()) {
-      setCheckoutError('Completa todos los campos obligatorios')
+      setCheckoutError(tc('errors.requiredFields'))
       return
     }
     setCheckoutError(null)
@@ -267,14 +270,14 @@ export default function Shop() {
         <div className="mx-5 mt-4 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{shopError}</div>
       )}
       <PageHeader
-        title="Tienda"
-        subtitle="Arte para llevar"
+        title={t('title')}
+        subtitle={t('subtitle')}
         action={
           <div className="relative">
             <button
               type="button"
               onClick={() => setShowCart((s) => !s)}
-              aria-label="Carrito"
+              aria-label={t('cart')}
               aria-expanded={showCart}
               className="w-11 h-11 rounded-full bg-ink-medium flex items-center justify-center text-cream hover:bg-ink-medium/80 transition-colors"
             >
@@ -301,8 +304,8 @@ export default function Shop() {
             type="text"
             value={shopSearch}
             onChange={e => setShopSearch(e.target.value)}
-            placeholder="Buscar productos..."
-            aria-label="Buscar productos"
+            placeholder={t('searchPlaceholder')}
+            aria-label={t('searchAria')}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle text-sm focus:outline-none focus:border-gold/40 transition-colors"
           />
         </div>
@@ -346,10 +349,7 @@ export default function Shop() {
               {CATEGORY_TABS.find((t) => t.value === categoryFilter)?.label}
             </h3>
             <p className="text-subtle text-xs">
-              {categoryFilter === 'cuadros' && 'Obras de arte originales y ediciones limitadas para decorar tu espacio.'}
-              {categoryFilter === 'ropa' && 'Prendas exclusivas con diseños de la artista. Algodón orgánico y piezas únicas.'}
-              {categoryFilter === 'zapatos' && 'Calzado personalizado y pintado a mano. Cada par es una obra de arte.'}
-              {categoryFilter === 'accesorios' && 'Complementos únicos: joyería, bolsos, pins y más con diseños exclusivos.'}
+              {t(`categoryDescriptions.${categoryFilter}`)}
             </p>
           </div>
         </motion.div>
@@ -370,7 +370,7 @@ export default function Shop() {
 
       {filteredItems.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 px-5">
-          <p className="text-subtle text-sm">No hay productos en esta categoría</p>
+          <p className="text-subtle text-sm">{t('noProducts')}</p>
         </div>
       )}
 
@@ -397,56 +397,56 @@ export default function Shop() {
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
               role="dialog"
               aria-modal="true"
-              aria-label="Carrito de compras"
+              aria-label={t('cartTitle')}
               className="pointer-events-auto flex max-h-[90dvh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl border-t border-white/10 bg-ink-light shadow-2xl focus:outline-none"
             >
               <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 rounded-full bg-white/10" />
               </div>
               <div className="flex-1 overflow-y-auto overscroll-contain p-5 pb-[max(2rem,env(safe-area-inset-bottom))]">
-                <h3 className="font-serif text-cream text-lg mb-4">Carrito</h3>
+                <h3 className="font-serif text-cream text-lg mb-4">{t('cart')}</h3>
                 {checkoutStep === 'success' ? (
                   <div className="py-8 text-center">
-                    <p className="text-gold font-medium mb-2">¡Pedido confirmado!</p>
-                    <p className="text-cream-dark text-sm">Te contactaremos pronto.</p>
+                    <p className="text-gold font-medium mb-2">{t('orderConfirmed')}</p>
+                    <p className="text-cream-dark text-sm">{t('contactSoon')}</p>
                     <button
                       type="button"
                       onClick={closeCartDrawer}
                       className="mt-6 px-6 py-2.5 rounded-xl bg-gold text-ink font-medium text-sm hover:bg-gold-light transition-colors"
                     >
-                      Cerrar
+                      {tc('close')}
                     </button>
                   </div>
                 ) : checkoutStep === 'form' ? (
                   <div className="space-y-4">
                     <input
                       type="text"
-                      placeholder="Nombre"
-                      aria-label="Nombre"
+                      placeholder={t('checkoutForm.name')}
+                      aria-label={t('checkoutForm.name')}
                       value={checkoutForm.name}
                       onChange={(e) => setCheckoutForm((f) => ({ ...f, name: e.target.value }))}
                       className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm"
                     />
                     <input
                       type="email"
-                      placeholder="Correo electrónico"
-                      aria-label="Correo electrónico"
+                      placeholder={t('checkoutForm.email')}
+                      aria-label={t('checkoutForm.email')}
                       value={checkoutForm.email}
                       onChange={(e) => setCheckoutForm((f) => ({ ...f, email: e.target.value }))}
                       className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm"
                     />
                     <input
                       type="tel"
-                      placeholder="Teléfono"
-                      aria-label="Teléfono"
+                      placeholder={t('checkoutForm.phone')}
+                      aria-label={t('checkoutForm.phone')}
                       value={checkoutForm.phone}
                       onChange={(e) => setCheckoutForm((f) => ({ ...f, phone: e.target.value }))}
                       className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm"
                     />
                     <input
                       type="text"
-                      placeholder="Dirección"
-                      aria-label="Dirección"
+                      placeholder={t('checkoutForm.address')}
+                      aria-label={t('checkoutForm.address')}
                       value={checkoutForm.address}
                       onChange={(e) => setCheckoutForm((f) => ({ ...f, address: e.target.value }))}
                       className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle text-sm"
@@ -458,7 +458,7 @@ export default function Shop() {
                         onClick={() => setCheckoutStep('cart')}
                         className="flex-1 py-3 rounded-xl border border-white/20 text-cream text-sm font-medium"
                       >
-                        Volver
+                        {tc('back')}
                       </button>
                       <button
                         type="button"
@@ -466,13 +466,13 @@ export default function Shop() {
                         disabled={checkoutLoading}
                         className="flex-1 py-3 rounded-xl bg-gold text-ink font-medium text-sm hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {checkoutLoading ? 'Procesando...' : 'Confirmar Pedido'}
+                        {checkoutLoading ? t('processing') : t('confirmOrder')}
                       </button>
                     </div>
                   </div>
                 ) : cart.length === 0 ? (
                   <div className="py-12 text-center">
-                    <p className="text-subtle text-sm">Tu carrito está vacío</p>
+                    <p className="text-subtle text-sm">{t('cartEmpty')}</p>
                   </div>
                 ) : (
                   <>
@@ -492,7 +492,7 @@ export default function Shop() {
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-cream text-sm line-clamp-2">{line.item.title}</p>
                             <p className="text-subtle text-xs mt-0.5">
-                              {line.size && `Talla ${line.size}`}
+                              {line.size && t('size', { size: line.size })}
                               {line.size && line.color && ' · '}
                               {line.color}
                             </p>
@@ -501,7 +501,7 @@ export default function Shop() {
                           <button
                             type="button"
                             onClick={() => removeFromCart(i)}
-                            aria-label="Eliminar del carrito"
+                            aria-label={t('removeFromCart')}
                             className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-subtle hover:text-rose hover:bg-rose/10 transition-colors shrink-0"
                           >
                             <Trash2 size={16} />
@@ -511,14 +511,14 @@ export default function Shop() {
                     </div>
                     <div className="mt-4 pt-4 border-t border-white/5">
                       <p className="flex justify-between text-cream font-medium">
-                        Total <span className="text-gold">€{cart.reduce((sum, c) => sum + c.item.price * c.qty, 0)}</span>
+                        {t('total')} <span className="text-gold">€{cart.reduce((sum, c) => sum + c.item.price * c.qty, 0)}</span>
                       </p>
                       <button
                         type="button"
                         onClick={() => setCheckoutStep('form')}
                         className="w-full mt-4 py-3.5 rounded-2xl bg-gold text-ink font-medium text-sm hover:bg-gold-light active:scale-[0.98] shadow-lg shadow-gold/20"
                       >
-                        Finalizar Compra
+                        {t('checkout')}
                       </button>
                     </div>
                   </>
@@ -550,7 +550,7 @@ export default function Shop() {
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
               role="dialog"
               aria-modal="true"
-              aria-label="Detalle del producto"
+              aria-label={t('productDetail')}
               className="pointer-events-auto flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-white/10 bg-ink-light shadow-2xl focus:outline-none"
             >
               <div className="flex justify-center pt-2.5 pb-1 shrink-0">
@@ -562,16 +562,16 @@ export default function Shop() {
                 <button
                   type="button"
                   onClick={() => { setSelectedItem(null); setSelectedSize(''); setSelectedColor('') }}
-                  aria-label="Volver a la tienda"
+                  aria-label={t('backToShop')}
                   className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-ink text-cream transition-colors hover:border-gold/30 hover:bg-ink-medium"
                 >
                   <ChevronLeft size={20} strokeWidth={1.5} />
                 </button>
-                <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-subtle">Producto</span>
+                <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-subtle">{t('product')}</span>
                 <button
                   type="button"
                   onClick={() => { setSelectedItem(null); setSelectedSize(''); setSelectedColor('') }}
-                  aria-label="Cerrar"
+                  aria-label={tc('close')}
                   className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-ink text-cream transition-colors hover:border-gold/30"
                 >
                   <X size={18} />
@@ -598,7 +598,7 @@ export default function Shop() {
                 <div className="space-y-5 px-4 pb-6 pt-2 sm:px-5">
                   <div>
                     <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gold/90">
-                      {CATEGORY_LABELS[selectedItem.category]}
+                      {t(`categoryLabels.${selectedItem.category}`)}
                     </p>
                     <h2 className="font-serif text-[1.35rem] leading-snug tracking-tight text-cream sm:text-2xl">
                       {selectedItem.title}
@@ -618,18 +618,18 @@ export default function Shop() {
                           : 'border-red-500/25 bg-red-500/10 text-red-400'
                       }`}
                     >
-                      {selectedItem.in_stock ? 'En stock' : 'Agotado'}
+                      {selectedItem.in_stock ? t('inStock') : t('outOfStock')}
                     </span>
                     <span className="rounded-full border border-white/10 bg-ink px-3 py-1.5 text-[11px] text-cream-dark">
-                      Envío acordado al confirmar
+                      {t('shippingNote')}
                     </span>
                   </div>
 
                   {selectedItem.sizes && selectedItem.sizes.length > 0 && (
                     <div>
                       <div className="mb-2.5 flex items-center justify-between">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-cream">Talla</p>
-                        <span className="text-[10px] text-subtle">Elige una</span>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-cream">{t('sizeLabel')}</p>
+                        <span className="text-[10px] text-subtle">{t('chooseOne')}</span>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {selectedItem.sizes.map((size) => (
@@ -654,7 +654,7 @@ export default function Shop() {
                   {selectedItem.colors && selectedItem.colors.length > 0 && (
                     <div>
                       <div className="mb-2.5 flex items-center justify-between">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-cream">Color</p>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-cream">{t('color')}</p>
                         <span className="text-[11px] text-cream-dark">{selectedColor || '—'}</span>
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -681,17 +681,17 @@ export default function Shop() {
                   {!selectedItem.in_stock && (
                     <div className="space-y-3 rounded-2xl border border-red-500/15 bg-red-500/[0.06] p-4">
                       {notifiedItems.has(selectedItem.id) ? (
-                        <p className="text-sm font-medium text-gold">Te avisaremos cuando esté disponible.</p>
+                        <p className="text-sm font-medium text-gold">{t('notifyAvailable')}</p>
                       ) : (
                         <>
                           <p className="text-sm leading-snug text-red-400/95">
-                            Agotado. Déjanos tu correo y te avisamos cuando vuelva.
+                            {t('outOfStockNotify')}
                           </p>
                           <div className="flex flex-col gap-2 sm:flex-row">
                             <input
                               type="email"
                               placeholder="tu@email.com"
-                              aria-label="Correo electrónico para notificación de stock"
+                              aria-label={t('stockEmailAria')}
                               value={notifyEmail}
                               onChange={(e) => setNotifyEmail(e.target.value)}
                               className="min-h-[44px] flex-1 rounded-xl border border-white/10 bg-ink px-3 text-sm text-cream placeholder:text-subtle"
@@ -702,7 +702,7 @@ export default function Shop() {
                               disabled={!notifyEmail.trim() || notifyLoading}
                               className="min-h-[44px] shrink-0 rounded-xl bg-gold px-5 text-sm font-medium text-ink hover:bg-gold-light disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                              {notifyLoading ? 'Enviando...' : 'Notificarme'}
+                              {notifyLoading ? tc('sending') : t('notifyMe')}
                             </button>
                           </div>
                           {notifyError && <p className="text-xs text-red-400">{notifyError}</p>}
@@ -717,7 +717,7 @@ export default function Shop() {
               <div className="shrink-0 border-t border-white/10 bg-ink-light/95 px-4 py-3 backdrop-blur-md sm:px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                 <div className="flex items-center gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] uppercase tracking-wider text-subtle">Precio</p>
+                    <p className="text-[10px] uppercase tracking-wider text-subtle">{t('price')}</p>
                     <p className="truncate font-semibold text-gold text-xl">€{selectedItem.price}</p>
                   </div>
                   <button
@@ -731,7 +731,7 @@ export default function Shop() {
                     }`}
                   >
                     <ShoppingCart size={18} strokeWidth={1.75} />
-                    {selectedItem.in_stock ? 'Añadir al carrito' : 'Agotado'}
+                    {selectedItem.in_stock ? t('addToCart') : t('outOfStock')}
                   </button>
                 </div>
               </div>

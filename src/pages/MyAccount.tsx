@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import i18n from '../i18n'
 import { motion } from 'framer-motion'
 import { User, Calendar, Package, Pencil, Check } from 'lucide-react'
 import { doc, setDoc } from 'firebase/firestore'
@@ -20,12 +22,14 @@ const itemVariants = {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(iso).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 type Tab = 'profile' | 'appointments' | 'orders'
 
 export default function MyAccount() {
+  const { t } = useTranslation('account')
+  const { t: tc } = useTranslation()
   const { user, profile, loading, refreshProfile } = useAuth()
   const { appointments, error: appointmentsError } = useAppointments(user?.uid)
   const { orders, error: ordersError } = useOrders(user?.uid)
@@ -38,7 +42,7 @@ export default function MyAccount() {
   if (loading) {
     return (
       <div className="min-h-dvh bg-ink flex items-center justify-center" role="status">
-        <span className="sr-only">Cargando...</span>
+        <span className="sr-only">{tc('loading')}</span>
         <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
       </div>
     )
@@ -66,16 +70,16 @@ export default function MyAccount() {
   }
 
   const tabs: { key: Tab; label: string; icon: typeof User }[] = [
-    { key: 'profile', label: 'Perfil', icon: User },
-    { key: 'appointments', label: 'Citas', icon: Calendar },
-    { key: 'orders', label: 'Pedidos', icon: Package },
+    { key: 'profile', label: t('tabs.profile'), icon: User },
+    { key: 'appointments', label: t('tabs.appointments'), icon: Calendar },
+    { key: 'orders', label: t('tabs.orders'), icon: Package },
   ]
 
   const sortedAppts = [...appointments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
   return (
     <div className="min-h-dvh bg-ink">
-      <PageHeader title="Mi Cuenta" subtitle={profile?.full_name ?? user.email ?? ''} />
+      <PageHeader title={t('title')} subtitle={profile?.full_name ?? user.email ?? ''} />
 
       <div className="px-5 pt-4 pb-28">
         <motion.div initial="hidden" animate="visible" variants={containerVariants} className="space-y-6">
@@ -110,36 +114,36 @@ export default function MyAccount() {
               {editing ? (
                 <div className="space-y-3">
                   <input
-                    type="text" placeholder="Nombre completo" aria-label="Nombre completo" value={form.full_name}
+                    type="text" placeholder={t('profile.namePlaceholder')} aria-label={t('profile.namePlaceholder')} value={form.full_name}
                     onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl bg-ink-light border border-white/10 text-cream text-sm"
                   />
                   <input
-                    type="tel" placeholder="Teléfono" aria-label="Teléfono" value={form.phone}
+                    type="tel" placeholder={t('profile.phonePlaceholder')} aria-label={t('profile.phonePlaceholder')} value={form.phone}
                     onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl bg-ink-light border border-white/10 text-cream text-sm"
                   />
                   {saveError && <p className="text-rose text-sm text-center mb-2">{saveError}</p>}
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => setEditing(false)} className="flex-1 py-2.5 rounded-xl border border-white/10 text-subtle text-sm">Cancelar</button>
-                    <button type="button" onClick={saveEdit} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-gold text-ink text-sm font-medium flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"><Check size={14} /> {saving ? 'Guardando...' : 'Guardar'}</button>
+                    <button type="button" onClick={() => setEditing(false)} className="flex-1 py-2.5 rounded-xl border border-white/10 text-subtle text-sm">{tc('cancel')}</button>
+                    <button type="button" onClick={saveEdit} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-gold text-ink text-sm font-medium flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"><Check size={14} /> {saving ? tc('saving') : tc('save')}</button>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-2">
                   <div className="p-4 rounded-xl bg-ink-light border border-white/5">
-                    <p className="text-xs text-subtle mb-1">Nombre</p>
+                    <p className="text-xs text-subtle mb-1">{t('profile.name')}</p>
                     <p className="text-cream text-sm">{profile?.full_name ?? '—'}</p>
                   </div>
                   <div className="p-4 rounded-xl bg-ink-light border border-white/5">
-                    <p className="text-xs text-subtle mb-1">Correo electrónico</p>
+                    <p className="text-xs text-subtle mb-1">{t('profile.email')}</p>
                     <p className="text-cream text-sm">{user.email}</p>
                   </div>
                   <div className="p-4 rounded-xl bg-ink-light border border-white/5">
-                    <p className="text-xs text-subtle mb-1">Teléfono</p>
+                    <p className="text-xs text-subtle mb-1">{t('profile.phone')}</p>
                     <p className="text-cream text-sm">{profile?.phone || '—'}</p>
                   </div>
-                  <button type="button" onClick={startEdit} className="w-full py-2.5 rounded-xl bg-gold/10 text-gold text-sm font-medium flex items-center justify-center gap-1.5"><Pencil size={14} /> Editar perfil</button>
+                  <button type="button" onClick={startEdit} className="w-full py-2.5 rounded-xl bg-gold/10 text-gold text-sm font-medium flex items-center justify-center gap-1.5"><Pencil size={14} /> {t('profile.editProfile')}</button>
                 </div>
               )}
             </motion.section>
@@ -152,12 +156,12 @@ export default function MyAccount() {
               )}
               {sortedAppts.length === 0 && !appointmentsError ? (
                 <div className="p-8 rounded-xl bg-ink-light border border-white/5 text-center">
-                  <p className="text-subtle text-sm mb-3">No tienes citas aún</p>
-                  <Link to="/book" className="text-gold text-sm font-medium hover:underline">Reservar una cita</Link>
+                  <p className="text-subtle text-sm mb-3">{t('appointments.empty')}</p>
+                  <Link to="/book" className="text-gold text-sm font-medium hover:underline">{t('appointments.book')}</Link>
                 </div>
               ) : sortedAppts.map(apt => {
                 const statusCfg: Record<string, string> = { confirmed: 'bg-emerald-500/20 text-emerald-400', pending: 'bg-amber-500/20 text-amber-400', completed: 'bg-subtle/20 text-subtle', rejected: 'bg-red-500/20 text-red-400' }
-                const statusLabel: Record<string, string> = { confirmed: 'Confirmada', pending: 'Pendiente', completed: 'Completada', rejected: 'Rechazada' }
+                const statusLabel: Record<string, string> = { confirmed: t('appointments.status.confirmed'), pending: t('appointments.status.pending'), completed: t('appointments.status.completed'), rejected: t('appointments.status.rejected') }
                 return (
                   <div key={apt.id} className="p-4 rounded-xl bg-ink-light border border-white/5">
                     <div className="flex items-start justify-between gap-3 mb-1">
@@ -181,20 +185,20 @@ export default function MyAccount() {
               )}
               {orders.length === 0 && !ordersError ? (
                 <div className="p-8 rounded-xl bg-ink-light border border-white/5 text-center">
-                  <p className="text-subtle text-sm mb-3">No tienes pedidos aún</p>
-                  <Link to="/shop" className="text-gold text-sm font-medium hover:underline">Ir a la tienda</Link>
+                  <p className="text-subtle text-sm mb-3">{t('orders.empty')}</p>
+                  <Link to="/shop" className="text-gold text-sm font-medium hover:underline">{t('orders.goToShop')}</Link>
                 </div>
               ) : orders.map(order => {
-                const statusLabel: Record<string, string> = { pending: 'Pendiente', confirmed: 'Confirmado', shipped: 'Enviado', delivered: 'Entregado' }
+                const statusLabel: Record<string, string> = { pending: t('appointments.status.pending'), confirmed: t('orders.status.confirmed'), shipped: t('orders.status.shipped'), delivered: t('orders.status.delivered') }
                 return (
                   <div key={order.id} className="p-4 rounded-xl bg-ink-light border border-white/5">
                     <div className="flex items-start justify-between gap-3 mb-1">
                       <p className="text-cream text-sm font-medium">€{order.total}</p>
-                      <span className="text-[10px] px-2 py-1 rounded-full bg-gold/20 text-gold">{statusLabel[order.status] ?? 'Desconocido'}</span>
+                      <span className="text-[10px] px-2 py-1 rounded-full bg-gold/20 text-gold">{statusLabel[order.status] ?? t('orders.status.unknown')}</span>
                     </div>
                     <p className="text-xs text-subtle">{formatDate(order.created_at)}</p>
                     {order.items && order.items.length > 0 && (
-                      <p className="text-xs text-cream-dark mt-1">{order.items.length} artículo{order.items.length > 1 ? 's' : ''}</p>
+                      <p className="text-xs text-cream-dark mt-1">{order.items.length} {order.items.length > 1 ? t('orders.itemPlural') : t('orders.itemSingular')}</p>
                     )}
                   </div>
                 )

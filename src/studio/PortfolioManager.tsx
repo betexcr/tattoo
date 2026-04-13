@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Pencil,
@@ -30,6 +31,7 @@ const itemVariants = {
 }
 
 export default function PortfolioManager() {
+  const { t } = useTranslation('studio')
   const { config } = useStudioConfig()
   const { items: portfolio, loading, error, create, update, remove, swapOrder } = usePortfolio(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
@@ -90,7 +92,7 @@ export default function PortfolioManager() {
   const handleSave = async () => {
     if (saving) return
     if (!formData.title || !formData.style || !formData.image_url) {
-      setMutationError('Completa el título, estilo e imagen')
+      setMutationError(t('portfolioManager.validation'))
       return
     }
     setMutationError(null)
@@ -150,7 +152,7 @@ export default function PortfolioManager() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20" role="status">
-        <span className="sr-only">Cargando...</span>
+        <span className="sr-only">{t('analytics.loading')}</span>
         <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
       </div>
     )
@@ -178,7 +180,7 @@ export default function PortfolioManager() {
             <p className="text-2xl font-serif font-semibold text-gold">
               {totalItems}
             </p>
-            <p className="text-sm text-subtle">Total de trabajos</p>
+            <p className="text-sm text-subtle">{t('portfolioManager.totalWorks')}</p>
           </div>
           {mutationError && (
             <div className="mt-3 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{mutationError}</div>
@@ -233,7 +235,7 @@ export default function PortfolioManager() {
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); moveItem(item.id, -1) }}
-                  aria-label="Subir en la lista"
+                  aria-label={t('portfolioManager.moveUp')}
                   className="w-9 h-9 rounded-md bg-black/50 flex items-center justify-center text-cream hover:bg-black/70 transition-colors"
                 >
                   <ChevronUp size={16} />
@@ -241,7 +243,7 @@ export default function PortfolioManager() {
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); moveItem(item.id, 1) }}
-                  aria-label="Bajar en la lista"
+                  aria-label={t('portfolioManager.moveDown')}
                   className="w-9 h-9 rounded-md bg-black/50 flex items-center justify-center text-cream hover:bg-black/70 transition-colors"
                 >
                   <ChevronDown size={16} />
@@ -253,8 +255,8 @@ export default function PortfolioManager() {
                 type="button"
                 onClick={() => togglePublished(item)}
                 className="absolute top-2 right-2 w-10 h-10 rounded-full bg-black/40 flex items-center justify-center hover:bg-black/60 transition-colors"
-                title={item.published ? 'Publicado' : 'Borrador'}
-                aria-label={item.published ? 'Marcado como publicado' : 'Marcado como borrador'}
+                title={item.published ? t('portfolioManager.published') : t('portfolioManager.draft')}
+                aria-label={item.published ? t('portfolioManager.markedPublished') : t('portfolioManager.markedDraft')}
               >
                 {item.published ? (
                   <Eye size={18} className="text-emerald-400" />
@@ -268,7 +270,7 @@ export default function PortfolioManager() {
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); handleEdit(item) }}
-                  aria-label="Editar trabajo"
+                  aria-label={t('portfolioManager.editWork')}
                   className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-sm text-cream flex items-center justify-center hover:bg-gold/80 hover:text-ink transition-colors"
                 >
                   <Pencil size={14} />
@@ -294,7 +296,7 @@ export default function PortfolioManager() {
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(item.id) }}
-                    aria-label="Eliminar trabajo"
+                    aria-label={t('portfolioManager.deleteWork')}
                     className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-sm text-cream flex items-center justify-center hover:bg-red-500/80 transition-colors"
                   >
                     <Trash2 size={14} />
@@ -313,7 +315,7 @@ export default function PortfolioManager() {
         animate={{ scale: 1 }}
         transition={{ type: 'spring', damping: 20, stiffness: 300 }}
         onClick={handleAdd}
-        aria-label="Añadir al portafolio"
+        aria-label={t('portfolioManager.addToPortfolio')}
         className="fixed bottom-24 right-4 w-14 h-14 rounded-full bg-gold text-ink flex items-center justify-center shadow-lg shadow-gold/30 hover:bg-gold-light transition-colors z-30"
       >
         <Plus size={24} strokeWidth={2.5} />
@@ -339,18 +341,18 @@ export default function PortfolioManager() {
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
               role="dialog"
               aria-modal="true"
-              aria-label={selectedItem ? 'Editar trabajo del portafolio' : 'Nuevo trabajo del portafolio'}
+              aria-label={selectedItem ? t('portfolioManager.editDialog') : t('portfolioManager.newDialog')}
               className="fixed bottom-0 left-0 right-0 z-50 bg-ink-light rounded-t-3xl max-h-[85dvh] overflow-y-auto focus:outline-none"
             >
               <div className="p-5 border-b border-white/5">
                 <h2 className="font-serif text-lg text-cream">
-                  {selectedItem ? 'Editar trabajo' : 'Nuevo trabajo'}
+                  {selectedItem ? t('portfolioManager.editTitle') : t('portfolioManager.newTitle')}
                 </h2>
               </div>
               <div className="p-5 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-4">
                 <div>
                   <label htmlFor="pm-title" className="block text-xs text-subtle mb-1.5">
-                    Título
+                    {t('portfolioManager.form.title')}
                   </label>
                   <input
                     id="pm-title"
@@ -360,12 +362,12 @@ export default function PortfolioManager() {
                       setFormData((f) => ({ ...f, title: e.target.value }))
                     }
                     className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle focus:outline-none focus:border-gold/50"
-                    placeholder="Nombre del diseño"
+                    placeholder={t('portfolioManager.form.titlePlaceholder')}
                   />
                 </div>
                 <div>
                   <label htmlFor="pm-style" className="block text-xs text-subtle mb-1.5">
-                    Estilo
+                    {t('portfolioManager.form.style')}
                   </label>
                   <select
                     id="pm-style"
@@ -384,7 +386,7 @@ export default function PortfolioManager() {
                 </div>
                 <div>
                   <label htmlFor="pm-description" className="block text-xs text-subtle mb-1.5">
-                    Descripción
+                    {t('portfolioManager.form.description')}
                   </label>
                   <textarea
                     id="pm-description"
@@ -397,11 +399,11 @@ export default function PortfolioManager() {
                     }
                     rows={3}
                     className="w-full px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle focus:outline-none focus:border-gold/50 resize-none"
-                    placeholder="Descripción del tatuaje"
+                    placeholder={t('portfolioManager.form.descriptionPlaceholder')}
                   />
                 </div>
                 <div>
-                  <label htmlFor="pm-image" className="block text-xs text-subtle mb-1.5">Imagen</label>
+                  <label htmlFor="pm-image" className="block text-xs text-subtle mb-1.5">{t('portfolioManager.form.image')}</label>
                   <div className="flex gap-2">
                     <input
                       id="pm-image"
@@ -411,7 +413,7 @@ export default function PortfolioManager() {
                         setFormData((f) => ({ ...f, image_url: e.target.value }))
                       }
                       className="flex-1 px-4 py-3 rounded-xl bg-ink border border-white/10 text-cream placeholder:text-subtle focus:outline-none focus:border-gold/50"
-                      placeholder="URL o sube un archivo"
+                      placeholder={t('portfolioManager.form.imagePlaceholder')}
                     />
                     <button
                       type="button"
@@ -420,12 +422,12 @@ export default function PortfolioManager() {
                       className="px-4 py-3 rounded-xl bg-gold/10 text-gold text-sm font-medium hover:bg-gold/20 transition-colors disabled:opacity-50 flex items-center gap-1.5"
                     >
                       <Upload size={14} />
-                      {uploading ? 'Subiendo...' : 'Subir'}
+                      {uploading ? t('portfolioManager.form.uploading') : t('portfolioManager.form.upload')}
                     </button>
                     <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
                   </div>
                   {formData.image_url && (
-                    <img src={formData.image_url} alt="Vista previa" loading="lazy" decoding="async" className="mt-2 w-20 h-20 rounded-lg object-cover border border-white/10" />
+                    <img src={formData.image_url} alt={t('portfolioManager.form.preview')} loading="lazy" decoding="async" className="mt-2 w-20 h-20 rounded-lg object-cover border border-white/10" />
                   )}
                 </div>
                 <div className="flex gap-3 pt-2">

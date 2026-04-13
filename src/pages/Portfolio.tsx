@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback, memo } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useScrollLock } from '../hooks/useScrollLock'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -55,6 +56,8 @@ const PortfolioCard = memo(function PortfolioCard({ item, onClick }: { item: Por
 })
 
 export default function Portfolio() {
+  const { t } = useTranslation('portfolio')
+  const { t: tc } = useTranslation()
   const { config } = useStudioConfig()
   const { items: portfolioItems, loading, error } = usePortfolio()
   const [searchParams] = useSearchParams()
@@ -104,7 +107,7 @@ export default function Portfolio() {
 
   return (
     <div className="min-h-dvh pb-6">
-      <PageHeader title="Portafolio" subtitle="Mi trabajo" />
+      <PageHeader title={t('title')} subtitle={t('subtitle')} />
 
       {error && (
         <div className="mx-5 mt-4 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">{error}</div>
@@ -118,8 +121,8 @@ export default function Portfolio() {
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Buscar diseños..."
-            aria-label="Buscar diseños"
+            placeholder={t('searchPlaceholder')}
+            aria-label={t('searchAria')}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle text-sm focus:outline-none focus:border-gold/40 transition-colors"
           />
         </div>
@@ -140,7 +143,7 @@ export default function Portfolio() {
                   : 'bg-ink-medium/60 text-cream-dark border border-white/5 hover:border-gold/30'
               }`}
             >
-              {style}
+              {style === 'Todos' ? t('all') : style}
             </button>
           ))}
         </div>
@@ -160,7 +163,7 @@ export default function Portfolio() {
 
       {filteredItems.length === 0 && !loading && (
         <div className="flex flex-col items-center justify-center py-16 px-5">
-          <p className="text-subtle text-sm">No se encontraron resultados</p>
+          <p className="text-subtle text-sm">{t('noResults')}</p>
         </div>
       )}
 
@@ -184,14 +187,14 @@ export default function Portfolio() {
               onClick={(e) => e.stopPropagation()}
               role="dialog"
               aria-modal="true"
-              aria-label="Detalle de la obra"
+              aria-label={t('detailAria')}
               className="w-full max-w-md bg-ink-light rounded-2xl overflow-hidden overflow-y-auto overscroll-contain border border-white/10 shadow-2xl focus:outline-none"
             >
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setSelectedItem(null)}
-                  aria-label="Cerrar"
+                  aria-label={tc('close')}
                   className="absolute top-3 right-3 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-ink/80 text-cream backdrop-blur-sm transition-colors hover:bg-ink hover:text-cream"
                 >
                   <X size={20} strokeWidth={2} />

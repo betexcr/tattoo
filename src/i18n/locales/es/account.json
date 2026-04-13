@@ -1,0 +1,38 @@
+{
+  "title": "Mi Cuenta",
+  "tabs": {
+    "profile": "Perfil",
+    "appointments": "Citas",
+    "orders": "Pedidos"
+  },
+  "profile": {
+    "name": "Nombre",
+    "namePlaceholder": "Nombre completo",
+    "email": "Correo electrónico",
+    "phone": "Teléfono",
+    "phonePlaceholder": "Teléfono",
+    "editProfile": "Editar perfil"
+  },
+  "appointments": {
+    "empty": "No tienes citas aún",
+    "book": "Reservar una cita",
+    "status": {
+      "confirmed": "Confirmada",
+      "pending": "Pendiente",
+      "completed": "Completada",
+      "rejected": "Rechazada"
+    }
+  },
+  "orders": {
+    "empty": "No tienes pedidos aún",
+    "goToShop": "Ir a la tienda",
+    "status": {
+      "confirmed": "Confirmado",
+      "shipped": "Enviado",
+      "delivered": "Entregado",
+      "unknown": "Desconocido"
+    },
+    "itemSingular": "artículo",
+    "itemPlural": "artículos"
+  }
+}

@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import i18n from '../i18n'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, ArrowLeft, MessageCircle, CalendarPlus, Phone, Mail, UserCheck, Users } from 'lucide-react'
 import { collection, getDocs, doc, setDoc, query, limit } from 'firebase/firestore'
@@ -36,11 +38,11 @@ function getInitials(name: string): string {
     .toUpperCase()
 }
 
-function formatDateSpanish(dateStr: string): string {
-  if (!dateStr) return 'Sin visitas'
+function formatDateLocalized(dateStr: string, noVisitsLabel: string): string {
+  if (!dateStr) return noVisitsLabel
   const date = new Date(dateStr + 'T12:00:00')
   if (isNaN(date.getTime())) return '—'
-  return date.toLocaleDateString('es-ES', {
+  return date.toLocaleDateString(i18n.language, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -117,6 +119,7 @@ const itemVariants = {
 }
 
 export default function Clients() {
+  const { t } = useTranslation('studio')
   const { appointments, loading: appointmentsLoading, error: appointmentsError } = useAppointments()
   const { clients: registeredClients, loading: clientsLoading, error: clientsError } = useClients()
   const [search, setSearch] = useState('')
@@ -232,26 +235,26 @@ export default function Clients() {
                 <p className="text-lg font-serif font-semibold text-cream">
                   {selectedClient.visits}
                 </p>
-                <p className="text-[10px] text-subtle uppercase tracking-wider">Citas</p>
+                <p className="text-[10px] text-subtle uppercase tracking-wider">{t('clients.stats.appointments')}</p>
               </div>
               <div className="rounded-xl bg-ink-light border border-white/5 p-3 text-center">
                 <p className="text-lg font-serif font-semibold text-gold">
                   €{selectedClient.totalSpent}
                 </p>
-                <p className="text-[10px] text-subtle uppercase tracking-wider">Gastado</p>
+                <p className="text-[10px] text-subtle uppercase tracking-wider">{t('clients.stats.spent')}</p>
               </div>
               <div className="rounded-xl bg-ink-light border border-white/5 p-3 text-center">
                 <p className="text-sm font-serif font-semibold text-cream">
-                  {formatDateSpanish(selectedClient.firstVisit)}
+                  {formatDateLocalized(selectedClient.firstVisit, t('clients.noVisits'))}
                 </p>
                 <p className="text-[10px] text-subtle uppercase tracking-wider">
-                  Primera visita
+                  {t('clients.stats.firstVisit')}
                 </p>
               </div>
             </div>
 
             <section>
-              <h2 className="font-serif text-base text-cream mb-3">Historial de Citas</h2>
+              <h2 className="font-serif text-base text-cream mb-3">{t('clients.appointmentHistory')}</h2>
               <div className="space-y-2">
                 {[...selectedClient.appointments]
                   .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -263,7 +266,7 @@ export default function Clients() {
                       <div className="flex justify-between items-start">
                         <div>
                           <p className="text-sm font-medium text-cream">
-                            {formatDateSpanish(apt.date)} · {apt.time}
+                            {formatDateLocalized(apt.date, t('clients.noVisits'))} · {apt.time}
                           </p>
                           <p className="text-xs text-subtle mt-0.5">
                             {apt.style} · {apt.body_part}
@@ -284,12 +287,12 @@ export default function Clients() {
                           }`}
                         >
                           {apt.status === 'completed'
-                            ? 'Completada'
+                            ? t('appointments.filters.completed')
                             : apt.status === 'confirmed'
-                              ? 'Confirmada'
+                              ? t('appointments.filters.confirmed')
                               : apt.status === 'pending'
-                                ? 'Pendiente'
-                                : 'Rechazada'}
+                                ? t('appointments.filters.pending')
+                                : t('appointments.filters.rejected')}
                         </span>
                       </div>
                     </div>
@@ -298,16 +301,16 @@ export default function Clients() {
             </section>
 
             <section>
-              <h2 className="font-serif text-base text-cream mb-2">Notas</h2>
+              <h2 className="font-serif text-base text-cream mb-2">{t('clients.notes')}</h2>
               <textarea
                 value={currentNotes}
                 onChange={(e) => { setNoteError(null); setCurrentNotes(e.target.value) }}
-                placeholder="Notas privadas sobre el cliente..."
-                aria-label="Notas privadas del cliente"
+                placeholder={t('clients.notesPlaceholder')}
+                aria-label={t('clients.notesAria')}
                 className="w-full h-24 px-4 py-3 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle text-sm resize-none focus:outline-none focus:border-gold/40 transition-colors"
               />
               {noteError && (
-                <p className="text-rose text-xs mt-1">Error guardando nota: {noteError}</p>
+                <p className="text-rose text-xs mt-1">{t('clients.notesSaveError')} {noteError}</p>
               )}
             </section>
 
@@ -317,14 +320,14 @@ export default function Clients() {
                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-gold/20 text-gold font-medium text-sm hover:bg-gold/30 transition-colors"
               >
                 <MessageCircle size={18} />
-                Enviar Mensaje
+                {t('clients.sendMessage')}
               </Link>
               <Link
                 to="/studio/appointments"
                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-gold text-ink font-medium text-sm hover:bg-gold-light transition-colors"
               >
                 <CalendarPlus size={18} />
-                Nueva Cita
+                {t('clients.newAppointment')}
               </Link>
             </div>
           </motion.div>
@@ -345,7 +348,7 @@ export default function Clients() {
                 }`}
               >
                 <Users size={14} />
-                Todos ({clientList.length})
+                {t('clients.tabs.all')} ({clientList.length})
               </button>
               <button
                 type="button"
@@ -355,7 +358,7 @@ export default function Clients() {
                 }`}
               >
                 <UserCheck size={14} />
-                Registrados ({clientList.filter(c => c.registered).length})
+                {t('clients.tabs.registered')} ({clientList.filter(c => c.registered).length})
               </button>
             </div>
 
@@ -368,8 +371,8 @@ export default function Clients() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por nombre..."
-                aria-label="Buscar clientes por nombre"
+                placeholder={t('clients.searchPlaceholder')}
+                aria-label={t('clients.searchAria')}
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-ink-light border border-white/5 text-cream placeholder:text-subtle text-sm focus:outline-none focus:border-gold/40 transition-colors"
               />
             </div>
@@ -386,7 +389,7 @@ export default function Clients() {
                       : 'bg-ink-light text-subtle hover:text-cream border border-white/5'
                   }`}
                 >
-                  {key === 'nombre' ? 'Nombre' : key === 'visitas' ? 'Visitas' : 'Gasto'}
+                  {key === 'nombre' ? t('clients.sort.name') : key === 'visitas' ? t('clients.sort.visits') : t('clients.sort.spent')}
                 </button>
               ))}
             </div>
@@ -410,7 +413,7 @@ export default function Clients() {
                       <p className="font-medium text-cream truncate">{client.name}</p>
                       {client.registered && (
                         <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-medium bg-emerald-500/20 text-emerald-400">
-                          Registrado
+                          {t('clients.registered')}
                         </span>
                       )}
                     </div>
@@ -420,12 +423,12 @@ export default function Clients() {
                     <div className="flex gap-3 mt-1 text-[11px] text-subtle">
                       {client.visits > 0 ? (
                         <>
-                          <span>{client.visits} visitas</span>
-                          <span>€{client.totalSpent} gastado</span>
-                          <span>{formatDateSpanish(client.lastVisit)}</span>
+                          <span>{client.visits} {t('clients.visits')}</span>
+                          <span>€{client.totalSpent} {t('clients.spent')}</span>
+                          <span>{formatDateLocalized(client.lastVisit, t('clients.noVisits'))}</span>
                         </>
                       ) : (
-                        <span>Sin citas aún{client.registeredAt ? ` · Registrado ${formatDateSpanish(client.registeredAt.slice(0, 10))}` : ''}</span>
+                        <span>{t('clients.noAppointments')}{client.registeredAt ? ` · ${t('clients.registeredDate', { date: formatDateLocalized(client.registeredAt.slice(0, 10), t('clients.noVisits')) })}` : ''}</span>
                       )}
                     </div>
                   </div>
@@ -436,7 +439,7 @@ export default function Clients() {
             {filteredAndSorted.length === 0 && (
               <div className="rounded-xl bg-ink-light border border-white/5 p-8 text-center">
                 <p className="text-cream-dark text-sm">
-                  {search.trim() ? 'No se encontraron clientes' : 'No hay clientes'}
+                  {search.trim() ? t('clients.noResults') : t('clients.empty')}
                 </p>
               </div>
             )}

@@ -1,0 +1,358 @@
+{
+  "layout": {
+    "skipToContent": "Skip to content",
+    "openMenu": "Open menu",
+    "moreOptions": "More options",
+    "studioMenu": "Studio menu",
+    "closeMenu": "Close menu",
+    "drawerTitle": "Studio",
+    "subtitle": "Studio",
+    "more": "More"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "dashboardDesc": "Overview & activity",
+    "appointments": "Appointments",
+    "appointmentsDesc": "Studio schedule",
+    "clients": "Clients",
+    "clientsDesc": "Database",
+    "messages": "Messages",
+    "messagesDesc": "Client chat",
+    "orders": "Orders",
+    "ordersDesc": "Online shop",
+    "portfolio": "Portfolio",
+    "portfolioDesc": "Work management",
+    "analytics": "Analytics",
+    "analyticsDesc": "Data & metrics",
+    "settings": "Settings",
+    "settingsDesc": "Studio settings"
+  },
+  "pageTitle": {
+    "dashboard": "Dashboard",
+    "appointments": "Appointments",
+    "clients": "Clients",
+    "messages": "Messages",
+    "orders": "Orders",
+    "portfolio": "Portfolio",
+    "analytics": "Analytics",
+    "settings": "Settings",
+    "default": "Studio"
+  },
+  "dashboard": {
+    "greetings": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "stats": {
+      "todayAppointments": "Today's Appointments",
+      "pending": "Pending",
+      "messages": "Messages",
+      "monthRevenue": "Month Revenue"
+    },
+    "pendingRequests": "Pending Requests",
+    "viewAll": "View all",
+    "noPendingRequests": "No pending requests",
+    "todaySchedule": "Today's Schedule",
+    "dayOff": "Day off",
+    "unreadMessages": "Unread Messages",
+    "allCaughtUp": "All caught up",
+    "quickActions": {
+      "title": "Quick actions",
+      "addPortfolio": "Add to Portfolio",
+      "newAppointment": "New Manual Appointment",
+      "viewAnalytics": "View Analytics",
+      "settings": "Settings"
+    },
+    "revenueChart": "Revenue (7 days)",
+    "weekdaysShort": ["M", "T", "W", "T", "F", "S", "S"]
+  },
+  "appointments": {
+    "statusUnknown": "Unknown",
+    "filters": {
+      "all": "All",
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "completed": "Completed",
+      "rejected": "Rejected"
+    },
+    "views": {
+      "calendar": "Calendar",
+      "list": "List"
+    },
+    "appointmentsForDate": "Appointments for {{date}}",
+    "noAppointmentsDay": "No appointments for this day",
+    "noAppointments": "No appointments",
+    "cancelAppointment": "Cancel appointment?",
+    "completing": "Completing...",
+    "complete": "Complete",
+    "notification": {
+      "title": "Appointment {{status}}",
+      "body": "Your appointment on {{date}} at {{time}} has been {{status}}.",
+      "confirmed": "confirmed",
+      "rejected": "rejected",
+      "completed": "completed"
+    },
+    "newAppointment": "New appointment",
+    "form": {
+      "status": "Status",
+      "statusPending": "Pending",
+      "statusConfirmed": "Confirmed"
+    },
+    "monthNames": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+  },
+  "clients": {
+    "noVisits": "No visits",
+    "stats": {
+      "appointments": "Appointments",
+      "spent": "Spent",
+      "firstVisit": "First visit"
+    },
+    "appointmentHistory": "Appointment History",
+    "notes": "Notes",
+    "notesPlaceholder": "Add note...",
+    "notesAria": "Client note",
+    "notesSaveError": "Error saving note:",
+    "sendMessage": "Send Message",
+    "newAppointment": "New Appointment",
+    "tabs": {
+      "all": "All",
+      "registered": "Registered"
+    },
+    "registered": "Registered",
+    "searchPlaceholder": "Search clients...",
+    "searchAria": "Search clients",
+    "sort": {
+      "name": "Name",
+      "visits": "Visits",
+      "spent": "Spent"
+    },
+    "visits": "visits",
+    "spent": "spent",
+    "noAppointments": "No appointments yet",
+    "registeredDate": "Registered {{date}}",
+    "noResults": "No clients found",
+    "empty": "No clients"
+  },
+  "messages": {
+    "backToConversations": "Back to conversations",
+    "viewProfile": "View profile",
+    "emptyThread": "No messages yet",
+    "firstMessage": "Send the first message to this client",
+    "unreadCount": "{{count}} unread message(s)",
+    "noConversations": "No conversations",
+    "placeholder": "Write a message...",
+    "messageAria": "Message",
+    "sendAria": "Send message"
+  },
+  "orders": {
+    "status": {
+      "pending": { "label": "Pending", "nextLabel": "Confirm" },
+      "confirmed": { "label": "Confirmed", "nextLabel": "Mark shipped" },
+      "shipped": { "label": "Shipped", "nextLabel": "Mark delivered" },
+      "delivered": { "label": "Delivered" },
+      "unknown": { "label": "Unknown" }
+    },
+    "filters": {
+      "all": "All",
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "shipped": "Shipped",
+      "delivered": "Delivered"
+    },
+    "title": "Orders",
+    "totalCount": "{{count}} total",
+    "empty": "No orders",
+    "phone": "Phone:",
+    "address": "Addr:",
+    "items": "Items",
+    "updateError": "Error updating order status",
+    "updating": "Updating...",
+    "notification": {
+      "title": "Order updated",
+      "body": "Your order has been marked as \"{{label}}\"."
+    }
+  },
+  "portfolioManager": {
+    "totalWorks": "Total works",
+    "published": "Published",
+    "draft": "Draft",
+    "markedPublished": "Marked as published",
+    "markedDraft": "Marked as draft",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "editWork": "Edit work",
+    "deleteWork": "Delete work",
+    "addToPortfolio": "Add to portfolio",
+    "editDialog": "Edit portfolio work",
+    "newDialog": "New portfolio work",
+    "editTitle": "Edit work",
+    "newTitle": "New work",
+    "form": {
+      "title": "Title",
+      "titlePlaceholder": "Design name",
+      "description": "Description",
+      "descriptionPlaceholder": "Tattoo description",
+      "style": "Style",
+      "image": "Image",
+      "imagePlaceholder": "URL or upload a file",
+      "uploading": "Uploading...",
+      "upload": "Upload",
+      "preview": "Preview"
+    },
+    "validation": "Complete title, style and image"
+  },
+  "analytics": {
+    "loading": "Loading...",
+    "loadError": "Error loading data",
+    "revenue": {
+      "title": "Revenue",
+      "total": "Total revenue",
+      "description": "Appointment deposits + shop orders (all time)",
+      "monthlyGoal": "Monthly goal",
+      "bySource": "Revenue by source",
+      "tattoos": "Tattoos",
+      "shop": "Shop (orders)"
+    },
+    "appointments": {
+      "title": "Appointments",
+      "total": "Total appointments",
+      "confirmed": "Confirmed",
+      "pending": "Pending",
+      "completed": "Completed",
+      "rejected": "Rejected",
+      "byStatus": "By status",
+      "popularStyles": "Most popular styles",
+      "noStyleData": "No style data",
+      "popularZones": "Most popular zones",
+      "noZoneData": "No zone data"
+    },
+    "clients": {
+      "title": "Clients",
+      "unique": "Unique clients",
+      "avgDeposit": "Average deposit",
+      "returning": "Returning clients",
+      "newVsReturning": "New vs returning",
+      "new": "New",
+      "returningLabel": "Returning"
+    },
+    "weeklyDensity": "Weekly density",
+    "weekdaysShort": ["M", "T", "W", "T", "F", "S", "S"]
+  },
+  "settings": {
+    "tabs": {
+      "profile": "Profile",
+      "catalog": "Catalog",
+      "suggestions": "Suggestions & Quiz",
+      "content": "Content",
+      "chat": "Messages",
+      "notifications": "Notifications"
+    },
+    "loading": "Loading settings...",
+    "profile": {
+      "title": "Studio Profile",
+      "studioName": "Studio name",
+      "artistName": "Artist name",
+      "bio": "Bio",
+      "phone": "Phone",
+      "email": "Email",
+      "address": "Address",
+      "schedule": "Work Schedule",
+      "closed": "Closed",
+      "preview": "Preview",
+      "basePrices": "Base Prices",
+      "socialLinks": "Social Links"
+    },
+    "weekdays": {
+      "monday": "Monday", "tuesday": "Tuesday", "wednesday": "Wednesday",
+      "thursday": "Thursday", "friday": "Friday", "saturday": "Saturday", "sunday": "Sunday"
+    },
+    "sizeLabels": {
+      "tiny": "Tiny (2-5cm)",
+      "small": "Small (5-10cm)",
+      "medium": "Medium (10-20cm)",
+      "large": "Large (20-35cm)",
+      "xlarge": "Extra large (35+cm)"
+    },
+    "catalog": {
+      "tattooStyles": "Tattoo Styles",
+      "newStyle": "New style...",
+      "bodyParts": "Body Parts",
+      "newBodyPart": "New body part..."
+    },
+    "suggestions": {
+      "title": "Suggestions",
+      "titlePlaceholder": "Title",
+      "descriptionPlaceholder": "Description",
+      "addSuggestion": "Add suggestion",
+      "quizTitle": "Style Quiz",
+      "questionPlaceholder": "Question",
+      "optionPlaceholder": "Option {{index}}",
+      "addOption": "+ Add option",
+      "addQuestion": "Add question",
+      "recommendations": "Style Recommendations",
+      "trendingThreshold": "Trending threshold",
+      "trendingDescription": "Minimum popularity to show as trending (0-100)"
+    },
+    "content": {
+      "homePage": "Home Page",
+      "subtitleLabel": "Subtitle",
+      "tagline": "Tagline",
+      "reviews": "Reviews",
+      "reviewName": "Name",
+      "reviewText": "Review text",
+      "reviewRating": "Rating (1-5)",
+      "reviewStyle": "Style",
+      "addReview": "Add review",
+      "aboutPage": "About Page",
+      "heroImage": "Hero image URL",
+      "artistTitle": "Artist title",
+      "bio": "Bio",
+      "stats": "Stats",
+      "statValue": "Value (e.g.: 8+)",
+      "statLabel": "Label (e.g.: Years)",
+      "addStat": "+ Add stat",
+      "specialties": "Specialties",
+      "newSpecialty": "New specialty...",
+      "certifications": "Certifications",
+      "newCertification": "New certification..."
+    },
+    "chatConfig": {
+      "title": "Chat Settings",
+      "artistName": "Artist name",
+      "initials": "Initials",
+      "initialsDefault": "VR",
+      "welcomeMessage": "Welcome message",
+      "responseTime": "Response time text",
+      "responseTimeDefault": "Usually responds within 1h",
+      "quickReplies": "Quick Replies",
+      "replyLabel": "Label (e.g.: Prices)",
+      "replyKey": "Key (e.g.: price)",
+      "addQuickReply": "Add quick reply",
+      "botResponses": "Chatbot Responses",
+      "addBotResponse": "Add new response",
+      "botKey": "Key (e.g.: price)",
+      "botValue": "Response (multiline)",
+      "addBotResponseBtn": "Add response",
+      "cannedResponses": "Pre-set Responses (unauthenticated)",
+      "cannedPlaceholder": "Pre-set response...",
+      "addCanned": "Add pre-set response",
+      "fallbackResponse": "Default Response",
+      "fallbackHint": "When the chatbot has no specific answer"
+    },
+    "notificationSettings": {
+      "newBooking": "New booking",
+      "newBookingDesc": "Get notified when a client books an appointment",
+      "newMessage": "New message",
+      "newMessageDesc": "Get notified when you receive a chat message",
+      "reminders": "Reminders",
+      "remindersDesc": "Pending appointment reminders",
+      "depositReceived": "Deposit received",
+      "depositReceivedDesc": "Confirmation when a deposit is received"
+    },
+    "saveButton": {
+      "saved": "Changes saved successfully",
+      "saveChanges": "Save Changes"
+    }
+  }
+}

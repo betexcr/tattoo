@@ -1,0 +1,46 @@
+{
+  "title": "Diseñador de Tatuajes",
+  "subtitle": "Diseña tu tatuaje",
+  "style": "Estilo",
+  "sizeLabel": "Tamaño",
+  "elements": "Elementos de diseño",
+  "selectedElements": "Elementos seleccionados",
+  "colorMode": "Modo de color",
+  "black": "Negro",
+  "color": "Color",
+  "notes": "Notas",
+  "notesPlaceholder": "Describe tu idea...",
+  "notesAria": "Notas sobre el diseño",
+  "savedSuccess": "Diseño guardado correctamente",
+  "redirectingChat": "Redirigiendo al chat con la artista...",
+  "saveDesign": "Guardar Diseño",
+  "shareWithArtist": "Compartir con Artista",
+  "selectElements": "Selecciona elementos para tu diseño",
+  "sizes": {
+    "small": "Pequeño",
+    "medium": "Mediano",
+    "large": "Grande"
+  },
+  "designElements": {
+    "rose": "Rosa",
+    "lotus": "Loto",
+    "sunflower": "Girasol",
+    "bird": "Pájaro",
+    "fish": "Pez",
+    "cat": "Gato",
+    "triangle": "Triángulo",
+    "circle": "Círculo",
+    "diamond": "Diamante",
+    "moon": "Luna",
+    "star": "Estrella",
+    "heart": "Corazón"
+  },
+  "colors": {
+    "black": "Negro",
+    "gold": "Oro",
+    "rose": "Rosa",
+    "blue": "Azul",
+    "green": "Verde",
+    "red": "Rojo"
+  }
+}
