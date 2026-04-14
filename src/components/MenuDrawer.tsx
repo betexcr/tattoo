@@ -4,7 +4,7 @@ import { useScrollLock } from '../hooks/useScrollLock'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  X, Palette, PenTool, Eye, Lightbulb,
+  X, Palette, PenTool, Lightbulb,
   GraduationCap, User, Phone, Bell, ShoppingBag, LogIn, LogOut, LayoutDashboard, UserCircle,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -29,7 +29,6 @@ export default function MenuDrawer({ open, onClose }: MenuDrawerProps) {
   const menuItems = [
     { to: '/shop', icon: ShoppingBag, label: t('menu.shop'), desc: t('menu.shopDesc') },
     { to: '/designer', icon: PenTool, label: t('menu.designer'), desc: t('menu.designerDesc') },
-    { to: '/visualizer', icon: Eye, label: t('menu.visualizer'), desc: t('menu.visualizerDesc') },
     { to: '/suggestions', icon: Lightbulb, label: t('menu.suggestions'), desc: t('menu.suggestionsDesc') },
     { to: '/courses', icon: GraduationCap, label: t('menu.courses'), desc: t('menu.coursesDesc') },
     { to: '/reminders', icon: Bell, label: t('menu.reminders'), desc: t('menu.remindersDesc') },

@@ -21,7 +21,7 @@ import HomeReviewsSection from './home/HomeReviewsSection'
 import TattooFlashBackdrop from '../components/TattooFlashBackdrop'
 
 const actionKeyMap: Record<string, string> = {
-  '/book': 'book', '/designer': 'designer', '/visualizer': 'visualizer',
+  '/book': 'book', '/designer': 'designer',
   '/shop': 'shop', '/courses': 'courses', '/suggestions': 'suggestions',
 }
 

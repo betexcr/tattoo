@@ -1,7 +1,6 @@
 import {
   Sparkles,
   PenTool,
-  Eye,
   ShoppingBag,
   GraduationCap,
   Lightbulb,
@@ -32,7 +31,6 @@ export const lineVariants = {
 export const quickActions = [
   { to: '/book', icon: Sparkles },
   { to: '/designer', icon: PenTool },
-  { to: '/visualizer', icon: Eye },
   { to: '/shop', icon: ShoppingBag },
   { to: '/courses', icon: GraduationCap },
   { to: '/suggestions', icon: Lightbulb },
